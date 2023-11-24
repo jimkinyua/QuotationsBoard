@@ -22,5 +22,5 @@ public class QuotationsBoardContext : IdentityDbContext<PortalUser>
         base.OnModelCreating(builder);
     }
 
-
+    public DbSet<InstitutionApplication> InstitutionApplications { get; set; } = null!;
 }
