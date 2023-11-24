@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
-public class QuotationsBoardContext : IdentityDbContext
+public class QuotationsBoardContext : IdentityDbContext<PortalUser>
 {
     public QuotationsBoardContext(DbContextOptions<QuotationsBoardContext> options) : base(options)
     {
@@ -21,5 +21,6 @@ public class QuotationsBoardContext : IdentityDbContext
     {
         base.OnModelCreating(builder);
     }
+
 
 }
