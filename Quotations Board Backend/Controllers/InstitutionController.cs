@@ -105,5 +105,88 @@ namespace Quotations_Board_Backend.Controllers
             }
         }
 
+        // List of Institution Applications
+        [HttpGet("Applications")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [SwaggerOperation(Summary = "Get Institution Applications", Description = "Gets all institution applications", OperationId = "GetInstitutionApplications")]
+        [Authorize(Roles = Roles.SuperAdmin, AuthenticationSchemes = "Bearer")]
+        public async Task<ActionResult<List<InstitutionApplicationDTO>>> GetInstitutionApplicationsAsync()
+        {
+            try
+            {
+                using (var context = new QuotationsBoardContext())
+                {
+                    var institutionApplications = await context.InstitutionApplications.ToListAsync();
+                    var institutionApplicationsDTO = _mapper.Map<List<InstitutionApplicationDTO>>(institutionApplications);
+                    return Ok(institutionApplicationsDTO);
+                }
+            }
+            catch (Exception Ex)
+            {
+                UtilityService.LogException(Ex);
+                return StatusCode(500, UtilityService.HandleException(Ex));
+            }
+        }
+
+        // Application Details
+        [HttpGet("Application/{id}")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [SwaggerOperation(Summary = "Get Institution Application Details", Description = "Gets details of an institution application", OperationId = "GetInstitutionApplicationDetails")]
+        [Authorize(Roles = Roles.SuperAdmin, AuthenticationSchemes = "Bearer")]
+        public async Task<ActionResult<InstitutionApplicationDTO>> GetInstitutionApplicationDetailsAsync(string id)
+        {
+            try
+            {
+                using (var context = new QuotationsBoardContext())
+                {
+                    var institutionApplication = await context.InstitutionApplications.FirstOrDefaultAsync(x => x.Id == id);
+                    if (institutionApplication == null)
+                    {
+                        return NotFound();
+                    }
+                    var institutionApplicationDTO = _mapper.Map<InstitutionApplicationDTO>(institutionApplication);
+                    return Ok(institutionApplicationDTO);
+                }
+            }
+            catch (Exception Ex)
+            {
+                UtilityService.LogException(Ex);
+                return StatusCode(500, UtilityService.HandleException(Ex));
+            }
+        }
+
+        // Approve Application
+        [HttpPost("ApproveApplication/{id}")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [SwaggerOperation(Summary = "Approve Institution Application", Description = "Approves an institution application", OperationId = "ApproveInstitutionApplication")]
+        [Authorize(Roles = Roles.SuperAdmin, AuthenticationSchemes = "Bearer")]
+        public async Task<IActionResult> ApproveInstitutionApplicationAsync(string id)
+        {
+            try
+            {
+                using (var context = new QuotationsBoardContext())
+                {
+                    var institutionApplication = await context.InstitutionApplications.FirstOrDefaultAsync(x => x.Id == id);
+                    if (institutionApplication == null)
+                    {
+                        return NotFound();
+                    }
+                    institutionApplication.ApplicationStatus = InstitutionApplicationStatus.Approved;
+                    await context.SaveChangesAsync();
+                    return Ok();
+                }
+            }
+            catch (Exception Ex)
+            {
+                UtilityService.LogException(Ex);
+                return StatusCode(500, UtilityService.HandleException(Ex));
+            }
+        }
+
     }
+
+
 }
