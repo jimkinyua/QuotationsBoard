@@ -14,5 +14,6 @@ public class InstitutionApplication
     public string InstitutionAddress { get; set; } = null!;
     public DateTime ApplicationDate { get; set; } = DateTime.Now;
     public string InstitutionType { get; set; } = null!;
+    public string InstitutionEmail { get; set; } = null!;
 
 }

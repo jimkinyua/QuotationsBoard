@@ -105,7 +105,7 @@ internal class Program
         });
 
         // Add services to the container.
-
+        builder.Services.AddAutoMapper(typeof(Program));
         builder.Services.AddControllers().AddJsonOptions(options =>
         {
             options.JsonSerializerOptions.PropertyNamingPolicy = null;
