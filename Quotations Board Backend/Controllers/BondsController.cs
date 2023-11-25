@@ -103,5 +103,12 @@ namespace Quotations_Board_Backend.Controllers
         {
             return _context.Bonds.Any(e => e.Id == id);
         }
+
+        // Fetched Bond Types (Hard code values)
+        [HttpGet("BondTypes")]
+        public async Task<ActionResult<IEnumerable<string>>> GetBondTypes()
+        {
+            return await Task.FromResult(new List<string> { "Corporate", "Government" });
+        }
     }
 }
