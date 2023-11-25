@@ -1,6 +1,8 @@
-﻿using AutoMapper;
+﻿using System.Web;
+using AutoMapper;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Swashbuckle.AspNetCore.Annotations;
@@ -12,10 +14,16 @@ namespace Quotations_Board_Backend.Controllers
     public class InstitutionController : ControllerBase
     {
         private readonly IMapper _mapper;
+        private readonly IConfiguration _configuration;
+        private readonly UserManager<PortalUser> _userManager;
 
-        public InstitutionController(IMapper mapper)
+
+
+        public InstitutionController(IMapper mapper, IConfiguration configuration, UserManager<PortalUser> userManager)
         {
             _mapper = mapper;
+            _configuration = configuration;
+            _userManager = userManager;
         }
 
         [HttpPost]
@@ -110,7 +118,7 @@ namespace Quotations_Board_Backend.Controllers
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [SwaggerOperation(Summary = "Get Institution Applications", Description = "Gets all institution applications", OperationId = "GetInstitutionApplications")]
-        [Authorize(Roles = Roles.SuperAdmin, AuthenticationSchemes = "Bearer")]
+        [Authorize(Roles = CustomRoles.SuperAdmin, AuthenticationSchemes = "Bearer")]
         public async Task<ActionResult<List<InstitutionApplicationDTO>>> GetInstitutionApplicationsAsync()
         {
             try
@@ -134,7 +142,7 @@ namespace Quotations_Board_Backend.Controllers
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [SwaggerOperation(Summary = "Get Institution Application Details", Description = "Gets details of an institution application", OperationId = "GetInstitutionApplicationDetails")]
-        [Authorize(Roles = Roles.SuperAdmin, AuthenticationSchemes = "Bearer")]
+        [Authorize(Roles = CustomRoles.SuperAdmin, AuthenticationSchemes = "Bearer")]
         public async Task<ActionResult<InstitutionApplicationDTO>> GetInstitutionApplicationDetailsAsync(string id)
         {
             try
@@ -162,7 +170,7 @@ namespace Quotations_Board_Backend.Controllers
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [SwaggerOperation(Summary = "Approve Institution Application", Description = "Approves an institution application", OperationId = "ApproveInstitutionApplication")]
-        [Authorize(Roles = Roles.SuperAdmin, AuthenticationSchemes = "Bearer")]
+        [Authorize(Roles = CustomRoles.SuperAdmin, AuthenticationSchemes = "Bearer")]
         public async Task<IActionResult> ApproveInstitutionApplicationAsync(string id)
         {
             try
@@ -175,8 +183,96 @@ namespace Quotations_Board_Backend.Controllers
                         return NotFound();
                     }
                     institutionApplication.ApplicationStatus = InstitutionApplicationStatus.Approved;
+                    context.InstitutionApplications.Update(institutionApplication);
+
+                    // create new institution
+                    var newInstitution = new Institution
+                    {
+                        CreatedAt = DateTime.Now,
+                        OrganizationName = institutionApplication.InstitutionName,
+                        OrganizationAddress = institutionApplication.InstitutionAddress,
+                        OrganizationEmail = institutionApplication.InstitutionEmail,
+                        InstitutionType = institutionApplication.InstitutionType
+                    };
+
+                    // create new portal user (Contact Person) will be acting on behalf of the institution
+                    var newPortalUser = new PortalUser
+                    {
+                        Email = institutionApplication.AdministratorEmail,
+                        UserName = institutionApplication.AdministratorEmail,
+                        PhoneNumber = institutionApplication.AdministratorPhoneNumber,
+                        EmailConfirmed = false,
+                        PhoneNumberConfirmed = false,
+                    };
+                    context.Users.Add(newPortalUser);
+
+                    //  Fetch the roles available
+                    var roles = await context.Roles.ToListAsync();
+                    // Usure all roles in the Roles class exist in the database if not create them
+                    foreach (var role in CustomRoles.AllRoles)
+                    {
+                        if (!roles.Any(x => x.Name == role))
+                        {
+                            var newRole = new IdentityRole
+                            {
+                                Name = role,
+                                NormalizedName = role.ToUpper()
+                            };
+                            context.Roles.Add(newRole);
+                        }
+                    }
+
+                    // add user to role of InstitutionAdmin
+                    var userRole = new IdentityUserRole<string>
+                    {
+                        RoleId = CustomRoles.InstitutionAdmin,
+                        UserId = newPortalUser.Id
+                    };
+                    context.UserRoles.Add(userRole);
+
+                    // Add them to the institution users
+                    var newInstitutionUser = new InstitutionUser
+                    {
+                        InstitutionId = newInstitution.Id,
+                        PortalUserId = newPortalUser.Id
+                    };
+                    context.InstitutionUsers.Add(newInstitutionUser);
+
                     await context.SaveChangesAsync();
-                    return Ok();
+                    // Generate Email Confirmation PasswordResetToken
+                    var token = await _userManager.GenerateEmailConfirmationTokenAsync(newPortalUser);
+                    var encodedUserId = HttpUtility.UrlEncode(newPortalUser.Id);
+                    var encodedCode = HttpUtility.UrlEncode(token);
+                    var callbackUrl = $"{_configuration["FrontEndUrl"]}/complete-institution-setup?userId={encodedUserId}&code={encodedCode}";
+
+                    var adminSubject = "Institution Application Approved";
+                    var adminMessage = "<html><head><style>" +
+                                        "body { font-family: Arial, sans-serif; background-color: #f5f5f5; margin: 0; padding: 0; }" +
+                                        ".container { max-width: 600px; margin: 0 auto; background-color: #ffffff; padding: 20px; }" +
+                                        "h1 { color: #333; }" +
+                                        "p { font-size: 16px; color: #555; }" +
+                                        "a { text-decoration: none; color: #007BFF; font-weight: bold; }" +
+                                        "a:hover { text-decoration: underline; }" +
+                                        "</style></head><body>" +
+                                        "<div class='container'>" +
+                                        "<h1>School Application Approved</h1>" +
+                                        $"Hello {institutionApplication.AdministratorName}," +
+                                        "<p>We are delighted to announce that your institution's application has been approved, granting you access to the Quotation Board. Your role as the authorized representative of the institution is crucial for the successful use of our platform.</p>" +
+                                        "<p>Here's what to expect as you embark on this journey:</p>" +
+                                        "<ol>" +
+                                        $"<li><strong>Login Credentials:</strong> You will use your  email address, {institutionApplication.AdministratorEmail}, for logging in to the Quotations Board Platform.</li>" +
+                                        "<li><strong>Managing Institution Users:</strong> As the designated representative, you will have the responsibility to manage users on behalf of the institution. This includes handling account management, and ensuring a safe experience for your institutions's participants.</li>" +
+                                        "</ol>" +
+                                        "<p>To complete the setup of your account and set your password, please click the link below:</p>" +
+                                        $"<p><a href='{callbackUrl}'>Set Up Your Password</a> (You will be redirected to a page where you can create your new password)</p>" +
+                                        "<p>If you encounter any issues or have questions, our support team is ready to assist you. Simply reply to this email or contact us at <a href='mailto:support@agilebiz.co.ke'>support@yourcompany.com</a>.</p>" +
+                                        "<p>Thank you for choosing us as your partner. We're excited to see your institution thrive on our platform!</p>" +
+                                        "<p>Best regards,</p>" +
+                                        "<p>Agile Business Solutions</p>" +
+                                        "</div></body></html>";
+                    await UtilityService.SendEmailAsync(institutionApplication.AdministratorEmail, adminSubject, adminMessage);
+
+                    return Ok("Application Approved");
                 }
             }
             catch (Exception Ex)
