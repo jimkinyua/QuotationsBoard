@@ -25,4 +25,5 @@ public class QuotationsBoardContext : IdentityDbContext<PortalUser>
     public DbSet<InstitutionApplication> InstitutionApplications { get; set; } = null!;
     public DbSet<InstitutionType> InstitutionTypes { get; set; } = null!;
     public DbSet<Institution> Institutions { get; set; } = null!;
+    public DbSet<Bond> Bonds { get; set; } = null!;
 }
