@@ -337,5 +337,70 @@ namespace Quotations_Board_Backend.Controllers
                 return StatusCode(500, UtilityService.HandleException(Ex));
             }
         }
+
+        // Complete Institution Setup
+        [HttpPost("CompleteInstitutionSetup")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [SwaggerOperation(Summary = "Complete Institution Setup", Description = "Completes the setup of an institution after Approval", OperationId = "CompleteInstitutionSetup")]
+        [AllowAnonymous]
+        public async Task<IActionResult> CompleteInstitutionSetupAsync([FromBody] ResetPasswordDTO resetPasswordDTO)
+        {
+            // check if model is valid
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            try
+            {
+                using (var _context = new QuotationsBoardContext())
+                {
+                    var user = await _context.Users.FirstOrDefaultAsync(x => x.Id == resetPasswordDTO.UserId);
+                    if (user == null)
+                    {
+                        return NotFound();
+                    }
+                    // Enusre that the user has not already confirmed their email
+                    if (user.EmailConfirmed)
+                    {
+                        return BadRequest("Your account is already set up");
+                    }
+                    var result = await _userManager.AddPasswordAsync(user, resetPasswordDTO.Password);
+                    if (!result.Succeeded)
+                    {
+                        // Fetch the error details
+                        string errorDetails = "";
+                        foreach (var error in result.Errors)
+                        {
+                            errorDetails += error.Description + "\n";
+                        }
+                        return BadRequest(errorDetails);
+                    }
+                    // Confirm the user's email
+                    var confirmEmailResult = await _userManager.ConfirmEmailAsync(user, resetPasswordDTO.Token);
+                    if (!confirmEmailResult.Succeeded)
+                    {
+                        // Fetch the error details
+                        string errorDetails = "";
+                        foreach (var error in confirmEmailResult.Errors)
+                        {
+                            errorDetails += error.Description + "\n";
+                        }
+                        return BadRequest(errorDetails);
+                    }
+                    return Ok("Account Setup Complete");
+
+                }
+
+            }
+            catch (Exception Ex)
+            {
+                UtilityService.LogException(Ex);
+                return StatusCode(500, UtilityService.HandleException(Ex));
+            }
+
+
+        }
     }
 }
