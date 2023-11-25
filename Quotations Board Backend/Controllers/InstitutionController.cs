@@ -16,14 +16,15 @@ namespace Quotations_Board_Backend.Controllers
         private readonly IMapper _mapper;
         private readonly IConfiguration _configuration;
         private readonly UserManager<PortalUser> _userManager;
+        private readonly RoleManager<IdentityRole> _roleManager;
 
-
-
-        public InstitutionController(IMapper mapper, IConfiguration configuration, UserManager<PortalUser> userManager)
+        public InstitutionController(IMapper mapper, IConfiguration configuration, UserManager<PortalUser> userManager, RoleManager<IdentityRole> roleManager)
         {
             _mapper = mapper;
             _configuration = configuration;
             _userManager = userManager;
+                    _roleManager = roleManager;
+
         }
 
         [HttpPost]
@@ -170,7 +171,7 @@ namespace Quotations_Board_Backend.Controllers
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [SwaggerOperation(Summary = "Approve Institution Application", Description = "Approves an institution application", OperationId = "ApproveInstitutionApplication")]
-        [Authorize(Roles = CustomRoles.SuperAdmin, AuthenticationSchemes = "Bearer")]
+        //[Authorize(Roles = CustomRoles.SuperAdmin, AuthenticationSchemes = "Bearer")]
         public async Task<IActionResult> ApproveInstitutionApplicationAsync(string id)
         {
             try
@@ -194,6 +195,7 @@ namespace Quotations_Board_Backend.Controllers
                         OrganizationEmail = institutionApplication.InstitutionEmail,
                         InstitutionType = institutionApplication.InstitutionType
                     };
+                    context.Institutions.Add(newInstitution);
 
                     // create new portal user (Contact Person) will be acting on behalf of the institution
                     var newPortalUser = new PortalUser
@@ -211,21 +213,20 @@ namespace Quotations_Board_Backend.Controllers
                     // Usure all roles in the Roles class exist in the database if not create them
                     foreach (var role in CustomRoles.AllRoles)
                     {
-                        if (!roles.Any(x => x.Name == role))
-                        {
-                            var newRole = new IdentityRole
+                        
+                            // Ensure Role Institution exists
+                            if (!await _roleManager.RoleExistsAsync(role))
                             {
-                                Name = role,
-                                NormalizedName = role.ToUpper()
-                            };
-                            context.Roles.Add(newRole);
-                        }
+                                await _roleManager.CreateAsync(new IdentityRole(role));
+                            }
+                        
                     }
+                    var institutionAdminRole = await context.Roles.FirstOrDefaultAsync(x => x.Name == CustomRoles.InstitutionAdmin);
 
                     // add user to role of InstitutionAdmin
                     var userRole = new IdentityUserRole<string>
                     {
-                        RoleId = CustomRoles.InstitutionAdmin,
+                        RoleId = institutionAdminRole.Id,
                         UserId = newPortalUser.Id
                     };
                     context.UserRoles.Add(userRole);
