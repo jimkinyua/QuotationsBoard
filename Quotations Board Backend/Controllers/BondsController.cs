@@ -15,9 +15,10 @@ namespace Quotations_Board_Backend.Controllers
         private readonly QuotationsBoardContext _context;
         private readonly IMapper _mapper;
 
-        public BondsController(QuotationsBoardContext context)
+        public BondsController(QuotationsBoardContext context, IMapper mapper)
         {
             _context = context;
+            _mapper = mapper;
         }
 
         // GET: api/Bonds
