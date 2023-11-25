@@ -11,6 +11,6 @@ public class Institution
     public string OrganizationAddress { get; set; } = null!;
     public string OrganizationEmail { get; set; } = null!;
     public string InstitutionType { get; set; } = null!;
-    // can have many InstitutionUsers
-    public ICollection<InstitutionUser> InstitutionUsers { get; set; } = null!;
+    // can have many PortalUsers
+    public ICollection<PortalUser> PortalUsers { get; set; } = null!;
 }

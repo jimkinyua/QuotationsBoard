@@ -42,14 +42,13 @@ namespace Quotations_Board_Backend.Controllers
                 using (var context = new QuotationsBoardContext())
                 {
                     PortalUser? user = await context.Users
-                    .Include(x => x.InstitutionUsers)
                     .FirstOrDefaultAsync(x => x.Email == login.Email);
 
                     if (user == null)
                     {
                         return BadRequest(new { message = "Invalid login attempt." });
                     }
-                    Institution? institution = await context.Institutions.FirstOrDefaultAsync(x => x.Id == user.InstitutionUsers.FirstOrDefault().InstitutionId);
+                    Institution? institution = await context.Institutions.FirstOrDefaultAsync(x => x.Id == user.InstitutionId);
                     if (institution == null)
                     {
                         return BadRequest(new { message = "Invalid login attempt. Can't Find Your Insiti" });
@@ -208,8 +207,9 @@ namespace Quotations_Board_Backend.Controllers
                 return BadRequest(ModelState);
             }
 
-            var UserId = UtilityService.GetUserIdFromToken(Request);
-            if (UserId == null)
+            LoginTokenDTO TokenDetails = UtilityService.GetUserIdFromCurrentRequest(Request);
+            var UserId = UtilityService.GetUserIdFromToken(TokenDetails.jwtSecurityToken);
+            if (TokenDetails == null)
             {
                 return Unauthorized();
             }

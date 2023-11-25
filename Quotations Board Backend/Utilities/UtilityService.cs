@@ -127,7 +127,7 @@ public static class UtilityService
         return token;
     }
 
-    internal static JwtSecurityToken GetTokenForThisRequest(HttpRequest request)
+    private static JwtSecurityToken ExtractTokenFromRequest(HttpRequest request)
     {
         var token = request.Headers["Authorization"].ToString().Replace("Bearer ", "");
         return new JwtSecurityTokenHandler().ReadJwtToken(token);
@@ -138,11 +138,28 @@ public static class UtilityService
         var userId = ((JwtSecurityToken)token).Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value;
         return userId.ToString();
     }
-    internal static string GetUserIdFromToken(HttpRequest request)
+    internal static LoginTokenDTO GetUserIdFromCurrentRequest(HttpRequest request)
     {
-        var token = GetTokenForThisRequest(request);
+        var token = ExtractTokenFromRequest(request);
         var userId = ((JwtSecurityToken)token).Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value;
-        return userId.ToString();
+        var email = ((JwtSecurityToken)token).Claims.FirstOrDefault(c => c.Type == ClaimTypes.Email)?.Value;
+        var name = ((JwtSecurityToken)token).Claims.FirstOrDefault(c => c.Type == ClaimTypes.Name)?.Value;
+        var role = ((JwtSecurityToken)token).Claims.FirstOrDefault(c => c.Type == ClaimTypes.Role)?.Value;
+        var institutionId = ((JwtSecurityToken)token).Claims.FirstOrDefault(c => c.Type == "InstitutionId")?.Value;
+        var institutionName = ((JwtSecurityToken)token).Claims.FirstOrDefault(c => c.Type == "InstitutionName")?.Value;
+        var isSuperAdmin = ((JwtSecurityToken)token).Claims.FirstOrDefault(c => c.Type == "IsSuperAdmin")?.Value;
+        return new LoginTokenDTO
+        {
+            Name = name,
+            Email = email,
+            token = token.ToString(),
+            IsSuperAdmin = isSuperAdmin == "true",
+            Role = role,
+            InstitutionId = institutionId,
+            InstitutionName = institutionName,
+            jwtSecurityToken = token
+        };
+
     }
 
     internal static string GetEmailFromToken(object token)

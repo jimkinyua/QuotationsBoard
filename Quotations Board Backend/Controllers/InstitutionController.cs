@@ -23,7 +23,7 @@ namespace Quotations_Board_Backend.Controllers
             _mapper = mapper;
             _configuration = configuration;
             _userManager = userManager;
-                    _roleManager = roleManager;
+            _roleManager = roleManager;
 
         }
 
@@ -205,6 +205,9 @@ namespace Quotations_Board_Backend.Controllers
                         PhoneNumber = institutionApplication.AdministratorPhoneNumber,
                         EmailConfirmed = false,
                         PhoneNumberConfirmed = false,
+                        FirstName = institutionApplication.AdministratorName,
+                        LastName = "",
+                        InstitutionId = newInstitution.Id
                     };
                     context.Users.Add(newPortalUser);
 
@@ -213,13 +216,13 @@ namespace Quotations_Board_Backend.Controllers
                     // Usure all roles in the Roles class exist in the database if not create them
                     foreach (var role in CustomRoles.AllRoles)
                     {
-                        
-                            // Ensure Role Institution exists
-                            if (!await _roleManager.RoleExistsAsync(role))
-                            {
-                                await _roleManager.CreateAsync(new IdentityRole(role));
-                            }
-                        
+
+                        // Ensure Role Institution exists
+                        if (!await _roleManager.RoleExistsAsync(role))
+                        {
+                            await _roleManager.CreateAsync(new IdentityRole(role));
+                        }
+
                     }
                     var institutionAdminRole = await context.Roles.FirstOrDefaultAsync(x => x.Name == CustomRoles.InstitutionAdmin);
 
@@ -231,13 +234,7 @@ namespace Quotations_Board_Backend.Controllers
                     };
                     context.UserRoles.Add(userRole);
 
-                    // Add them to the institution users
-                    var newInstitutionUser = new InstitutionUser
-                    {
-                        InstitutionId = newInstitution.Id,
-                        PortalUserId = newPortalUser.Id
-                    };
-                    context.InstitutionUsers.Add(newInstitutionUser);
+                    ;
 
                     await context.SaveChangesAsync();
                     // Generate Email Confirmation PasswordResetToken

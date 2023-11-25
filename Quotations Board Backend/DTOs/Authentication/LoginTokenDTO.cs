@@ -1,3 +1,4 @@
+using System.IdentityModel.Tokens.Jwt;
 using System.Runtime.CompilerServices;
 
 public class LoginTokenDTO
@@ -9,4 +10,5 @@ public class LoginTokenDTO
     public string Role { get; set; } = null!;
     public string InstitutionId { get; set; } = null!;
     public string InstitutionName { get; set; } = null!;
+    public JwtSecurityToken? jwtSecurityToken { get; set; } = null;
 }
