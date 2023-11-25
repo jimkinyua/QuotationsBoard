@@ -15,5 +15,6 @@ public class InstitutionApplication
     public DateTime ApplicationDate { get; set; } = DateTime.Now;
     public string InstitutionType { get; set; } = null!;
     public string InstitutionEmail { get; set; } = null!;
+    public string? RejectionReason { get; set; }
 
 }
