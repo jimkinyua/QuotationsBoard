@@ -30,7 +30,7 @@ namespace Quotations_Board_Backend.Controllers
 
         // Login
         [AllowAnonymous]
-        [HttpPost("login")]
+        [HttpPost("Login")]
         public async Task<IActionResult> Login(LoginDTO login)
         {
             try
@@ -129,8 +129,106 @@ namespace Quotations_Board_Backend.Controllers
                 UtilityService.LogException(Ex);
                 return StatusCode(500, UtilityService.HandleException(Ex));
             }
+        }
 
+        // Forgot Password
+        [AllowAnonymous]
+        [HttpPost("ForgotPassword")]
+        public async Task<IActionResult> ForgotPassword(ForgotPasswordDTO forgotPasswordDTO)
+        {
+            try
+            {
+                if (!ModelState.IsValid)
+                {
+                    return BadRequest(ModelState);
+                }
+                using (var context = new QuotationsBoardContext())
+                {
+                    PortalUser? user = await context.Users.FirstOrDefaultAsync(x => x.Email == forgotPasswordDTO.Email);
+                    if (user == null)
+                    {
+                        return BadRequest(new { message = "Invalid login attempt." });
+                    }
+                    var token = await _userManager.GeneratePasswordResetTokenAsync(user);
+                    var encodedUserId = HttpUtility.UrlEncode(user.Id);
+                    var encodedCode = HttpUtility.UrlEncode(token);
+                    var callbackUrl = $"{_configuration["FrontEndUrl"]}/reset-password?userId={encodedUserId}&code={encodedCode}";
+                    var adminSubject = "Reset Password";
+                    var adminBody = $"Please reset your password by <a href='{HtmlEncoder.Default.Encode(callbackUrl)}'>clicking here</a>.";
+                    await UtilityService.SendEmailAsync(user.Email, adminSubject, adminBody);
+                    return Ok(new { message = "Please check your email for a password reset link." });
+                }
+            }
+            catch (Exception Ex)
+            {
+                UtilityService.LogException(Ex);
+                return StatusCode(500, UtilityService.HandleException(Ex));
+            }
+        }
 
+        [HttpPost("ResetPassword")]
+        public async Task<IActionResult> ResetPassword(ResetPasswordDTO resetPassword)
+        {
+            if (UtilityService.IsDTOValid(resetPassword) == true)
+            {
+
+                var user = await _userManager.FindByIdAsync(resetPassword.UserId);
+                if (user == null)
+                {
+                    return NotFound($"Unable to load user with ID '{resetPassword.UserId}'.");
+                }
+
+                var result = await _userManager.ResetPasswordAsync(user, resetPassword.Token, resetPassword.Password);
+                if (result.Succeeded)
+                {
+                    return Ok();
+                }
+
+                // If we got this far, something failed. Fetch the error list and display it.
+                var errors = result.Errors.Select(result => result.Description);
+                return BadRequest(errors);
+
+            }
+            else
+            {
+                var errors = UtilityService.FetchDataAnnotationErrors(resetPassword);
+                return BadRequest(errors);
+            }
+        }
+
+        // Intentionally Change Password
+        [Authorize(AuthenticationSchemes = "Bearer")]
+        [HttpPost]
+        [Route("ChangePassword")]
+
+        public async Task<IActionResult> ChangePassword(ChangePasswordDTO model)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            var UserId = UtilityService.GetUserIdFromToken(Request);
+            if (UserId == null)
+            {
+                return Unauthorized();
+            }
+
+            var user = await _userManager.FindByIdAsync(UserId);
+
+            if (user != null)
+            {
+                var result = await _userManager.ChangePasswordAsync(user, model.CurrentPassword, model.NewPassword);
+
+                if (result.Succeeded)
+                {
+                    return Ok("Password changed successfully");
+                }
+
+                return StatusCode(StatusCodes.Status500InternalServerError, "Password change failed. Please try again later.");
+            }
+
+            return StatusCode(StatusCodes.Status404NotFound, "User not found!");
         }
     }
 }
