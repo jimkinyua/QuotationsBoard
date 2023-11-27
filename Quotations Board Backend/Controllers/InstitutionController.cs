@@ -125,7 +125,7 @@ namespace Quotations_Board_Backend.Controllers
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [SwaggerOperation(Summary = "Get Institution Applications", Description = "Gets all institution applications", OperationId = "GetInstitutionApplications")]
-        [Authorize(Roles = CustomRoles.SuperAdmin, AuthenticationSchemes = "Bearer")]
+        // [Authorize(Roles = CustomRoles.SuperAdmin, AuthenticationSchemes = "Bearer")]
         public async Task<ActionResult<List<InstitutionApplicationDTO>>> GetInstitutionApplicationsAsync()
         {
             try
@@ -175,7 +175,7 @@ namespace Quotations_Board_Backend.Controllers
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [SwaggerOperation(Summary = "Get Institution Application Details", Description = "Gets details of an institution application", OperationId = "GetInstitutionApplicationDetails")]
-        [Authorize(Roles = CustomRoles.SuperAdmin, AuthenticationSchemes = "Bearer")]
+        // [Authorize(Roles = CustomRoles.SuperAdmin, AuthenticationSchemes = "Bearer")]
         public async Task<ActionResult<InstitutionApplicationDTO>> GetInstitutionApplicationDetailsAsync(string id)
         {
             try
@@ -317,7 +317,7 @@ namespace Quotations_Board_Backend.Controllers
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [SwaggerOperation(Summary = "Reject Institution Application", Description = "Rejects an institution application", OperationId = "RejectInstitutionApplication")]
-        [Authorize(Roles = CustomRoles.SuperAdmin, AuthenticationSchemes = "Bearer")]
+        // [Authorize(Roles = CustomRoles.SuperAdmin, AuthenticationSchemes = "Bearer")]
         public async Task<IActionResult> RejectInstitutionApplicationAsync(string id)
         {
             try

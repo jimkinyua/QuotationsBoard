@@ -1,6 +1,6 @@
 public class InstitutionApplicationDTO
 {
-    public int Id { get; set; }
+    public string Id { get; set; }
     public string InstitutionName { get; set; }
     public string ApplicationStatus { get; set; }
     public string AdministratorEmail { get; set; }
