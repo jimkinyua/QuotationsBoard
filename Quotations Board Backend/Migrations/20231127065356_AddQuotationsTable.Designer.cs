@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,10 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Quotations_Board_Backend.Migrations
 {
     [DbContext(typeof(QuotationsBoardContext))]
-    partial class QuotationsBoardContextModelSnapshot : ModelSnapshot
+    [Migration("20231127065356_AddQuotationsTable")]
+    partial class AddQuotationsTable
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -375,7 +377,7 @@ namespace Quotations_Board_Backend.Migrations
 
                     b.Property<string>("BondId")
                         .IsRequired()
-                        .HasColumnType("nvarchar(450)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<decimal>("BuyingYield")
                         .HasColumnType("decimal(18,2)");
@@ -398,8 +400,6 @@ namespace Quotations_Board_Backend.Migrations
                         .HasColumnType("decimal(18,2)");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("BondId");
 
                     b.HasIndex("InstitutionId");
 
@@ -470,33 +470,18 @@ namespace Quotations_Board_Backend.Migrations
 
             modelBuilder.Entity("Quotation", b =>
                 {
-                    b.HasOne("Bond", "Bond")
-                        .WithMany("Quotations")
-                        .HasForeignKey("BondId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
                     b.HasOne("Institution", "Institution")
-                        .WithMany("Quotations")
+                        .WithMany()
                         .HasForeignKey("InstitutionId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("Bond");
-
                     b.Navigation("Institution");
-                });
-
-            modelBuilder.Entity("Bond", b =>
-                {
-                    b.Navigation("Quotations");
                 });
 
             modelBuilder.Entity("Institution", b =>
                 {
                     b.Navigation("PortalUsers");
-
-                    b.Navigation("Quotations");
                 });
 #pragma warning restore 612, 618
         }

@@ -14,6 +14,7 @@ public class Quotation
     public Institution Institution { get; set; } = null!;
     [ForeignKey("Bond")]
     public string BondId { get; set; } = null!;
+    public Bond Bond { get; set; } = null!;
     public DateTime CreatedAt { get; set; }
     [ForeignKey("User")]
     public string UserId { get; set; } = null!;

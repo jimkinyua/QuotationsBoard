@@ -13,4 +13,6 @@ public class Institution
     public string InstitutionType { get; set; } = null!;
     // can have many PortalUsers
     public ICollection<PortalUser> PortalUsers { get; set; } = null!;
+    // can have many quotations
+    public ICollection<Quotation> Quotations { get; set; } = null!;
 }
