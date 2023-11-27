@@ -63,7 +63,7 @@ namespace Quotations_Board_Backend.Controllers
         }
 
         // POST: api/Bonds
-        [HttpPost]
+        [HttpPost("CreateBond")]
         public async Task<ActionResult<Bond>> PostBond(NewBondDTO bond)
         {
             // Model is valid?
@@ -84,7 +84,7 @@ namespace Quotations_Board_Backend.Controllers
         }
 
         // DELETE: api/Bonds/5
-        [HttpDelete("{id}")]
+        [HttpDelete("DeleteBond/{id}")]
         public async Task<ActionResult<Bond>> DeleteBond(string id)
         {
             var bond = await _context.Bonds.FindAsync(id);
