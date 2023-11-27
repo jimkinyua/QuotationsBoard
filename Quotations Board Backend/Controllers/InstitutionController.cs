@@ -281,7 +281,7 @@ namespace Quotations_Board_Backend.Controllers
                                         "a:hover { text-decoration: underline; }" +
                                         "</style></head><body>" +
                                         "<div class='container'>" +
-                                        "<h1>School Application Approved</h1>" +
+                                        "<h1> Application Approved</h1>" +
                                         $"Hello {institutionApplication.AdministratorName}," +
                                         "<p>We are delighted to announce that your institution's application has been approved, granting you access to the Quotation Board. Your role as the authorized representative of the institution is crucial for the successful use of our platform.</p>" +
                                         "<p>Here's what to expect as you embark on this journey:</p>" +
@@ -343,7 +343,7 @@ namespace Quotations_Board_Backend.Controllers
                                         "a:hover { text-decoration: underline; }" +
                                         "</style></head><body>" +
                                         "<div class='container'>" +
-                                        "<h1>School Application Rejected</h1>" +
+                                        "<h1> Application Rejected</h1>" +
                                         $"Hello {institutionApplication.AdministratorName}," +
                                         "<p>We are sorry to announce that your institution's application has been rejected. This means that you will not be able to access the Quotation Board." +
                                         "<ol>";
