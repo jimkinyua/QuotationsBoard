@@ -132,7 +132,7 @@ namespace Quotations_Board_Backend.Controllers
             {
                 using (var context = new QuotationsBoardContext())
                 {
-                    var institutionApplications = await context.InstitutionApplications.ToListAsync();
+                    var institutionApplications = await context.InstitutionApplications.Where(x => x.ApplicationStatus == InstitutionApplicationStatus.Pending).ToListAsync();
                     var mapper = new MapperConfiguration(cfg => cfg.CreateMap<InstitutionApplication, InstitutionApplicationDTO>()).CreateMapper();
                     var institutionApplicationsDTO = mapper.Map<List<InstitutionApplicationDTO>>(institutionApplications);
                     return Ok(institutionApplicationsDTO);
