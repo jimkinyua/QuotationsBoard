@@ -396,17 +396,7 @@ namespace Quotations_Board_Backend.Controllers
                     {
                         return BadRequest("Your account is already set up");
                     }
-                    var result = await _userManager.AddPasswordAsync(user, resetPasswordDTO.Password);
-                    if (!result.Succeeded)
-                    {
-                        // Fetch the error details
-                        string errorDetails = "";
-                        foreach (var error in result.Errors)
-                        {
-                            errorDetails += error.Description + "\n";
-                        }
-                        return BadRequest(errorDetails);
-                    }
+
                     // Confirm the user's email
                     var confirmEmailResult = await _userManager.ConfirmEmailAsync(user, resetPasswordDTO.Token);
                     if (!confirmEmailResult.Succeeded)
@@ -414,6 +404,17 @@ namespace Quotations_Board_Backend.Controllers
                         // Fetch the error details
                         string errorDetails = "";
                         foreach (var error in confirmEmailResult.Errors)
+                        {
+                            errorDetails += error.Description + "\n";
+                        }
+                        return BadRequest(errorDetails);
+                    }
+                    var result = await _userManager.AddPasswordAsync(user, resetPasswordDTO.Password);
+                    if (!result.Succeeded)
+                    {
+                        // Fetch the error details
+                        string errorDetails = "";
+                        foreach (var error in result.Errors)
                         {
                             errorDetails += error.Description + "\n";
                         }
