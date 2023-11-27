@@ -133,7 +133,33 @@ namespace Quotations_Board_Backend.Controllers
                 using (var context = new QuotationsBoardContext())
                 {
                     var institutionApplications = await context.InstitutionApplications.ToListAsync();
-                    var institutionApplicationsDTO = _mapper.Map<List<InstitutionApplicationDTO>>(institutionApplications);
+                    var mapper = new MapperConfiguration(cfg => cfg.CreateMap<InstitutionApplication, InstitutionApplicationDTO>()).CreateMapper();
+                    var institutionApplicationsDTO = mapper.Map<List<InstitutionApplicationDTO>>(institutionApplications);
+                    return Ok(institutionApplicationsDTO);
+                }
+            }
+            catch (Exception Ex)
+            {
+                UtilityService.LogException(Ex);
+                return StatusCode(500, UtilityService.HandleException(Ex));
+            }
+        }
+
+        // Approved Institution Applications
+        [HttpGet("ApprovedApplications")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [SwaggerOperation(Summary = "Get Approved Institution Applications", Description = "Gets all approved institution applications", OperationId = "GetApprovedInstitutionApplications")]
+
+        public async Task<ActionResult<List<InstitutionApplicationDTO>>> GetApprovedInstitutionApplicationsAsync()
+        {
+            try
+            {
+                using (var context = new QuotationsBoardContext())
+                {
+                    var institutionApplications = await context.InstitutionApplications.Where(x => x.ApplicationStatus == InstitutionApplicationStatus.Approved).ToListAsync();
+                    var mapper = new MapperConfiguration(cfg => cfg.CreateMap<InstitutionApplication, InstitutionApplicationDTO>()).CreateMapper();
+                    var institutionApplicationsDTO = mapper.Map<List<InstitutionApplicationDTO>>(institutionApplications);
                     return Ok(institutionApplicationsDTO);
                 }
             }
