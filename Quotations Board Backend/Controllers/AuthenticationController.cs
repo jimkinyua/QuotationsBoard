@@ -165,6 +165,50 @@ namespace Quotations_Board_Backend.Controllers
             }
         }
 
+        [HttpGet]
+        [AllowAnonymous]
+        [Route("ValidatePasswordResetToken")]
+
+        public async Task<IActionResult> ValidatePasswordResetToken([FromQuery] string userId, [FromQuery] string code)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            // Find User by ResetToken.
+            var user = await _userManager.FindByIdAsync(userId);
+
+            if (user != null)
+            {
+                // Verify there PasswordResetToken
+
+                var isTokenValid = await _userManager.VerifyUserTokenAsync(
+                        user,
+                        _userManager.Options.Tokens.PasswordResetTokenProvider,
+                        UserManager<PortalUser>.ResetPasswordTokenPurpose,
+                        code);
+
+                if (isTokenValid)
+                {
+                    return Ok(new { Status = "Success", Message = "Password has been reset!", });
+
+                }
+
+                return StatusCode(StatusCodes.Status401Unauthorized, new
+                {
+                    Status = "Error",
+                    Message = "The Link has expired. Please try again!"
+                });
+            }
+
+            return StatusCode(StatusCodes.Status404NotFound, new
+            {
+                Status = "Error",
+                Message = "The Link has expired. Please try again!"
+            });
+        }
+
         [HttpPost("ResetPassword")]
         public async Task<IActionResult> ResetPassword(ResetPasswordDTO resetPassword)
         {
