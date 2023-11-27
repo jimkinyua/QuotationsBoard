@@ -46,12 +46,12 @@ namespace Quotations_Board_Backend.Controllers
 
                     if (user == null)
                     {
-                        return BadRequest(new { message = "Invalid login attempt." });
+                        return BadRequest("Invalid login attempt.");
                     }
                     Institution? institution = await context.Institutions.FirstOrDefaultAsync(x => x.Id == user.InstitutionId);
                     if (institution == null)
                     {
-                        return BadRequest(new { message = "Invalid login attempt. Can't Find Your Insiti" });
+                        return BadRequest("Invalid login attempt. Can't Find Your Insiti");
                     }
                     if (!await _userManager.IsEmailConfirmedAsync(user))
                     {
@@ -62,7 +62,7 @@ namespace Quotations_Board_Backend.Controllers
                         var adminSubject = "Confirm your email (Resend)";
                         var adminBody = $"Please confirm your account by <a href='{HtmlEncoder.Default.Encode(callbackUrl)}'>clicking here</a>.";
                         await UtilityService.SendEmailAsync(user.Email, adminSubject, adminBody);
-                        return BadRequest(new { message = "Email not confirmed. Please check your email for a confirmation link." });
+                        return BadRequest("Email not confirmed. Please check your email for a confirmation link.");
                     }
 
                     var result = await _signInManager.PasswordSignInAsync(user, login.Password, false, false);
@@ -107,7 +107,7 @@ namespace Quotations_Board_Backend.Controllers
                         }
                         else
                         {
-                            return BadRequest(new { message = "Invalid login attempt. No Role" });
+                            return BadRequest("Invalid login attempt. No Role");
                         }
 
                         var claims = new List<Claim>
@@ -120,7 +120,7 @@ namespace Quotations_Board_Backend.Controllers
                         loginTokenDTO.token = new JwtSecurityTokenHandler().WriteToken(jwtSecurityToken);
                         return Ok(loginTokenDTO);
                     }
-                    return BadRequest(new { message = "Invalid login attempt. Pass Wong" });
+                    return BadRequest("Invalid login attempt. Pass Wong");
                 }
             }
             catch (Exception Ex)
@@ -146,7 +146,7 @@ namespace Quotations_Board_Backend.Controllers
                     PortalUser? user = await context.Users.FirstOrDefaultAsync(x => x.Email == forgotPasswordDTO.Email);
                     if (user == null)
                     {
-                        return BadRequest(new { message = "Invalid login attempt." });
+                        return BadRequest("Invalid login attempt.");
                     }
                     var token = await _userManager.GeneratePasswordResetTokenAsync(user);
                     var encodedUserId = HttpUtility.UrlEncode(user.Id);
@@ -155,7 +155,7 @@ namespace Quotations_Board_Backend.Controllers
                     var adminSubject = "Reset Password";
                     var adminBody = $"Please reset your password by <a href='{HtmlEncoder.Default.Encode(callbackUrl)}'>clicking here</a>.";
                     await UtilityService.SendEmailAsync(user.Email, adminSubject, adminBody);
-                    return Ok(new { message = "Please check your email for a password reset link." });
+                    return Ok("Please check your email for a password reset link.");
                 }
             }
             catch (Exception Ex)
