@@ -9,7 +9,8 @@ namespace Quotations_Board_Backend.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    [Authorize(Roles = CustomRoles.SuperAdmin, AuthenticationSchemes = "Bearer")]
+    // [Authorize(Roles = CustomRoles.SuperAdmin, AuthenticationSchemes = "Bearer")]
+    [AllowAnonymous]
     public class BondsController : ControllerBase
     {
         private readonly QuotationsBoardContext _context;
@@ -64,6 +65,7 @@ namespace Quotations_Board_Backend.Controllers
 
         // POST: api/Bonds
         [HttpPost("CreateBond")]
+        [AllowAnonymous]
         public async Task<ActionResult<Bond>> PostBond(NewBondDTO bond)
         {
             // Model is valid?
@@ -71,16 +73,25 @@ namespace Quotations_Board_Backend.Controllers
             {
                 return BadRequest(ModelState);
             }
-            if (await _context.Bonds.AnyAsync(b => b.Isin == bond.Isin))
-            {
-                return BadRequest("Bond with this ISIN already exists");
-            }
-            // Map the DTO to the model
-            var bondModel = _mapper.Map<Bond>(bond);
-            _context.Bonds.Add(bondModel);
-            await _context.SaveChangesAsync();
 
-            return CreatedAtAction("GetBond", new { id = bondModel.Id });
+            try
+            {
+                if (await _context.Bonds.AnyAsync(b => b.Isin == bond.Isin))
+                {
+                    return BadRequest("Bond with this ISIN already exists");
+                }
+                // Map the DTO to the model
+                var mapper = new MapperConfiguration(cfg => cfg.CreateMap<NewBondDTO, Bond>()).CreateMapper();
+                var bondModel = mapper.Map<Bond>(bond);
+                _context.Bonds.Add(bondModel);
+                await _context.SaveChangesAsync();
+                return CreatedAtAction("GetBond", new { id = bondModel.Id });
+            }
+            catch (System.Exception)
+            {
+
+                throw;
+            }
         }
 
         // DELETE: api/Bonds/5
