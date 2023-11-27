@@ -96,7 +96,7 @@ namespace Quotations_Board_Backend.Controllers
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [SwaggerOperation(Summary = "Get Institution Types", Description = "Gets all institution types", OperationId = "GetInstitutionTypes")]
         [AllowAnonymous]
-        public async Task<ActionResult<InstitutionTypeDTO>> GetInstitutionTypesAsync()
+        public async Task<ActionResult<List<InstitutionTypeDTO>>> GetInstitutionTypesAsync()
         {
             try
             {
