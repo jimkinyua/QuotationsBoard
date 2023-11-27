@@ -57,10 +57,6 @@ namespace Quotations_Board_Backend.Controllers
                         {
                             return BadRequest("An institution with the same email already exists and is pending approval");
                         }
-                        else
-                        {
-                            return BadRequest("An Application alreasy exists with the same email");
-                        }
 
                     }
 
@@ -313,18 +309,22 @@ namespace Quotations_Board_Backend.Controllers
         }
 
         // Reject Application
-        [HttpPost("RejectApplication/{id}")]
+        [HttpPost("RejectApplication")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [SwaggerOperation(Summary = "Reject Institution Application", Description = "Rejects an institution application", OperationId = "RejectInstitutionApplication")]
         // [Authorize(Roles = CustomRoles.SuperAdmin, AuthenticationSchemes = "Bearer")]
-        public async Task<IActionResult> RejectInstitutionApplicationAsync(string id)
+        public async Task<IActionResult> RejectInstitutionApplicationAsync(RejectApplication rejectApplication)
         {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
             try
             {
                 using (var context = new QuotationsBoardContext())
                 {
-                    var institutionApplication = await context.InstitutionApplications.FirstOrDefaultAsync(x => x.Id == id);
+                    var institutionApplication = await context.InstitutionApplications.FirstOrDefaultAsync(x => x.Id == rejectApplication.Id);
                     if (institutionApplication == null)
                     {
                         return NotFound();
@@ -347,9 +347,9 @@ namespace Quotations_Board_Backend.Controllers
                                         $"Hello {institutionApplication.AdministratorName}," +
                                         "<p>We are sorry to announce that your institution's application has been rejected. This means that you will not be able to access the Quotation Board." +
                                         "<ol>";
-                    if (institutionApplication.RejectionReason != null)
+                    if (rejectApplication.RejectionReason != null)
                     {
-                        adminMessage += $"<li><strong>Reason for Rejection:</strong> {institutionApplication.RejectionReason}</li>";
+                        adminMessage += $"<li><strong>Reason for Rejection:</strong> {rejectApplication.RejectionReason}</li>";
                     }
                     adminMessage += "</ol>" +
                                         "<p>If you encounter any issues or have questions, our support team is ready to assist you.";
