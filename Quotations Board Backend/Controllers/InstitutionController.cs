@@ -103,7 +103,13 @@ namespace Quotations_Board_Backend.Controllers
                 using (var context = new QuotationsBoardContext())
                 {
                     var institutionTypes = await context.InstitutionTypes.ToListAsync();
-                    var institutionTypesDTO = _mapper.Map<List<InstitutionTypeDTO>>(institutionTypes);
+                    // mapper configuration
+                    var mapperConfig = new MapperConfiguration(mc =>
+                    {
+                        mc.CreateMap<InstitutionType, InstitutionTypeDTO>();
+                    });
+                    IMapper mapper = mapperConfig.CreateMapper();
+                    var institutionTypesDTO = mapper.Map<List<InstitutionTypeDTO>>(institutionTypes);
                     return Ok(institutionTypesDTO);
                 }
             }
