@@ -230,7 +230,7 @@ namespace Quotations_Board_Backend.Controllers
                         }
 
                     }
-                    var institutionAdminRole = await context.Roles.FirstOrDefaultAsync(x => x.Name == CustomRoles.SuperAdmin);
+                    var institutionAdminRole = await context.Roles.FirstOrDefaultAsync(x => x.Name == CustomRoles.InstitutionAdmin);
 
                     // add user to role of InstitutionAdmin
                     var userRole = new IdentityUserRole<string>
