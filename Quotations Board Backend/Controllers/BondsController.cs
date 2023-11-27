@@ -85,7 +85,7 @@ namespace Quotations_Board_Backend.Controllers
                 var bondModel = mapper.Map<Bond>(bond);
                 _context.Bonds.Add(bondModel);
                 await _context.SaveChangesAsync();
-                return CreatedAtAction("GetBond", new { id = bondModel.Id });
+                return Ok();
             }
             catch (System.Exception)
             {
