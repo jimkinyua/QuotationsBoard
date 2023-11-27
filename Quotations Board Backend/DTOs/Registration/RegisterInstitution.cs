@@ -7,11 +7,6 @@ public class RegisterInstitution
     [Required]
     public string InstitutionEmail { get; set; } = null!;
     [Required]
-    public string Password { get; set; } = null!;
-    [Required]
-    [Compare("Password")]
-    public string ConfrimPassword { get; set; } = null!;
-    [Required]
     public string Address { get; set; } = null!;
     [Required]
     public string ContactPerson { get; set; } = null!;
