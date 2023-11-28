@@ -9,8 +9,8 @@ public class NewPortalUser
     [Required]
     [EmailAddress]
     public string Email { get; set; } = null!;
-    [Required]
-    public string InstitutionId { get; set; } = null!;
+    // [Required]
+    // public string InstitutionId { get; set; } = null!;
     [Required]
     public string Role { get; set; } = null!;
 }

@@ -48,8 +48,15 @@ namespace Quotations_Board_Backend.Controllers
                 {
                     return NotFound();
                 }
+                var mapper = new MapperConfiguration(cfg => cfg.CreateMap<PortalUser, PortalUserDTO>()).CreateMapper();
+                var portalUsers = mapper.Map<List<PortalUserDTO>>(institution.PortalUsers);
 
-                List<PortalUserDTO> portalUsers = _mapper.Map<List<PortalUserDTO>>(institution.PortalUsers);
+                foreach (var user in portalUsers)
+                {
+                    var roles = await _userManager.GetRolesAsync(await _userManager.FindByEmailAsync(user.Email));
+                    user.Role = roles[0];
+                }
+
                 return Ok(portalUsers);
 
             }
@@ -119,8 +126,8 @@ namespace Quotations_Board_Backend.Controllers
                 await UtilityService.SendEmailAsync(portalUser.Email, "Quotations Board Portal Account Created", emailBody);
 
                 // return user
-                PortalUserDTO portalUserDTOToReturn = _mapper.Map<PortalUserDTO>(portalUser);
-                return Ok(portalUserDTOToReturn);
+                //PortalUserDTO portalUserDTOToReturn = _mapper.Map<PortalUserDTO>(portalUser);
+                return Ok();
             }
         }
 
