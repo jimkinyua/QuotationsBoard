@@ -113,7 +113,7 @@ namespace Quotations_Board_Backend.Controllers
                 {
                     LoginTokenDTO TokenContents = UtilityService.GetUserIdFromCurrentRequest(Request);
                     var userId = UtilityService.GetUserIdFromToken(Request);
-                    var quotations = await context.Quotations.Include(x => x.Institution).Where(q => q.InstitutionId == TokenContents.InstitutionId).ToListAsync();
+                    var quotations = await context.Quotations.Include(x => x.Institution).ToListAsync();
                     List<QuotationDTO> quotationDTOs = new List<QuotationDTO>();
                     foreach (var quotation in quotations)
                     {
@@ -128,22 +128,25 @@ namespace Quotations_Board_Backend.Controllers
                         };
                         quotationDTOs.Add(quotationDTO);
                     }
-
-                    // Calculate the total buying yield, total selling yield, average buy yield, average sell yield and average yield
-                    var totalBuyingYield = quotationDTOs.Sum(x => x.BuyingYield);
-                    var totalSellingYield = quotationDTOs.Sum(x => x.SellingYield);
-                    var averageBuyYield = quotationDTOs.Average(x => x.BuyingYield);
-                    var averageSellYield = quotationDTOs.Average(x => x.SellingYield);
-                    var averageYield = quotationDTOs.Average(x => (x.BuyingYield + x.SellingYield) / 2);
-
-                    foreach (var quotationDTO in quotationDTOs)
+                    if (quotationDTOs.Count > 0)
                     {
-                        quotationDTO.TotalBuyingYield = totalBuyingYield;
-                        quotationDTO.TotalSellingYield = totalSellingYield;
-                        quotationDTO.AverageBuyYield = averageBuyYield;
-                        quotationDTO.AverageSellYield = averageSellYield;
-                        quotationDTO.AverageYield = averageYield;
+                        // Calculate the total buying yield, total selling yield, average buy yield, average sell yield and average yield
+                        var totalBuyingYield = quotationDTOs.Sum(x => x.BuyingYield);
+                        var totalSellingYield = quotationDTOs.Sum(x => x.SellingYield);
+                        var averageBuyYield = quotationDTOs.Average(x => x.BuyingYield);
+                        var averageSellYield = quotationDTOs.Average(x => x.SellingYield);
+                        var averageYield = quotationDTOs.Average(x => (x.BuyingYield + x.SellingYield) / 2);
+
+                        foreach (var quotationDTO in quotationDTOs)
+                        {
+                            quotationDTO.TotalBuyingYield = totalBuyingYield;
+                            quotationDTO.TotalSellingYield = totalSellingYield;
+                            quotationDTO.AverageBuyYield = averageBuyYield;
+                            quotationDTO.AverageSellYield = averageSellYield;
+                            quotationDTO.AverageYield = averageYield;
+                        }
                     }
+                   
 
                     return StatusCode(200, quotationDTOs);
                 }
@@ -183,23 +186,28 @@ namespace Quotations_Board_Backend.Controllers
                         };
                         quotationDTOs.Add(quotationDTO);
                     }
-
-                    // Calculate the total buying yield, total selling yield, average buy yield, average sell yield and average yield
-
-                    var totalBuyingYield = quotationDTOs.Sum(x => x.BuyingYield);
-                    var totalSellingYield = quotationDTOs.Sum(x => x.SellingYield);
-                    var averageBuyYield = quotationDTOs.Average(x => x.BuyingYield);
-                    var averageSellYield = quotationDTOs.Average(x => x.SellingYield);
-                    var averageYield = quotationDTOs.Average(x => (x.BuyingYield + x.SellingYield) / 2);
-
-                    foreach (var quotationDTO in quotationDTOs)
+                    if (quotationDTOs.Count > 0)
                     {
-                        quotationDTO.TotalBuyingYield = totalBuyingYield;
-                        quotationDTO.TotalSellingYield = totalSellingYield;
-                        quotationDTO.AverageBuyYield = averageBuyYield;
-                        quotationDTO.AverageSellYield = averageSellYield;
-                        quotationDTO.AverageYield = averageYield;
+                        // Calculate the total buying yield, total selling yield, average buy yield, average sell yield and average yield
+
+                        var totalBuyingYield = quotationDTOs.Sum(x => x.BuyingYield);
+                        var totalSellingYield = quotationDTOs.Sum(x => x.SellingYield);
+                        var averageBuyYield = quotationDTOs.Average(x => x.BuyingYield);
+                        var averageSellYield = quotationDTOs.Average(x => x.SellingYield);
+                        var averageYield = quotationDTOs.Average(x => (x.BuyingYield + x.SellingYield) / 2);
+
+                        foreach (var quotationDTO in quotationDTOs)
+                        {
+                            quotationDTO.TotalBuyingYield = totalBuyingYield;
+                            quotationDTO.TotalSellingYield = totalSellingYield;
+                            quotationDTO.AverageBuyYield = averageBuyYield;
+                            quotationDTO.AverageSellYield = averageSellYield;
+                            quotationDTO.AverageYield = averageYield;
+                        }
+
                     }
+
+                 
 
                     return StatusCode(200, quotationDTOs);
 
@@ -238,24 +246,29 @@ namespace Quotations_Board_Backend.Controllers
                             SellingYield = quotation.SellingYield,
                             UserId = quotation.UserId
                         };
+                        quotationDTOs.Add(quotationDTO);
+
                     }
 
                     // Calculate the total buying yield, total selling yield, average buy yield, average sell yield and average yield
-
-                    var totalBuyingYield = quotationDTOs.Sum(x => x.BuyingYield);
-                    var totalSellingYield = quotationDTOs.Sum(x => x.SellingYield);
-                    var averageBuyYield = quotationDTOs.Average(x => x.BuyingYield);
-                    var averageSellYield = quotationDTOs.Average(x => x.SellingYield);
-                    var averageYield = quotationDTOs.Average(x => (x.BuyingYield + x.SellingYield) / 2);
-
-                    foreach (var quotationDTO in quotationDTOs)
+                    if (quotationDTOs.Count > 0)
                     {
-                        quotationDTO.TotalBuyingYield = totalBuyingYield;
-                        quotationDTO.TotalSellingYield = totalSellingYield;
-                        quotationDTO.AverageBuyYield = averageBuyYield;
-                        quotationDTO.AverageSellYield = averageSellYield;
-                        quotationDTO.AverageYield = averageYield;
+                        var totalBuyingYield = quotationDTOs.Sum(x => x.BuyingYield);
+                        var totalSellingYield = quotationDTOs.Sum(x => x.SellingYield);
+                        var averageBuyYield = quotationDTOs.Average(x => x.BuyingYield);
+                        var averageSellYield = quotationDTOs.Average(x => x.SellingYield);
+                        var averageYield = quotationDTOs.Average(x => (x.BuyingYield + x.SellingYield) / 2);
+
+                        foreach (var quotationDTO in quotationDTOs)
+                        {
+                            quotationDTO.TotalBuyingYield = totalBuyingYield;
+                            quotationDTO.TotalSellingYield = totalSellingYield;
+                            quotationDTO.AverageBuyYield = averageBuyYield;
+                            quotationDTO.AverageSellYield = averageSellYield;
+                            quotationDTO.AverageYield = averageYield;
+                        }
                     }
+                  
 
                     return StatusCode(200, quotationDTOs);
                 }
