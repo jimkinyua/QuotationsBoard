@@ -56,7 +56,7 @@ namespace Quotations_Board_Backend.Controllers
         }
 
         [HttpPost("AddInstitutionUser")]
-        public async Task<ActionResult<PortalUserDTO>> AddInstitutionUser(PortalUserDTO portalUserDTO)
+        public async Task<ActionResult<PortalUserDTO>> AddInstitutionUser(NewPortalUser portalUserDTO)
         {
             LoginTokenDTO TokenContents = UtilityService.GetUserIdFromCurrentRequest(Request);
             if (TokenContents == null)
@@ -86,14 +86,11 @@ namespace Quotations_Board_Backend.Controllers
                     return BadRequest("User already exists");
                 }
 
-
-
-                // create user
-                PortalUser portalUser = _mapper.Map<PortalUser>(portalUserDTO);
+                var mapper = new MapperConfiguration(cfg => cfg.CreateMap<NewPortalUser, PortalUser>()).CreateMapper();
+                var portalUser = mapper.Map<PortalUser>(portalUserDTO);
                 portalUser.InstitutionId = institution.Id;
                 portalUser.UserName = portalUser.Email;
                 portalUser.EmailConfirmed = false;
-
                 context.Users.Add(portalUser);
 
                 // add user to role
@@ -108,7 +105,6 @@ namespace Quotations_Board_Backend.Controllers
                 var encodedUserId = HttpUtility.UrlEncode(portalUser.Id);
                 var encodedCode = HttpUtility.UrlEncode(token);
                 var callbackUrl = $"{_configuration["FrontEndUrl"]}/complete-institution-setup?userId={encodedUserId}&code={encodedCode}";
-
 
                 // add user to institution
                 institution.PortalUsers.Add(portalUser);
@@ -129,7 +125,7 @@ namespace Quotations_Board_Backend.Controllers
         }
 
         [HttpPut("UpdateInstitutionUser")]
-        public async Task<ActionResult<PortalUserDTO>> UpdateInstitutionUser(PortalUserDTO portalUserDTO)
+        public async Task<ActionResult> UpdateInstitutionUser(EditPortalUser portalUserDTO)
         {
             LoginTokenDTO TokenContents = UtilityService.GetUserIdFromCurrentRequest(Request);
             if (TokenContents == null)
@@ -188,8 +184,7 @@ namespace Quotations_Board_Backend.Controllers
                 await context.SaveChangesAsync();
 
                 // return user
-                PortalUserDTO portalUserDTOToReturn = _mapper.Map<PortalUserDTO>(existingUser);
-                return Ok(portalUserDTOToReturn);
+                return Ok();
             }
         }
 

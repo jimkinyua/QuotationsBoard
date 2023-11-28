@@ -13,6 +13,7 @@ public class Bond
     public string CouponType { get; set; } = null!;
     public decimal CouponRate { get; set; }
     public string BondType { get; set; } = null!;
+    public string IssueNumber { get; set; } = null!;
     // can have many quotations
     public ICollection<Quotation> Quotations { get; set; } = null!;
 }

@@ -48,7 +48,8 @@ namespace Quotations_Board_Backend.Controllers
         public async Task<IActionResult> PutBond(UpdateBondDTO bond)
         {
             // Map the DTO to the model
-            var bondModel = _mapper.Map<Bond>(bond);
+            var mapper = new MapperConfiguration(cfg => cfg.CreateMap<UpdateBondDTO, Bond>()).CreateMapper();
+            var bondModel = mapper.Map<Bond>(bond);
             _context.Entry(bondModel).State = EntityState.Modified;
             try
             {

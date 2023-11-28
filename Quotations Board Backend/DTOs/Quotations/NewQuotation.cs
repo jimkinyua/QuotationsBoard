@@ -4,4 +4,5 @@ public class NewQuotation
     public decimal BuyYield { get; set; }
     public decimal SellYield { get; set; }
     public decimal Volume { get; set; }
+    public string IssueNumber { get; set; } = null!;
 }
