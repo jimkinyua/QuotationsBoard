@@ -30,11 +30,16 @@ namespace Quotations_Board_Backend.Controllers
                 {
                     LoginTokenDTO TokenContents = UtilityService.GetUserIdFromCurrentRequest(Request);
                     var userId = UtilityService.GetUserIdFromToken(Request);
-                    // Map the DTO to the model
-                    quotation.UserId = userId;
-                    quotation.CreatedAt = DateTime.Now;
-                    quotation.InstitutionId = TokenContents.InstitutionId;
-                    quotation.S
+                    Quotation quotation = new Quotation
+                    {
+                        BondId = newQuotation.BondId,
+                        BuyingYield = newQuotation.BuyYield,
+                        SellingYield = newQuotation.SellYield,
+                        Volume = newQuotation.Volume,
+                        UserId = userId,
+                        CreatedAt = DateTime.Now,
+                        InstitutionId = TokenContents.InstitutionId
+                    };
 
                     // Ensure selling yield is greater than buying yield
                     if (quotation.SellingYield < quotation.BuyingYield)
@@ -73,12 +78,22 @@ namespace Quotations_Board_Backend.Controllers
                 {
                     LoginTokenDTO TokenContents = UtilityService.GetUserIdFromCurrentRequest(Request);
                     var userId = UtilityService.GetUserIdFromToken(Request);
-                    // Map the DTO to the model
-                    var mapper = new MapperConfiguration(cfg => cfg.CreateMap<EditQuotation, Quotation>()).CreateMapper();
-                    var quotation = mapper.Map<Quotation>(editQuotation);
-                    quotation.UserId = userId;
-                    //quotation.CreatedAt = DateTime.Now;
-                    quotation.InstitutionId = TokenContents.InstitutionId;
+                    var existingQuotation = await context.Quotations.FirstOrDefaultAsync(q => q.Id == editQuotation.Id);
+                    if (existingQuotation == null)
+                    {
+                        return BadRequest("Quotation does not exist");
+                    }
+                    Quotation quotation = new Quotation
+                    {
+                        Id = editQuotation.Id,
+                        BondId = editQuotation.BondId,
+                        BuyingYield = editQuotation.BuyYield,
+                        SellingYield = editQuotation.SellYield,
+                        Volume = editQuotation.Volume,
+                        UserId = userId,
+                        //CreatedAt = DateTime.Now,
+                        InstitutionId = TokenContents.InstitutionId
+                    };
 
                     // Ensure selling yield is greater than buying yield
                     if (quotation.SellingYield < quotation.BuyingYield)
@@ -145,7 +160,7 @@ namespace Quotations_Board_Backend.Controllers
                             quotationDTO.AverageYield = averageYield;
                         }
                     }
-                   
+
 
                     return StatusCode(200, quotationDTOs);
                 }
@@ -206,7 +221,7 @@ namespace Quotations_Board_Backend.Controllers
 
                     }
 
-                 
+
 
                     return StatusCode(200, quotationDTOs);
 
@@ -267,7 +282,7 @@ namespace Quotations_Board_Backend.Controllers
                             quotationDTO.AverageYield = averageYield;
                         }
                     }
-                  
+
 
                     return StatusCode(200, quotationDTOs);
                 }
