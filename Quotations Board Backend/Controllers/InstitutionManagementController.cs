@@ -108,12 +108,21 @@ namespace Quotations_Board_Backend.Controllers
                 portalUser.EmailConfirmed = false;
                 context.Users.Add(portalUser);
 
-                // add user to role
-                var result = await _userManager.AddToRoleAsync(portalUser, portalUserDTO.Role);
-                if (!result.Succeeded)
+                // Get the role
+                var role = await _roleManager.FindByNameAsync(portalUserDTO.Role);
+                if (role == null)
                 {
-                    return BadRequest(result.Errors);
+                    return BadRequest("Role does not exist");
                 }
+
+                // add user to role 
+                // add user to role of InstitutionAdmin
+                var userRole = new IdentityUserRole<string>
+                {
+                    RoleId = role.Id,
+                    UserId = portalUser.Id
+                };
+                context.UserRoles.Add(userRole);
 
                 // Generate Email Confirmation Token
                 var token = await _userManager.GenerateEmailConfirmationTokenAsync(portalUser);
@@ -122,7 +131,7 @@ namespace Quotations_Board_Backend.Controllers
                 var callbackUrl = $"{_configuration["FrontEndUrl"]}/complete-institution-setup?userId={encodedUserId}&code={encodedCode}";
 
                 // add user to institution
-                institution.PortalUsers.Add(portalUser);
+                // institution.PortalUsers.Add(portalUser);
                 await context.SaveChangesAsync();
 
                 // send email to user
