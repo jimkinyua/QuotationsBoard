@@ -2,12 +2,13 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace Quotations_Board_Backend.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    // [Authorize(Roles = CustomRoles.Dealer + "," + CustomRoles.ChiefDealer, AuthenticationSchemes = "Bearer")]
+    [Authorize(Roles = CustomRoles.Dealer + "," + CustomRoles.ChiefDealer, AuthenticationSchemes = "Bearer")]
 
     public class QuotationsController : ControllerBase
     {
@@ -15,7 +16,7 @@ namespace Quotations_Board_Backend.Controllers
         [HttpPost("CreateQuotation")]
         [ProducesResponseType(StatusCodes.Status201Created)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public async Task<ActionResult<Quotation>> CreateQuotation(NewQuotation newQuotation)
+        public async Task<ActionResult> CreateQuotation(NewQuotation newQuotation)
         {
             try
             {
@@ -59,7 +60,7 @@ namespace Quotations_Board_Backend.Controllers
         [HttpPut("EditQuotation")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public async Task<ActionResult<Quotation>> EditQuotation(EditQuotation editQuotation)
+        public async Task<ActionResult> EditQuotation(EditQuotation editQuotation)
         {
             try
             {
@@ -88,7 +89,7 @@ namespace Quotations_Board_Backend.Controllers
                     // Save the quotation
                     context.Quotations.Update(quotation);
                     await context.SaveChangesAsync();
-                    return StatusCode(200, quotation);
+                    return StatusCode(200);
                 }
 
             }
@@ -98,6 +99,85 @@ namespace Quotations_Board_Backend.Controllers
                 return StatusCode(500, UtilityService.HandleException(Ex));
             }
         }
+
+        // Fetch all quotations filled by Institution
+        [HttpGet("GetQuotationsFilledByInstitution")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        public async Task<ActionResult<List<QuotationDTO>>> GetQuotationsFilledByInstitution()
+        {
+            try
+            {
+                using (var context = new QuotationsBoardContext())
+                {
+                    LoginTokenDTO TokenContents = UtilityService.GetUserIdFromCurrentRequest(Request);
+                    var userId = UtilityService.GetUserIdFromToken(Request);
+                    var quotations = await context.Quotations.Include(x => x.Institution).Where(q => q.InstitutionId == TokenContents.InstitutionId).ToListAsync();
+                    var mapper = new MapperConfiguration(cfg => cfg.CreateMap<Quotation, QuotationDTO>()).CreateMapper();
+                    var quotationDTOs = mapper.Map<List<QuotationDTO>>(quotations);
+                    return StatusCode(200, quotationDTOs);
+                }
+
+            }
+            catch (Exception Ex)
+            {
+                UtilityService.LogException(Ex);
+                return StatusCode(500, UtilityService.HandleException(Ex));
+            }
+        }
+
+        // Fetch Quaotes Filled by a Specific user
+        [HttpGet("GetQuotationsFilledByUser")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        public async Task<ActionResult<List<QuotationDTO>>> GetQuotationsFilledByUser()
+        {
+            try
+            {
+                using (var context = new QuotationsBoardContext())
+                {
+                    LoginTokenDTO TokenContents = UtilityService.GetUserIdFromCurrentRequest(Request);
+                    var userId = UtilityService.GetUserIdFromToken(Request);
+                    var quotations = await context.Quotations.Include(x => x.Institution).Where(q => q.UserId == userId).ToListAsync();
+                    var mapper = new MapperConfiguration(cfg => cfg.CreateMap<Quotation, QuotationDTO>()).CreateMapper();
+                    var quotationDTOs = mapper.Map<List<QuotationDTO>>(quotations);
+                    return StatusCode(200, quotationDTOs);
+                }
+
+            }
+            catch (Exception Ex)
+            {
+                UtilityService.LogException(Ex);
+                return StatusCode(500, UtilityService.HandleException(Ex));
+            }
+        }
+
+        // Quotations For a Specific Bond
+        [HttpGet("GetQuotationsForBond/{bondId}")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        public async Task<ActionResult<List<QuotationDTO>>> GetQuotationsForBond(string bondId)
+        {
+            try
+            {
+                using (var context = new QuotationsBoardContext())
+                {
+                    LoginTokenDTO TokenContents = UtilityService.GetUserIdFromCurrentRequest(Request);
+                    var userId = UtilityService.GetUserIdFromToken(Request);
+                    var quotations = await context.Quotations.Include(x => x.Institution).Where(q => q.BondId == bondId).ToListAsync();
+                    var mapper = new MapperConfiguration(cfg => cfg.CreateMap<Quotation, QuotationDTO>()).CreateMapper();
+                    var quotationDTOs = mapper.Map<List<QuotationDTO>>(quotations);
+                    return StatusCode(200, quotationDTOs);
+                }
+
+            }
+            catch (Exception Ex)
+            {
+                UtilityService.LogException(Ex);
+                return StatusCode(500, UtilityService.HandleException(Ex));
+            }
+        }
+
 
     }
 }
