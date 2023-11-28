@@ -27,7 +27,7 @@ namespace Quotations_Board_Backend.Controllers
                 using (var context = new QuotationsBoardContext())
                 {
                     LoginTokenDTO TokenContents = UtilityService.GetUserIdFromCurrentRequest(Request);
-                    var userId = UtilityService.GetUserIdFromToken(TokenContents.token);
+                    var userId = UtilityService.GetUserIdFromToken(Request);
                     // Map the DTO to the model
                     var mapper = new MapperConfiguration(cfg => cfg.CreateMap<NewQuotation, Quotation>()).CreateMapper();
                     var quotation = mapper.Map<Quotation>(newQuotation);
@@ -71,7 +71,7 @@ namespace Quotations_Board_Backend.Controllers
                 using (var context = new QuotationsBoardContext())
                 {
                     LoginTokenDTO TokenContents = UtilityService.GetUserIdFromCurrentRequest(Request);
-                    var userId = UtilityService.GetUserIdFromToken(TokenContents.token);
+                    var userId = UtilityService.GetUserIdFromToken(Request);
                     // Map the DTO to the model
                     var mapper = new MapperConfiguration(cfg => cfg.CreateMap<EditQuotation, Quotation>()).CreateMapper();
                     var quotation = mapper.Map<Quotation>(editQuotation);

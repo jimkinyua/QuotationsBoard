@@ -252,7 +252,7 @@ namespace Quotations_Board_Backend.Controllers
             }
 
             LoginTokenDTO TokenDetails = UtilityService.GetUserIdFromCurrentRequest(Request);
-            var UserId = UtilityService.GetUserIdFromToken(TokenDetails.jwtSecurityToken);
+            var UserId = UtilityService.GetUserIdFromToken(Request);
             if (TokenDetails == null)
             {
                 return Unauthorized();

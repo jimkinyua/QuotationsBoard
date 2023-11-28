@@ -133,8 +133,9 @@ public static class UtilityService
         return new JwtSecurityTokenHandler().ReadJwtToken(token);
     }
 
-    internal static string GetUserIdFromToken(object token)
+    internal static string GetUserIdFromToken(HttpRequest request)
     {
+        var token = ExtractTokenFromRequest(request);
         var userId = ((JwtSecurityToken)token).Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value;
         return userId.ToString();
     }
