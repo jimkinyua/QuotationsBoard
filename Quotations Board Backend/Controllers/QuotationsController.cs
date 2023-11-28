@@ -31,11 +31,10 @@ namespace Quotations_Board_Backend.Controllers
                     LoginTokenDTO TokenContents = UtilityService.GetUserIdFromCurrentRequest(Request);
                     var userId = UtilityService.GetUserIdFromToken(Request);
                     // Map the DTO to the model
-                    var mapper = new MapperConfiguration(cfg => cfg.CreateMap<NewQuotation, Quotation>()).CreateMapper();
-                    var quotation = mapper.Map<Quotation>(newQuotation);
                     quotation.UserId = userId;
                     quotation.CreatedAt = DateTime.Now;
                     quotation.InstitutionId = TokenContents.InstitutionId;
+                    quotation.S
 
                     // Ensure selling yield is greater than buying yield
                     if (quotation.SellingYield < quotation.BuyingYield)
