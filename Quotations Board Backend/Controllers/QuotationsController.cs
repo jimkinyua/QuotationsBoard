@@ -167,6 +167,9 @@ namespace Quotations_Board_Backend.Controllers
                     var quotations = await context.Quotations.Include(x => x.Institution).Where(q => q.BondId == bondId).ToListAsync();
                     var mapper = new MapperConfiguration(cfg => cfg.CreateMap<Quotation, QuotationDTO>()).CreateMapper();
                     var quotationDTOs = mapper.Map<List<QuotationDTO>>(quotations);
+
+                    // Calculate the total buying yield, total selling yield, average buy yield, average sell yield and average yield
+
                     return StatusCode(200, quotationDTOs);
                 }
 

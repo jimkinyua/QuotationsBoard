@@ -8,5 +8,11 @@ public class QuotationDTO
     public string BondId { get; set; } = null!;
     public DateTime CreatedAt { get; set; }
     public string UserId { get; set; } = null!;
+    public decimal TotalSellingYield { get; set; }
+    public decimal TotalBuyingYield { get; set; }
+    public decimal AverageSellYield { get; set; }
+    public decimal AverageBuyYield { get; set; }
+    public decimal AverageYield { get; set; }
+
 
 }
