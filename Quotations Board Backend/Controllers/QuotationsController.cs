@@ -138,7 +138,10 @@ namespace Quotations_Board_Backend.Controllers
                             CreatedAt = quotation.CreatedAt,
                             InstitutionId = quotation.InstitutionId,
                             SellingYield = quotation.SellingYield,
-                            UserId = quotation.UserId
+                            UserId = quotation.UserId,
+                            Volume = quotation.Volume,
+                            Id = quotation.Id
+
                         };
                         quotationDTOs.Add(quotationDTO);
                     }
@@ -196,7 +199,9 @@ namespace Quotations_Board_Backend.Controllers
                             CreatedAt = quotation.CreatedAt,
                             InstitutionId = quotation.InstitutionId,
                             SellingYield = quotation.SellingYield,
-                            UserId = quotation.UserId
+                            UserId = quotation.UserId,
+                            Volume = quotation.Volume,
+                            Id = quotation.Id
                         };
                         quotationDTOs.Add(quotationDTO);
                     }
@@ -258,7 +263,9 @@ namespace Quotations_Board_Backend.Controllers
                             CreatedAt = quotation.CreatedAt,
                             InstitutionId = quotation.InstitutionId,
                             SellingYield = quotation.SellingYield,
-                            UserId = quotation.UserId
+                            UserId = quotation.UserId,
+                            Volume = quotation.Volume,
+                            Id = quotation.Id
                         };
                         quotationDTOs.Add(quotationDTO);
 
