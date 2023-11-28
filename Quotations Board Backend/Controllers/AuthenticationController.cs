@@ -115,6 +115,9 @@ namespace Quotations_Board_Backend.Controllers
                             new Claim(ClaimTypes.NameIdentifier, user.Id),
                             new Claim(ClaimTypes.Email, user.Email),
                             new Claim(ClaimTypes.Role, string.Join(",", roles)),
+                            new Claim("InstitutionId", institution.Id),
+                            new Claim("InstitutionName", institution.OrganizationName),
+                            new Claim("IsSuperAdmin", loginTokenDTO.IsSuperAdmin.ToString())
                         };
                         JwtSecurityToken jwtSecurityToken = UtilityService.GenerateToken(claims);
                         loginTokenDTO.token = new JwtSecurityTokenHandler().WriteToken(jwtSecurityToken);
