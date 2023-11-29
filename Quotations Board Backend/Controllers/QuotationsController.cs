@@ -201,10 +201,8 @@ namespace Quotations_Board_Backend.Controllers
                         };
 
                         // Add the quote statistic to the quotation DTO
-                        quotationDTOs.Add(new QuotationDTO
-                        {
-                            QuoteStatistic = quoteStatistic
-                        });
+                        quotationDTOs[0].QuoteStatistic = quoteStatistic;
+
                     }
 
 
@@ -299,10 +297,7 @@ namespace Quotations_Board_Backend.Controllers
                         };
 
                         // Add the quote statistic to the quotation DTO
-                        quotationDTOs.Add(new QuotationDTO
-                        {
-                            QuoteStatistic = quoteStatistic
-                        });
+                        quotationDTOs[0].QuoteStatistic = quoteStatistic;
 
                     }
 
@@ -400,10 +395,7 @@ namespace Quotations_Board_Backend.Controllers
                         };
 
                         // Add the quote statistic to the quotation DTO
-                        quotationDTOs.Add(new QuotationDTO
-                        {
-                            QuoteStatistic = quoteStatistic
-                        });
+                        quotationDTOs[0].QuoteStatistic = quoteStatistic;
 
                     }
 
