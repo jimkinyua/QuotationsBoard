@@ -37,7 +37,7 @@ namespace Quotations_Board_Backend.Controllers
                         SellingYield = newQuotation.SellYield,
                         Volume = newQuotation.Volume,
                         UserId = userId,
-                        CreatedAt = DateTime.Now - TimeSpan.FromDays(2),
+                        CreatedAt = DateTime.Now - TimeSpan.FromDays(3),
                         InstitutionId = TokenContents.InstitutionId
                     };
 
