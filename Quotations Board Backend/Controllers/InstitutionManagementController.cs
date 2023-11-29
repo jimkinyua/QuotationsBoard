@@ -60,7 +60,8 @@ namespace Quotations_Board_Backend.Controllers
                         FirstName = user.FirstName,
                         LastName = user.LastName,
                         Email = user.Email,
-                        Role = roles[0]
+                        Role = roles[0],
+                        IsActive = !user.LockoutEnabled,
                     };
                     portalUserDTO.Add(portalUser);
                 }
@@ -252,6 +253,42 @@ namespace Quotations_Board_Backend.Controllers
 
                 existingUser.LockoutEnabled = true;
                 existingUser.LockoutEnd = DateTime.Now.AddYears(100);
+
+                await context.SaveChangesAsync();
+
+                return Ok();
+            }
+        }
+
+        // Enable User
+        [HttpPut("EnableInstitutionUser/{userId}")]
+        public async Task<ActionResult> EnableInstitutionUser(string userId)
+        {
+            LoginTokenDTO TokenContents = UtilityService.GetUserIdFromCurrentRequest(Request);
+            if (TokenContents == null)
+            {
+                return Unauthorized();
+            }
+
+            using (var context = new QuotationsBoardContext())
+            {
+                Institution? institution = await context.Institutions
+                    .Include(i => i.PortalUsers)
+                    .FirstOrDefaultAsync(i => i.Id == TokenContents.InstitutionId);
+                if (institution == null)
+                {
+                    return NotFound();
+                }
+
+                // check if user exists
+                PortalUser? existingUser = await _userManager.FindByIdAsync(userId);
+                if (existingUser == null)
+                {
+                    return BadRequest("User does not exist");
+                }
+
+                existingUser.LockoutEnabled = false;
+                existingUser.LockoutEnd = null;
 
                 await context.SaveChangesAsync();
 
