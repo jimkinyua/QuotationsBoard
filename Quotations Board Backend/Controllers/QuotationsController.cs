@@ -173,6 +173,12 @@ namespace Quotations_Board_Backend.Controllers
                         };
                         quoteinfos.Add(quotationDTO);
                     }
+
+                    quotationDTOs.Add(new QuotationDTO
+                    {
+                        Quotes = quoteinfos
+                    });
+
                     if (quoteinfos.Count > 0)
                     {
                         // Calculate the total buying yield, total selling yield, average buy yield, average sell yield and average yield
@@ -188,7 +194,10 @@ namespace Quotations_Board_Backend.Controllers
                             AverageSellYield = averageSellYield,
                             AverageYield = averageYield,
                             TotalBuyingYield = totalBuyingYield,
-                            TotalSellingYield = totalSellingYield
+                            TotalSellingYield = totalSellingYield,
+                            TotalQuotations = quoteinfos.Count,
+                            TotalBuyVolume = quoteinfos.Sum(x => x.BuyVolume),
+                            TotalSellVolume = quoteinfos.Sum(x => x.SellVolume)
                         };
 
                         // Add the quote statistic to the quotation DTO
@@ -262,6 +271,11 @@ namespace Quotations_Board_Backend.Controllers
                         };
                         quoteinfos.Add(quotationDTO);
                     }
+                    quotationDTOs.Add(new QuotationDTO
+                    {
+                        Quotes = quoteinfos
+                    });
+
                     if (quoteinfos.Count > 0)
                     {
                         // Calculate the total buying yield, total selling yield, average buy yield, average sell yield and average yield
@@ -278,7 +292,10 @@ namespace Quotations_Board_Backend.Controllers
                             AverageSellYield = averageSellYield,
                             AverageYield = averageYield,
                             TotalBuyingYield = totalBuyingYield,
-                            TotalSellingYield = totalSellingYield
+                            TotalSellingYield = totalSellingYield,
+                            TotalQuotations = quoteinfos.Count,
+                            TotalBuyVolume = quoteinfos.Sum(x => x.BuyVolume),
+                            TotalSellVolume = quoteinfos.Sum(x => x.SellVolume)
                         };
 
                         // Add the quote statistic to the quotation DTO
@@ -376,7 +393,10 @@ namespace Quotations_Board_Backend.Controllers
                             AverageSellYield = averageSellYield,
                             AverageYield = averageYield,
                             TotalBuyingYield = totalBuyingYield,
-                            TotalSellingYield = totalSellingYield
+                            TotalSellingYield = totalSellingYield,
+                            TotalQuotations = quoteinfos.Count,
+                            TotalBuyVolume = quoteinfos.Sum(x => x.BuyVolume),
+                            TotalSellVolume = quoteinfos.Sum(x => x.SellVolume)
                         };
 
                         // Add the quote statistic to the quotation DTO
