@@ -1,5 +1,11 @@
 public class QuotationDTO
 {
+    public List<Quoteinfo> Quotes { get; set; } = null!;
+    public QuoteStatistic QuoteStatistic { get; set; } = null!;
+}
+
+public class Quoteinfo
+{
     public string Id { get; set; } = null!;
     public decimal BuyingYield { get; set; }
     public decimal SellingYield { get; set; }
@@ -9,11 +15,4 @@ public class QuotationDTO
     public string BondId { get; set; } = null!;
     public DateTime CreatedAt { get; set; }
     public string UserId { get; set; } = null!;
-    public decimal TotalSellingYield { get; set; }
-    public decimal TotalBuyingYield { get; set; }
-    public decimal AverageSellYield { get; set; }
-    public decimal AverageBuyYield { get; set; }
-    public decimal AverageYield { get; set; }
-
-
 }

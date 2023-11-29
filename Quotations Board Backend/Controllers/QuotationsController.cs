@@ -155,9 +155,10 @@ namespace Quotations_Board_Backend.Controllers
                     var quotations = await context.Quotations.Include(x => x.Institution)
                         .Where(q => q.InstitutionId == TokenContents.InstitutionId && q.CreatedAt.Date >= fromDate.Date).ToListAsync();
                     List<QuotationDTO> quotationDTOs = new List<QuotationDTO>();
+                    List<Quoteinfo> quoteinfos = new List<Quoteinfo>();
                     foreach (var quotation in quotations)
                     {
-                        var quotationDTO = new QuotationDTO
+                        var quotationDTO = new Quoteinfo
                         {
                             BondId = quotation.BondId,
                             BuyingYield = quotation.BuyingYield,
@@ -170,25 +171,31 @@ namespace Quotations_Board_Backend.Controllers
                             Id = quotation.Id
 
                         };
-                        quotationDTOs.Add(quotationDTO);
+                        quoteinfos.Add(quotationDTO);
                     }
-                    if (quotationDTOs.Count > 0)
+                    if (quoteinfos.Count > 0)
                     {
                         // Calculate the total buying yield, total selling yield, average buy yield, average sell yield and average yield
-                        var totalBuyingYield = quotationDTOs.Sum(x => x.BuyingYield);
-                        var totalSellingYield = quotationDTOs.Sum(x => x.SellingYield);
-                        var averageBuyYield = quotationDTOs.Average(x => x.BuyingYield);
-                        var averageSellYield = quotationDTOs.Average(x => x.SellingYield);
-                        var averageYield = quotationDTOs.Average(x => (x.BuyingYield + x.SellingYield) / 2);
+                        var totalBuyingYield = quoteinfos.Sum(x => x.BuyingYield);
+                        var totalSellingYield = quoteinfos.Sum(x => x.SellingYield);
+                        var averageBuyYield = quoteinfos.Average(x => x.BuyingYield);
+                        var averageSellYield = quoteinfos.Average(x => x.SellingYield);
+                        var averageYield = quoteinfos.Average(x => (x.BuyingYield + x.SellingYield) / 2);
 
-                        foreach (var quotationDTO in quotationDTOs)
+                        QuoteStatistic quoteStatistic = new QuoteStatistic
                         {
-                            quotationDTO.TotalBuyingYield = totalBuyingYield;
-                            quotationDTO.TotalSellingYield = totalSellingYield;
-                            quotationDTO.AverageBuyYield = averageBuyYield;
-                            quotationDTO.AverageSellYield = averageSellYield;
-                            quotationDTO.AverageYield = averageYield;
-                        }
+                            AverageBuyYield = averageBuyYield,
+                            AverageSellYield = averageSellYield,
+                            AverageYield = averageYield,
+                            TotalBuyingYield = totalBuyingYield,
+                            TotalSellingYield = totalSellingYield
+                        };
+
+                        // Add the quote statistic to the quotation DTO
+                        quotationDTOs.Add(new QuotationDTO
+                        {
+                            QuoteStatistic = quoteStatistic
+                        });
                     }
 
 
@@ -238,9 +245,10 @@ namespace Quotations_Board_Backend.Controllers
                     var userId = UtilityService.GetUserIdFromToken(Request);
                     var quotations = await context.Quotations.Include(x => x.Institution).Where(q => q.UserId == userId && q.CreatedAt.Date >= fromDate.Date).ToListAsync();
                     List<QuotationDTO> quotationDTOs = new List<QuotationDTO>();
+                    List<Quoteinfo> quoteinfos = new List<Quoteinfo>();
                     foreach (var quotation in quotations)
                     {
-                        var quotationDTO = new QuotationDTO
+                        var quotationDTO = new Quoteinfo
                         {
                             BondId = quotation.BondId,
                             BuyingYield = quotation.BuyingYield,
@@ -252,30 +260,34 @@ namespace Quotations_Board_Backend.Controllers
                             SellVolume = quotation.SellVolume,
                             Id = quotation.Id
                         };
-                        quotationDTOs.Add(quotationDTO);
+                        quoteinfos.Add(quotationDTO);
                     }
-                    if (quotationDTOs.Count > 0)
+                    if (quoteinfos.Count > 0)
                     {
                         // Calculate the total buying yield, total selling yield, average buy yield, average sell yield and average yield
 
-                        var totalBuyingYield = quotationDTOs.Sum(x => x.BuyingYield);
-                        var totalSellingYield = quotationDTOs.Sum(x => x.SellingYield);
-                        var averageBuyYield = quotationDTOs.Average(x => x.BuyingYield);
-                        var averageSellYield = quotationDTOs.Average(x => x.SellingYield);
-                        var averageYield = quotationDTOs.Average(x => (x.BuyingYield + x.SellingYield) / 2);
+                        var totalBuyingYield = quoteinfos.Sum(x => x.BuyingYield);
+                        var totalSellingYield = quoteinfos.Sum(x => x.SellingYield);
+                        var averageBuyYield = quoteinfos.Average(x => x.BuyingYield);
+                        var averageSellYield = quoteinfos.Average(x => x.SellingYield);
+                        var averageYield = quoteinfos.Average(x => (x.BuyingYield + x.SellingYield) / 2);
 
-                        foreach (var quotationDTO in quotationDTOs)
+                        QuoteStatistic quoteStatistic = new QuoteStatistic
                         {
-                            quotationDTO.TotalBuyingYield = totalBuyingYield;
-                            quotationDTO.TotalSellingYield = totalSellingYield;
-                            quotationDTO.AverageBuyYield = averageBuyYield;
-                            quotationDTO.AverageSellYield = averageSellYield;
-                            quotationDTO.AverageYield = averageYield;
-                        }
+                            AverageBuyYield = averageBuyYield,
+                            AverageSellYield = averageSellYield,
+                            AverageYield = averageYield,
+                            TotalBuyingYield = totalBuyingYield,
+                            TotalSellingYield = totalSellingYield
+                        };
+
+                        // Add the quote statistic to the quotation DTO
+                        quotationDTOs.Add(new QuotationDTO
+                        {
+                            QuoteStatistic = quoteStatistic
+                        });
 
                     }
-
-
 
                     return StatusCode(200, quotationDTOs);
 
@@ -323,10 +335,13 @@ namespace Quotations_Board_Backend.Controllers
                     LoginTokenDTO TokenContents = UtilityService.GetUserIdFromCurrentRequest(Request);
                     var userId = UtilityService.GetUserIdFromToken(Request);
                     var quotations = await context.Quotations.Include(x => x.Institution).Where(q => q.BondId == bondId && q.CreatedAt.Date >= fromDate.Date).ToListAsync();
+
                     List<QuotationDTO> quotationDTOs = new List<QuotationDTO>();
+                    List<Quoteinfo> quoteinfos = new List<Quoteinfo>();
+
                     foreach (var quotation in quotations)
                     {
-                        var quotationDTO = new QuotationDTO
+                        var quotationInfo = new Quoteinfo
                         {
                             BondId = quotation.BondId,
                             BuyingYield = quotation.BuyingYield,
@@ -338,27 +353,38 @@ namespace Quotations_Board_Backend.Controllers
                             SellVolume = quotation.SellVolume,
                             Id = quotation.Id
                         };
-                        quotationDTOs.Add(quotationDTO);
-
+                        quoteinfos.Add(quotationInfo);
                     }
 
-                    // Calculate the total buying yield, total selling yield, average buy yield, average sell yield and average yield
-                    if (quotationDTOs.Count > 0)
+                    quotationDTOs.Add(new QuotationDTO
                     {
-                        var totalBuyingYield = quotationDTOs.Sum(x => x.BuyingYield);
-                        var totalSellingYield = quotationDTOs.Sum(x => x.SellingYield);
-                        var averageBuyYield = quotationDTOs.Average(x => x.BuyingYield);
-                        var averageSellYield = quotationDTOs.Average(x => x.SellingYield);
-                        var averageYield = quotationDTOs.Average(x => (x.BuyingYield + x.SellingYield) / 2);
+                        Quotes = quoteinfos
+                    });
 
-                        foreach (var quotationDTO in quotationDTOs)
+                    // Calculate the total buying yield, total selling yield, average buy yield, average sell yield and average yield
+                    if (quoteinfos.Count > 0)
+                    {
+                        var totalBuyingYield = quoteinfos.Sum(x => x.BuyingYield);
+                        var totalSellingYield = quoteinfos.Sum(x => x.SellingYield);
+                        var averageBuyYield = quoteinfos.Average(x => x.BuyingYield);
+                        var averageSellYield = quoteinfos.Average(x => x.SellingYield);
+                        var averageYield = quoteinfos.Average(x => (x.BuyingYield + x.SellingYield) / 2);
+
+                        QuoteStatistic quoteStatistic = new QuoteStatistic
                         {
-                            quotationDTO.TotalBuyingYield = totalBuyingYield;
-                            quotationDTO.TotalSellingYield = totalSellingYield;
-                            quotationDTO.AverageBuyYield = averageBuyYield;
-                            quotationDTO.AverageSellYield = averageSellYield;
-                            quotationDTO.AverageYield = averageYield;
-                        }
+                            AverageBuyYield = averageBuyYield,
+                            AverageSellYield = averageSellYield,
+                            AverageYield = averageYield,
+                            TotalBuyingYield = totalBuyingYield,
+                            TotalSellingYield = totalSellingYield
+                        };
+
+                        // Add the quote statistic to the quotation DTO
+                        quotationDTOs.Add(new QuotationDTO
+                        {
+                            QuoteStatistic = quoteStatistic
+                        });
+
                     }
 
 
@@ -374,24 +400,48 @@ namespace Quotations_Board_Backend.Controllers
         }
 
         // Yield Curve for a Specific Bond
-        [HttpGet("GetYieldCurveForBond/{bondId}")]
+        [HttpGet("GetYieldCurveForBond/{bondId}/{From}")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public async Task<ActionResult<List<YieldCurveDTO>>> GetYieldCurveForBond(string bondId)
+        public async Task<ActionResult<List<YieldCurveDTO>>> GetYieldCurveForBond(string bondId, string? From = "default")
         {
             try
             {
+                DateTime fromDate = DateTime.Now;
+                if (From == "default")
+                {
+                    fromDate = DateTime.Now;
+                }
+                else
+                {
+                    var parsedDate = DateTime.Parse(From);
+                    // is date valid?
+                    if (fromDate == DateTime.MinValue)
+                    {
+                        return BadRequest("Invalid date");
+                    }
+                    // is date in the future?
+                    if (fromDate > DateTime.Now)
+                    {
+                        return BadRequest("Date cannot be in the future");
+                    }
+                    fromDate = parsedDate;
+                }
                 using (var context = new QuotationsBoardContext())
                 {
                     LoginTokenDTO TokenContents = UtilityService.GetUserIdFromCurrentRequest(Request);
                     var userId = UtilityService.GetUserIdFromToken(Request);
-                    var quotations = await context.Quotations.Include(x => x.Institution).Where(q => q.BondId == bondId).ToListAsync();
+                    var quotations = await context.Quotations.Include(x => x.Institution).Where(q => q.BondId == bondId
+                    && q.CreatedAt.Date >= fromDate.Date).ToListAsync();
                     var dailyAverages = quotations.GroupBy(x => x.CreatedAt.Date).Select(
                          (g => new
                          {
                              BondId = g.Key,
                              Date = g.Key.Date,
-                             AverageYield = g.Average(q => q.BuyingYield)
+                             AverageBuyYield = g.Average(q => q.BuyingYield),
+                             AverageSellYield = g.Average(q => q.SellingYield),
+                             TotalQuotations = g.Count(),
+                             CombinedAverageYield = g.Average(q => (q.BuyingYield + q.SellingYield) / 2),
                          })
                     ).ToList();
 
@@ -399,7 +449,10 @@ namespace Quotations_Board_Backend.Controllers
                     {
                         BondId = bondId,
                         Date = x.Date,
-                        Yield = x.AverageYield
+                        Yield = x.CombinedAverageYield,
+                        TotalQuotationsUsed = x.TotalQuotations,
+                        AverageBuyYield = x.AverageBuyYield,
+                        AverageSellYield = x.AverageSellYield
                     }).ToList();
 
                     return StatusCode(200, yieldCurveData);
