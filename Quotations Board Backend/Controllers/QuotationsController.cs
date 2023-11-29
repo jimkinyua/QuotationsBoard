@@ -221,7 +221,7 @@ namespace Quotations_Board_Backend.Controllers
         [HttpGet("GetQuotationsFilledByUser/{From}")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public async Task<ActionResult<List<QuotationDTO>>> GetQuotationsFilledByUser(string? From)
+        public async Task<ActionResult<List<QuotationDTO>>> GetQuotationsFilledByUser(string? From= "default")
         {
             try
             {
@@ -317,7 +317,7 @@ namespace Quotations_Board_Backend.Controllers
         [HttpGet("GetQuotationsForBond/{bondId}/{From}")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public async Task<ActionResult<List<QuotationDTO>>> GetQuotationsForBond(string bondId, string? From)
+        public async Task<ActionResult<List<QuotationDTO>>> GetQuotationsForBond(string bondId, string? From ="default")
         {
             try
             {
