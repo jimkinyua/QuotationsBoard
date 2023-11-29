@@ -120,7 +120,7 @@ namespace Quotations_Board_Backend.Controllers
         [HttpGet("GetQuotationsFilledByInstitution/{From}")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public async Task<ActionResult<List<QuotationDTO>>> GetQuotationsFilledByInstitution(string From)
+        public async Task<ActionResult<List<QuotationDTO>>> GetQuotationsFilledByInstitution(string? From)
         {
             try
             {
