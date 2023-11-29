@@ -35,16 +35,17 @@ namespace Quotations_Board_Backend.Controllers
                         BondId = newQuotation.BondId,
                         BuyingYield = newQuotation.BuyYield,
                         SellingYield = newQuotation.SellYield,
-                        Volume = newQuotation.Volume,
+                        BuyVolume = newQuotation.BuyVolume,
                         UserId = userId,
                         CreatedAt = DateTime.Now,//- TimeSpan.FromDays(5),
-                        InstitutionId = TokenContents.InstitutionId
+                        InstitutionId = TokenContents.InstitutionId,
+                        SellVolume = newQuotation.SellVolume
                     };
 
-                    // Ensure selling yield is greater than buying yield
-                    if (quotation.SellingYield < quotation.BuyingYield)
+                    // Ensure selling yield is not greater than buying yield
+                    if (quotation.SellingYield > quotation.BuyingYield)
                     {
-                        return BadRequest("Selling yield cannot be less than buying yield");
+                        return BadRequest("Selling yield cannot be greater than buying yield");
                     }
 
                     // Save the quotation
@@ -89,16 +90,16 @@ namespace Quotations_Board_Backend.Controllers
                         BondId = editQuotation.BondId,
                         BuyingYield = editQuotation.BuyYield,
                         SellingYield = editQuotation.SellYield,
-                        Volume = editQuotation.Volume,
+                        BuyVolume = editQuotation.BuyVolume,
+                        SellVolume = editQuotation.SellVolume,
                         UserId = userId,
-                        //CreatedAt = DateTime.Now,
                         InstitutionId = TokenContents.InstitutionId
                     };
 
-                    // Ensure selling yield is greater than buying yield
-                    if (quotation.SellingYield < quotation.BuyingYield)
+                    // Ensure selling yield is not greater than buying yield
+                    if (quotation.SellingYield > quotation.BuyingYield)
                     {
-                        return BadRequest("Selling yield cannot be less than buying yield");
+                        return BadRequest("Selling yield cannot be greater than buying yield");
                     }
 
                     // Save the quotation
@@ -139,7 +140,8 @@ namespace Quotations_Board_Backend.Controllers
                             InstitutionId = quotation.InstitutionId,
                             SellingYield = quotation.SellingYield,
                             UserId = quotation.UserId,
-                            Volume = quotation.Volume,
+                            BuyVolume = quotation.BuyVolume,
+                            SellVolume = quotation.SellVolume,
                             Id = quotation.Id
 
                         };
@@ -200,7 +202,8 @@ namespace Quotations_Board_Backend.Controllers
                             InstitutionId = quotation.InstitutionId,
                             SellingYield = quotation.SellingYield,
                             UserId = quotation.UserId,
-                            Volume = quotation.Volume,
+                            BuyVolume = quotation.BuyVolume,
+                            SellVolume = quotation.SellVolume,
                             Id = quotation.Id
                         };
                         quotationDTOs.Add(quotationDTO);
@@ -264,7 +267,8 @@ namespace Quotations_Board_Backend.Controllers
                             InstitutionId = quotation.InstitutionId,
                             SellingYield = quotation.SellingYield,
                             UserId = quotation.UserId,
-                            Volume = quotation.Volume,
+                            BuyVolume = quotation.BuyVolume,
+                            SellVolume = quotation.SellVolume,
                             Id = quotation.Id
                         };
                         quotationDTOs.Add(quotationDTO);

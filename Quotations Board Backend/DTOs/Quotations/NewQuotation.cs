@@ -9,6 +9,8 @@ public class NewQuotation
     [Required]
     public decimal SellYield { get; set; }
     [Required]
-    public decimal Volume { get; set; }
+    public decimal BuyVolume { get; set; } = 50000;
+    [Required]
+    public decimal SellVolume { get; set; } = 50000;
 
 }
