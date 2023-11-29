@@ -291,6 +291,14 @@ namespace Quotations_Board_Backend.Controllers
                 existingUser.LockoutEnd = null;
 
                 await context.SaveChangesAsync();
+                // Send email to user notifying them that their account has been enabled
+                string emailBody = $"<p>Dear {existingUser.FirstName},</p>" +
+                    "<p>Your account has been enabled on the Quotations Board Portal. " +
+                    " Follow the link below to login to your account.</p>" +
+                    $"<a href='{_configuration["FrontEndUrl"]}'>Login</a>";
+
+                await UtilityService.SendEmailAsync(existingUser.Email, "Quotations Board Portal Account Enabled", emailBody);
+
 
                 return Ok();
             }
