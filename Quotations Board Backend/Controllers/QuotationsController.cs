@@ -120,12 +120,12 @@ namespace Quotations_Board_Backend.Controllers
         [HttpGet("GetQuotationsFilledByInstitution/{From}")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public async Task<ActionResult<List<QuotationDTO>>> GetQuotationsFilledByInstitution(string? From)
+        public async Task<ActionResult<List<QuotationDTO>>> GetQuotationsFilledByInstitution(string? From = "default")
         {
             try
             {
                 DateTime fromDate = DateTime.Now;
-                if (String.IsNullOrEmpty(From))
+                if (From == "default")
                 {
                     fromDate = DateTime.Now;
                 }
@@ -144,6 +144,8 @@ namespace Quotations_Board_Backend.Controllers
                     }
                     fromDate = parsedDate;
                 }
+
+
 
 
                 using (var context = new QuotationsBoardContext())
@@ -210,7 +212,7 @@ namespace Quotations_Board_Backend.Controllers
             try
             {
                 DateTime fromDate = DateTime.Now;
-                if (String.IsNullOrEmpty(From))
+                if (From == "default")
                 {
                     fromDate = DateTime.Now;
                 }
@@ -296,7 +298,7 @@ namespace Quotations_Board_Backend.Controllers
             try
             {
                 DateTime fromDate = DateTime.Now;
-                if (String.IsNullOrEmpty(From))
+                if (From == "default")
                 {
                     fromDate = DateTime.Now;
                 }
