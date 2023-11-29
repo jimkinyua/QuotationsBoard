@@ -76,7 +76,7 @@ namespace Quotations_Board_Backend.Controllers
                             loginTokenDTO.Role = CustomRoles.SuperAdmin;
                             loginTokenDTO.InstitutionId = "0";
                             loginTokenDTO.InstitutionName = "Agile Business Solutions";
-                            loginTokenDTO.Name = user.UserName;
+                            loginTokenDTO.Name = user.FirstName + " " + user.LastName;
                             loginTokenDTO.Email = user.Email;
                         }
                         else if (roles.Contains(CustomRoles.InstitutionAdmin))
@@ -84,7 +84,7 @@ namespace Quotations_Board_Backend.Controllers
                             loginTokenDTO.Role = CustomRoles.InstitutionAdmin;
                             loginTokenDTO.InstitutionId = institution.Id;
                             loginTokenDTO.InstitutionName = institution.OrganizationName;
-                            loginTokenDTO.Name = user.UserName;
+                            loginTokenDTO.Name = user.FirstName + " " + user.LastName;
                             loginTokenDTO.Email = user.Email;
                         }
                         else if (roles.Contains(CustomRoles.Dealer))
@@ -93,7 +93,7 @@ namespace Quotations_Board_Backend.Controllers
                             loginTokenDTO.Role = CustomRoles.Dealer;
                             loginTokenDTO.InstitutionId = institution.Id;
                             loginTokenDTO.InstitutionName = institution.OrganizationName;
-                            loginTokenDTO.Name = user.UserName;
+                            loginTokenDTO.Name = user.FirstName + " " + user.LastName;
                             loginTokenDTO.Email = user.Email;
                         }
                         else if (roles.Contains(CustomRoles.ChiefDealer))
@@ -102,7 +102,7 @@ namespace Quotations_Board_Backend.Controllers
                             loginTokenDTO.Role = CustomRoles.ChiefDealer;
                             loginTokenDTO.InstitutionId = institution.Id;
                             loginTokenDTO.InstitutionName = institution.OrganizationName;
-                            loginTokenDTO.Name = user.UserName;
+                            loginTokenDTO.Name = user.FirstName + " " + user.LastName;
                             loginTokenDTO.Email = user.Email;
                         }
                         else
