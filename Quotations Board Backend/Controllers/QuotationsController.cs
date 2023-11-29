@@ -302,6 +302,44 @@ namespace Quotations_Board_Backend.Controllers
             }
         }
 
+        // Yield Curve for a Specific Bond
+        [HttpGet("GetYieldCurveForBond/{bondId}")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        public async Task<ActionResult<List<YieldCurveDTO>>> GetYieldCurveForBond(string bondId)
+        {
+            try
+            {
+                using (var context = new QuotationsBoardContext())
+                {
+                    LoginTokenDTO TokenContents = UtilityService.GetUserIdFromCurrentRequest(Request);
+                    var userId = UtilityService.GetUserIdFromToken(Request);
+                    var quotations = await context.Quotations.Include(x => x.Institution).Where(q => q.BondId == bondId).ToListAsync();
+                    var dailyAverages = quotations.GroupBy(x => x.CreatedAt.Date).Select(
+                         (g => new
+                         {
+                             BondId = g.Key,
+                             Date = g.Key.Date,
+                             AverageYield = g.Average(q => q.BuyingYield)
+                         })
+                    ).ToList();
+
+                    var yieldCurveData = dailyAverages.Select(x => new YieldCurveDTO
+                    {
+                        BondId = bondId,
+                        Date = x.Date,
+                        Yield = x.AverageYield
+                    }).ToList();
+
+                    return StatusCode(200, yieldCurveData);
+                }
+            }
+            catch (Exception Ex)
+            {
+                UtilityService.LogException(Ex);
+                return StatusCode(500, UtilityService.HandleException(Ex));
+            }
+        }
 
     }
 }
