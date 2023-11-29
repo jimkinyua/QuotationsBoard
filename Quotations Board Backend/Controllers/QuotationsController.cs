@@ -151,7 +151,7 @@ namespace Quotations_Board_Backend.Controllers
                     LoginTokenDTO TokenContents = UtilityService.GetUserIdFromCurrentRequest(Request);
                     var userId = UtilityService.GetUserIdFromToken(Request);
                     var quotations = await context.Quotations.Include(x => x.Institution)
-                        .Where(q => q.InstitutionId == TokenContents.InstitutionId && q.CreatedAt >= fromDate).ToListAsync();
+                        .Where(q => q.InstitutionId == TokenContents.InstitutionId && q.CreatedAt.Date >= fromDate.Date).ToListAsync();
                     List<QuotationDTO> quotationDTOs = new List<QuotationDTO>();
                     foreach (var quotation in quotations)
                     {
@@ -205,7 +205,7 @@ namespace Quotations_Board_Backend.Controllers
         [HttpGet("GetQuotationsFilledByUser/{From}")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public async Task<ActionResult<List<QuotationDTO>>> GetQuotationsFilledByUser(string From)
+        public async Task<ActionResult<List<QuotationDTO>>> GetQuotationsFilledByUser(string? From)
         {
             try
             {
@@ -234,7 +234,7 @@ namespace Quotations_Board_Backend.Controllers
                 {
                     LoginTokenDTO TokenContents = UtilityService.GetUserIdFromCurrentRequest(Request);
                     var userId = UtilityService.GetUserIdFromToken(Request);
-                    var quotations = await context.Quotations.Include(x => x.Institution).Where(q => q.UserId == userId && q.CreatedAt >= fromDate).ToListAsync();
+                    var quotations = await context.Quotations.Include(x => x.Institution).Where(q => q.UserId == userId && q.CreatedAt.Date >= fromDate.Date).ToListAsync();
                     List<QuotationDTO> quotationDTOs = new List<QuotationDTO>();
                     foreach (var quotation in quotations)
                     {
@@ -291,7 +291,7 @@ namespace Quotations_Board_Backend.Controllers
         [HttpGet("GetQuotationsForBond/{bondId}/{From}")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public async Task<ActionResult<List<QuotationDTO>>> GetQuotationsForBond(string bondId, string From)
+        public async Task<ActionResult<List<QuotationDTO>>> GetQuotationsForBond(string bondId, string? From)
         {
             try
             {
@@ -320,7 +320,7 @@ namespace Quotations_Board_Backend.Controllers
                 {
                     LoginTokenDTO TokenContents = UtilityService.GetUserIdFromCurrentRequest(Request);
                     var userId = UtilityService.GetUserIdFromToken(Request);
-                    var quotations = await context.Quotations.Include(x => x.Institution).Where(q => q.BondId == bondId && q.CreatedAt >= fromDate).ToListAsync();
+                    var quotations = await context.Quotations.Include(x => x.Institution).Where(q => q.BondId == bondId && q.CreatedAt.Date >= fromDate.Date).ToListAsync();
                     List<QuotationDTO> quotationDTOs = new List<QuotationDTO>();
                     foreach (var quotation in quotations)
                     {
