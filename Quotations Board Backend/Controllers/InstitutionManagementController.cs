@@ -61,7 +61,7 @@ namespace Quotations_Board_Backend.Controllers
                         LastName = user.LastName,
                         Email = user.Email,
                         Role = roles[0],
-                        IsActive = !user.LockoutEnabled,
+                        IsActive = user.LockoutEnabled,
                     };
                     portalUserDTO.Add(portalUser);
                 }
@@ -255,6 +255,13 @@ namespace Quotations_Board_Backend.Controllers
                 existingUser.LockoutEnd = DateTime.Now.AddYears(100);
 
                 await context.SaveChangesAsync();
+
+                // Send email to user notifying them that their account has been disabled
+                string emailBody = $"<p>Dear {existingUser.FirstName},</p>" +
+                    "<p>Your account has been disabled on the Quotations Board Portal. ";
+
+                await UtilityService.SendEmailAsync(existingUser.Email, "Quotations Board Portal Account Disabled", emailBody);
+
 
                 return Ok();
             }
