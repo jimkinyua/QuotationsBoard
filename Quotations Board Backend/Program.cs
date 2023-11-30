@@ -78,12 +78,12 @@ internal class Program
 
         builder.Services.AddIdentity<PortalUser, IdentityRole>(c =>
         {
-            c.Password.RequireDigit = true;
-            c.Password.RequireLowercase = true;
-            c.Password.RequireNonAlphanumeric = true;
-            c.Password.RequireUppercase = true;
+            c.Password.RequireDigit = false;
+            c.Password.RequireLowercase = false;
+            c.Password.RequireNonAlphanumeric = false;
+            c.Password.RequireUppercase = false;
             c.Password.RequiredLength = 6;
-            c.Password.RequiredUniqueChars = 1;
+            c.Password.RequiredUniqueChars = 0;
         })
         .AddEntityFrameworkStores<QuotationsBoardContext>()
         .AddDefaultTokenProviders();
