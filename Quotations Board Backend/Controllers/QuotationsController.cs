@@ -496,7 +496,7 @@ namespace Quotations_Board_Backend.Controllers
                             TotalBuyYield = quotation.TotalBuyYield,
                             TotalSellVolume = quotation.TotalSellVolume,
                             TotalSellYield = quotation.TotalSellYield,
-                            AverageYield = quotation.CombinedAverageYield,
+                            AverageYield = (quotation.AverageSellYield + quotation.AverageBuyYield) / 2,
                             AverageVolume = (quotation.TotalBuyVolume + quotation.TotalSellVolume) / 2,
                             Id = quotation.BondId,
                         };
