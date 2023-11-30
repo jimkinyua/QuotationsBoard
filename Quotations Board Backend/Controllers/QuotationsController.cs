@@ -120,7 +120,7 @@ namespace Quotations_Board_Backend.Controllers
         [HttpGet("GetQuotationsFilledByInstitution/{From}")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public async Task<ActionResult<List<QuotationDTO>>> GetQuotationsFilledByInstitution(string? From = "default")
+        public async Task<ActionResult<QuotationDTO>> GetQuotationsFilledByInstitution(string? From = "default")
         {
             try
             {
@@ -154,7 +154,8 @@ namespace Quotations_Board_Backend.Controllers
                     var userId = UtilityService.GetUserIdFromToken(Request);
                     var quotations = await context.Quotations.Include(x => x.Institution)
                         .Where(q => q.InstitutionId == TokenContents.InstitutionId && q.CreatedAt.Date >= fromDate.Date).ToListAsync();
-                    List<QuotationDTO> quotationDTOs = new List<QuotationDTO>();
+                    QuotationDTO sample = new();
+                    //List<QuotationDTO> quotationDTOs = new List<QuotationDTO>();
                     List<Quoteinfo> quoteinfos = new List<Quoteinfo>();
                     foreach (var quotation in quotations)
                     {
@@ -169,15 +170,16 @@ namespace Quotations_Board_Backend.Controllers
                             BuyVolume = quotation.BuyVolume,
                             SellVolume = quotation.SellVolume,
                             Id = quotation.Id
-
                         };
                         quoteinfos.Add(quotationDTO);
                     }
 
-                    quotationDTOs.Add(new QuotationDTO
-                    {
-                        Quotes = quoteinfos
-                    });
+                    // quotationDTOs.Add(new QuotationDTO
+                    // {
+                    //     Quotes = quoteinfos
+                    // });
+
+                    sample.Quotes = quoteinfos;
 
                     if (quoteinfos.Count > 0)
                     {
@@ -201,12 +203,12 @@ namespace Quotations_Board_Backend.Controllers
                         };
 
                         // Add the quote statistic to the quotation DTO
-                        quotationDTOs[0].QuoteStatistic = quoteStatistic;
-
+                        //quotationDTOs[0].QuoteStatistic = quoteStatistic;
+                        sample.QuoteStatistic = quoteStatistic;
                     }
 
 
-                    return StatusCode(200, quotationDTOs);
+                    return StatusCode(200, sample);
                 }
 
             }
@@ -221,7 +223,7 @@ namespace Quotations_Board_Backend.Controllers
         [HttpGet("GetQuotationsFilledByUser/{From}")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public async Task<ActionResult<List<QuotationDTO>>> GetQuotationsFilledByUser(string? From= "default")
+        public async Task<ActionResult<QuotationDTO>> GetQuotationsFilledByUser(string? From = "default")
         {
             try
             {
@@ -251,7 +253,8 @@ namespace Quotations_Board_Backend.Controllers
                     LoginTokenDTO TokenContents = UtilityService.GetUserIdFromCurrentRequest(Request);
                     var userId = UtilityService.GetUserIdFromToken(Request);
                     var quotations = await context.Quotations.Include(x => x.Institution).Where(q => q.UserId == userId && q.CreatedAt.Date >= fromDate.Date).ToListAsync();
-                    List<QuotationDTO> quotationDTOs = new List<QuotationDTO>();
+                    //List<QuotationDTO> quotationDTOs = new List<QuotationDTO>();
+                    QuotationDTO sample = new();
                     List<Quoteinfo> quoteinfos = new List<Quoteinfo>();
                     foreach (var quotation in quotations)
                     {
@@ -269,10 +272,12 @@ namespace Quotations_Board_Backend.Controllers
                         };
                         quoteinfos.Add(quotationDTO);
                     }
-                    quotationDTOs.Add(new QuotationDTO
-                    {
-                        Quotes = quoteinfos
-                    });
+                    // quotationDTOs.Add(new QuotationDTO
+                    // {
+                    //     Quotes = quoteinfos
+                    // });
+
+                    sample.Quotes = quoteinfos;
 
                     if (quoteinfos.Count > 0)
                     {
@@ -297,11 +302,12 @@ namespace Quotations_Board_Backend.Controllers
                         };
 
                         // Add the quote statistic to the quotation DTO
-                        quotationDTOs[0].QuoteStatistic = quoteStatistic;
+                        //quotationDTOs[0].QuoteStatistic = quoteStatistic;
+                        sample.QuoteStatistic = quoteStatistic;
 
                     }
 
-                    return StatusCode(200, quotationDTOs);
+                    return StatusCode(200, sample);
 
                 }
 
@@ -317,7 +323,7 @@ namespace Quotations_Board_Backend.Controllers
         [HttpGet("GetQuotationsForBond/{bondId}/{From}")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public async Task<ActionResult<List<QuotationDTO>>> GetQuotationsForBond(string bondId, string? From ="default")
+        public async Task<ActionResult<List<QuotationDTO>>> GetQuotationsForBond(string bondId, string? From = "default")
         {
             try
             {
@@ -348,7 +354,8 @@ namespace Quotations_Board_Backend.Controllers
                     var userId = UtilityService.GetUserIdFromToken(Request);
                     var quotations = await context.Quotations.Include(x => x.Institution).Where(q => q.BondId == bondId && q.CreatedAt.Date >= fromDate.Date).ToListAsync();
 
-                    List<QuotationDTO> quotationDTOs = new List<QuotationDTO>();
+                    //List<QuotationDTO> quotationDTOs = new List<QuotationDTO>();
+                    QuotationDTO sample = new();
                     List<Quoteinfo> quoteinfos = new List<Quoteinfo>();
 
                     foreach (var quotation in quotations)
@@ -368,11 +375,11 @@ namespace Quotations_Board_Backend.Controllers
                         quoteinfos.Add(quotationInfo);
                     }
 
-                    quotationDTOs.Add(new QuotationDTO
-                    {
-                        Quotes = quoteinfos
-                    });
-
+                    // quotationDTOs.Add(new QuotationDTO
+                    // {
+                    //     Quotes = quoteinfos
+                    // });
+                    sample.Quotes = quoteinfos;
                     // Calculate the total buying yield, total selling yield, average buy yield, average sell yield and average yield
                     if (quoteinfos.Count > 0)
                     {
@@ -395,12 +402,12 @@ namespace Quotations_Board_Backend.Controllers
                         };
 
                         // Add the quote statistic to the quotation DTO
-                        quotationDTOs[0].QuoteStatistic = quoteStatistic;
-
+                        //quotationDTOs[0].QuoteStatistic = quoteStatistic;
+                        sample.QuoteStatistic = quoteStatistic;
                     }
 
 
-                    return StatusCode(200, quotationDTOs);
+                    return StatusCode(200, sample);
                 }
 
             }
