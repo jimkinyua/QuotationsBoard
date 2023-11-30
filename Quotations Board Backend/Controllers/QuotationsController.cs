@@ -346,6 +346,11 @@ namespace Quotations_Board_Backend.Controllers
                     {
                         var institution = await context.Institutions.FirstOrDefaultAsync(i => i.Id == quotation.InstitutionId);
                         var user = await context.Users.FirstOrDefaultAsync(u => u.Id == quotation.UserId);
+                        var bond = await context.Bonds.FirstOrDefaultAsync(b => b.Id == quotation.BondId);
+                        if (bond == null)
+                        {
+                            return BadRequest("Invalid Bond");
+                        }
                         if (institution == null || user == null)
                         {
                             return BadRequest("Invalid institution or user");
@@ -354,6 +359,8 @@ namespace Quotations_Board_Backend.Controllers
                         var quotationDTO = new Quoteinfo
                         {
                             BondId = quotation.BondId,
+                            IssueNumber = bond.IssueNumber,
+                            BondIsin = bond.Isin,
                             TotalBuyYield = quotation.BuyingYield,
                             CreatedAt = quotation.CreatedAt,
                             InstitutionId = institution.OrganizationName,
@@ -491,6 +498,7 @@ namespace Quotations_Board_Backend.Controllers
                             TotalSellYield = quotation.TotalSellYield,
                             AverageYield = quotation.CombinedAverageYield,
                             AverageVolume = (quotation.TotalBuyVolume + quotation.TotalSellVolume) / 2,
+                            Id = quotation.BondId,
                         };
                         quoteinfos.Add(quotationDTO);
                     }
