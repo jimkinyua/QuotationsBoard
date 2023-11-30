@@ -368,14 +368,21 @@ namespace Quotations_Board_Backend.Controllers
 
                     foreach (var quotation in quotations)
                     {
+                        // Find the institution name and user that created the quotation
+                        var institution = await context.Institutions.FirstOrDefaultAsync(i => i.Id == quotation.InstitutionId);
+                        var user = await context.Users.FirstOrDefaultAsync(u => u.Id == quotation.UserId);
+                        if (institution == null || user == null)
+                        {
+                            return BadRequest("Invalid institution or user");
+                        }
                         var quotationInfo = new Quoteinfo
                         {
                             BondId = quotation.BondId,
                             BuyingYield = quotation.BuyingYield,
                             CreatedAt = quotation.CreatedAt,
-                            InstitutionId = quotation.InstitutionId,
+                            InstitutionId = institution.OrganizationName,
                             SellingYield = quotation.SellingYield,
-                            UserId = quotation.UserId,
+                            UserId = user.FirstName + " " + user.LastName,
                             BuyVolume = quotation.BuyVolume,
                             SellVolume = quotation.SellVolume,
                             Id = quotation.Id
