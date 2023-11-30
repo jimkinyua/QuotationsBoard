@@ -288,5 +288,48 @@ namespace Quotations_Board_Backend.Controllers
 
             return StatusCode(StatusCodes.Status404NotFound, "User not found!");
         }
+
+        // Return User Details 
+        [Authorize(AuthenticationSchemes = "Bearer")]
+        [HttpGet]
+        [Route("GetUserDetails")]
+        public async Task<ActionResult<UserDetailsDTO>> GetUserDetails()
+        {
+            try
+            {
+                LoginTokenDTO TokenDetails = UtilityService.GetUserIdFromCurrentRequest(Request);
+                var UserId = UtilityService.GetUserIdFromToken(Request);
+                if (TokenDetails == null)
+                {
+                    return Unauthorized();
+                }
+                using (var context = new QuotationsBoardContext())
+                {
+                    PortalUser? user = await context.Users.FirstOrDefaultAsync(x => x.Id == UserId);
+                    if (user == null)
+                    {
+                        return BadRequest("Invalid login attempt.");
+                    }
+                    Institution? institution = await context.Institutions.FirstOrDefaultAsync(x => x.Id == user.InstitutionId);
+                    if (institution == null)
+                    {
+                        return BadRequest("Invalid login attempt. Can't Find Your Insiti");
+                    }
+                    UserDetailsDTO userDetailsDTO = new UserDetailsDTO();
+                    userDetailsDTO.Email = user.Email;
+                    userDetailsDTO.FirstName = user.FirstName;
+                    userDetailsDTO.LastName = user.LastName;
+                    userDetailsDTO.PhoneNumber = user.PhoneNumber;
+                    userDetailsDTO.InstitutionName = institution.OrganizationName;
+                    userDetailsDTO.Role = TokenDetails.Role;
+                    return Ok(userDetailsDTO);
+                }
+            }
+            catch (Exception Ex)
+            {
+                UtilityService.LogException(Ex);
+                return StatusCode(500, UtilityService.HandleException(Ex));
+            }
+        }
     }
 }
