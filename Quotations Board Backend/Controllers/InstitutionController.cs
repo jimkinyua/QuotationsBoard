@@ -397,6 +397,20 @@ namespace Quotations_Board_Backend.Controllers
                         return BadRequest("Your account is already set up");
                     }
 
+                    // Validate if Pasword meets requirements
+                    var passwordValidator = new PasswordValidator<PortalUser>();
+                    var passwordValidationResult = await passwordValidator.ValidateAsync(_userManager, user, resetPasswordDTO.Password);
+                    if (!passwordValidationResult.Succeeded)
+                    {
+                        // Fetch the error details
+                        string errorDetails = "";
+                        foreach (var error in passwordValidationResult.Errors)
+                        {
+                            errorDetails += error.Description + "\n";
+                        }
+                        return BadRequest(errorDetails);
+                    }
+
                     // Confirm the user's email
                     var confirmEmailResult = await _userManager.ConfirmEmailAsync(user, resetPasswordDTO.Token);
                     if (!confirmEmailResult.Succeeded)

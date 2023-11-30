@@ -224,6 +224,17 @@ namespace Quotations_Board_Backend.Controllers
                     return NotFound($"Unable to load user with ID '{resetPassword.UserId}'.");
                 }
 
+                // Calidate Password
+                var passwordValidator = new PasswordValidator<PortalUser>();
+                var passwordValidationResult = await passwordValidator.ValidateAsync(_userManager, user, resetPassword.Password);
+
+                if (!passwordValidationResult.Succeeded)
+                {
+                    var Passerrors = passwordValidationResult.Errors.Select(result => result.Description);
+                    return BadRequest(Passerrors);
+                }
+
+
                 var result = await _userManager.ResetPasswordAsync(user, resetPassword.Token, resetPassword.Password);
                 if (result.Succeeded)
                 {
