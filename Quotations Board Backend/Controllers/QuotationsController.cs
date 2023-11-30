@@ -117,15 +117,15 @@ namespace Quotations_Board_Backend.Controllers
         }
 
         // Fetch all quotations filled by Institution
-        [HttpGet("GetQuotationsFilledByInstitution/{bondId}/{From}")]
+        [HttpGet("GetQuotationsFilledByInstitution/{bondId}/{From}/{To}")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public async Task<ActionResult<QuotationDTO>> GetQuotationsFilledByInstitution(string bondId, string? From = "default")
+        public async Task<ActionResult<QuotationDTO>> GetQuotationsFilledByInstitution(string bondId, string? From = "default", string? To = "default")
         {
-
             try
             {
                 DateTime fromDate = DateTime.Now;
+                DateTime toDate = DateTime.Now;
                 if (From == "default")
                 {
                     fromDate = DateTime.Now;
@@ -146,6 +146,26 @@ namespace Quotations_Board_Backend.Controllers
                     fromDate = parsedDate;
                 }
 
+                if (To == "default")
+                {
+                    toDate = DateTime.Now;
+                }
+                else
+                {
+                    var parsedDate = DateTime.Parse(To);
+                    // is date valid?
+                    if (toDate == DateTime.MinValue)
+                    {
+                        return BadRequest("Invalid date");
+                    }
+                    // is date in the future?
+                    if (toDate > DateTime.Now)
+                    {
+                        return BadRequest("Date cannot be in the future");
+                    }
+                    toDate = parsedDate;
+                }
+
                 if (string.IsNullOrEmpty(bondId))
                 {
                     return BadRequest("BondId cannot be null or empty");
@@ -161,6 +181,8 @@ namespace Quotations_Board_Backend.Controllers
                          q.InstitutionId == TokenContents.InstitutionId
                          && q.BondId == bondId
                          && q.CreatedAt.Date >= fromDate.Date
+                         && q.CreatedAt.Date <= toDate.Date
+
                          ).ToListAsync();
                     QuotationDTO sample = new();
                     //List<QuotationDTO> quotationDTOs = new List<QuotationDTO>();
@@ -234,6 +256,105 @@ namespace Quotations_Board_Backend.Controllers
             }
         }
 
+        // Fetch all quotations filled by Institution no Bond Provided just from and To
+        [HttpGet("GetAllQuotationsFilledByInstitution/{From}/{To}")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        public async Task<ActionResult<QuotationDTO>> GetAllQuotationsFilledByInstitution(string? From = "default", string? To = "default")
+        {
+            try
+            {
+                DateTime fromDate = DateTime.Now;
+                DateTime toDate = DateTime.Now;
+                if (From == "default")
+                {
+                    fromDate = DateTime.Now;
+                }
+                else
+                {
+                    var parsedDate = DateTime.Parse(From);
+                    // is date valid?
+                    if (fromDate == DateTime.MinValue)
+                    {
+                        return BadRequest("Invalid date");
+                    }
+                    // is date in the future?
+                    if (fromDate > DateTime.Now)
+                    {
+                        return BadRequest("Date cannot be in the future");
+                    }
+                    fromDate = parsedDate;
+                }
+
+                if (To == "default")
+                {
+                    toDate = DateTime.Now;
+                }
+                else
+                {
+                    var parsedDate = DateTime.Parse(To);
+                    // is date valid?
+                    if (toDate == DateTime.MinValue)
+                    {
+                        return BadRequest("Invalid date");
+                    }
+                    // is date in the future?
+                    if (toDate > DateTime.Now)
+                    {
+                        return BadRequest("Date cannot be in the future");
+                    }
+                    toDate = parsedDate;
+                }
+
+                using (var context = new QuotationsBoardContext())
+                {
+                    LoginTokenDTO TokenContents = UtilityService.GetUserIdFromCurrentRequest(Request);
+                    var userId = UtilityService.GetUserIdFromToken(Request);
+                    var quotations = await context.Quotations.Include(x => x.Institution)
+                        .Where(q =>
+                         q.InstitutionId == TokenContents.InstitutionId
+                         && q.CreatedAt.Date >= fromDate.Date
+                         && q.CreatedAt.Date <= toDate.Date
+                         ).ToListAsync();
+                    QuotationDTO sample = new();
+                    //List<QuotationDTO> quotationDTOs = new List<QuotationDTO>();
+                    List<Quoteinfo> quoteinfos = new List<Quoteinfo>();
+                    foreach (var quotation in quotations)
+                    {
+                        var institution = await context.Institutions.FirstOrDefaultAsync(i => i.Id == quotation.InstitutionId);
+                        var user = await context.Users.FirstOrDefaultAsync(u => u.Id == quotation.UserId);
+                        if (institution == null || user == null)
+                        {
+                            return BadRequest("Invalid institution or user");
+                        }
+
+                        var quotationDTO = new Quoteinfo
+                        {
+                            BondId = quotation.BondId,
+                            BuyingYield = quotation.BuyingYield,
+                            CreatedAt = quotation.CreatedAt,
+                            InstitutionId = institution.OrganizationName,
+                            SellingYield = quotation.SellingYield,
+                            UserId = user.FirstName + " " + user.LastName,
+                            BuyVolume = quotation.BuyVolume,
+                            SellVolume = quotation.SellVolume,
+                            Id = quotation.Id
+                        };
+                        quoteinfos.Add(quotationDTO);
+                    }
+                    sample.Quotes = quoteinfos;
+
+                    return StatusCode(200, sample);
+                }
+
+            }
+            catch (Exception Ex)
+            {
+                UtilityService.LogException(Ex);
+                return StatusCode(500, UtilityService.HandleException(Ex));
+            }
+        }
+
         // Fetch Quaotes Filled by a Specific user
         [HttpGet("GetQuotationsFilledByUser/{From}")]
         [ProducesResponseType(StatusCodes.Status200OK)]
@@ -267,7 +388,13 @@ namespace Quotations_Board_Backend.Controllers
                 {
                     LoginTokenDTO TokenContents = UtilityService.GetUserIdFromCurrentRequest(Request);
                     var userId = UtilityService.GetUserIdFromToken(Request);
-                    var quotations = await context.Quotations.Include(x => x.Institution).Where(q => q.UserId == userId && q.CreatedAt.Date >= fromDate.Date).ToListAsync();
+                    var quotations = await context.Quotations.Include(x => x.Institution).Where(q =>
+                     q.UserId == userId
+                      && q.CreatedAt.Date >= fromDate.Date
+
+
+                      )
+                      .ToListAsync();
                     //List<QuotationDTO> quotationDTOs = new List<QuotationDTO>();
                     QuotationDTO sample = new();
                     List<Quoteinfo> quoteinfos = new List<Quoteinfo>();
