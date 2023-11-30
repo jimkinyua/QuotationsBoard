@@ -48,6 +48,13 @@ namespace Quotations_Board_Backend.Controllers
                         return BadRequest("Selling yield cannot be greater than buying yield");
                     }
 
+                    // Ensure that today this institution has not already filled a quotation for this bond
+                    var existingQuotation = await context.Quotations.FirstOrDefaultAsync(q => q.InstitutionId == quotation.InstitutionId && q.BondId == quotation.BondId && q.CreatedAt.Date == quotation.CreatedAt.Date);
+                    if (existingQuotation != null)
+                    {
+                        return BadRequest(" A quotation for this bond has already been  for today");
+                    }
+
                     // Save the quotation
                     await context.Quotations.AddAsync(quotation);
                     await context.SaveChangesAsync();
@@ -309,13 +316,29 @@ namespace Quotations_Board_Backend.Controllers
                 using (var context = new QuotationsBoardContext())
                 {
                     LoginTokenDTO TokenContents = UtilityService.GetUserIdFromCurrentRequest(Request);
+                    // Check if InstutionName Nairobi Security Exchange if it is then return all quotations no need to filter by institution
+                    Institution? inst = await context.Institutions.FirstOrDefaultAsync(i => i.Id == TokenContents.InstitutionId);
                     var userId = UtilityService.GetUserIdFromToken(Request);
-                    var quotations = await context.Quotations.Include(x => x.Institution)
-                        .Where(q =>
-                         q.InstitutionId == TokenContents.InstitutionId
-                         && q.CreatedAt.Date >= fromDate.Date
-                         && q.CreatedAt.Date <= toDate.Date
-                         ).ToListAsync();
+                    var quotations = null as List<Quotation>;
+
+                    if (inst != null && inst.OrganizationName == "Nairobi Security Exchange")
+                    {
+                        quotations = await context.Quotations.Include(x => x.Institution)
+                       .Where(q =>
+                        q.CreatedAt.Date >= fromDate.Date
+                        && q.CreatedAt.Date <= toDate.Date
+                        ).ToListAsync();
+                    }
+                    else
+                    {
+                        quotations = await context.Quotations.Include(x => x.Institution)
+                       .Where(q =>
+                        q.InstitutionId == TokenContents.InstitutionId
+                        && q.CreatedAt.Date >= fromDate.Date
+                        && q.CreatedAt.Date <= toDate.Date
+                        ).ToListAsync();
+                    }
+
                     QuotationDTO sample = new();
                     //List<QuotationDTO> quotationDTOs = new List<QuotationDTO>();
                     List<Quoteinfo> quoteinfos = new List<Quoteinfo>();
@@ -354,6 +377,8 @@ namespace Quotations_Board_Backend.Controllers
                 return StatusCode(500, UtilityService.HandleException(Ex));
             }
         }
+
+        // Gets all quotations filled by all institution 
 
         // Fetch Quaotes Filled by a Specific user
         [HttpGet("GetQuotationsFilledByUser/{From}")]
