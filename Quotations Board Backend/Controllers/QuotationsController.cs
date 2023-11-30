@@ -206,13 +206,13 @@ namespace Quotations_Board_Backend.Controllers
                         var quotationDTO = new Quoteinfo
                         {
                             BondId = quotation.BondId,
-                            BuyingYield = quotation.BuyingYield,
+                            TotalBuyYield = quotation.BuyingYield,
                             CreatedAt = quotation.CreatedAt,
                             InstitutionId = institution.OrganizationName,
-                            SellingYield = quotation.SellingYield,
+                            TotalSellYield = quotation.SellingYield,
                             UserId = user.FirstName + " " + user.LastName,
-                            BuyVolume = quotation.BuyVolume,
-                            SellVolume = quotation.SellVolume,
+                            TotalBuyVolume = quotation.BuyVolume,
+                            TotalSellVolume = quotation.SellVolume,
                             Id = quotation.Id
                         };
                         quoteinfos.Add(quotationDTO);
@@ -228,11 +228,11 @@ namespace Quotations_Board_Backend.Controllers
                     if (quoteinfos.Count > 0)
                     {
                         // Calculate the total buying yield, total selling yield, average buy yield, average sell yield and average yield
-                        var totalBuyingYield = quoteinfos.Sum(x => x.BuyingYield);
-                        var totalSellingYield = quoteinfos.Sum(x => x.SellingYield);
-                        var averageBuyYield = quoteinfos.Average(x => x.BuyingYield);
-                        var averageSellYield = quoteinfos.Average(x => x.SellingYield);
-                        var averageYield = quoteinfos.Average(x => (x.BuyingYield + x.SellingYield) / 2);
+                        var totalBuyingYield = quoteinfos.Sum(x => x.TotalBuyYield);
+                        var totalSellingYield = quoteinfos.Sum(x => x.TotalSellYield);
+                        var averageBuyYield = quoteinfos.Average(x => x.TotalBuyYield);
+                        var averageSellYield = quoteinfos.Average(x => x.TotalSellYield);
+                        var averageYield = quoteinfos.Average(x => (x.TotalBuyYield + x.TotalSellYield) / 2);
 
                         QuoteStatistic quoteStatistic = new QuoteStatistic
                         {
@@ -242,8 +242,8 @@ namespace Quotations_Board_Backend.Controllers
                             TotalBuyingYield = totalBuyingYield,
                             TotalSellingYield = totalSellingYield,
                             TotalQuotations = quoteinfos.Count,
-                            TotalBuyVolume = quoteinfos.Sum(x => x.BuyVolume),
-                            TotalSellVolume = quoteinfos.Sum(x => x.SellVolume)
+                            TotalBuyVolume = quoteinfos.Sum(x => x.TotalBuyVolume),
+                            TotalSellVolume = quoteinfos.Sum(x => x.TotalSellVolume)
                         };
 
                         // Add the quote statistic to the quotation DTO
@@ -354,13 +354,13 @@ namespace Quotations_Board_Backend.Controllers
                         var quotationDTO = new Quoteinfo
                         {
                             BondId = quotation.BondId,
-                            BuyingYield = quotation.BuyingYield,
+                            TotalBuyYield = quotation.BuyingYield,
                             CreatedAt = quotation.CreatedAt,
                             InstitutionId = institution.OrganizationName,
-                            SellingYield = quotation.SellingYield,
+                            TotalSellYield = quotation.SellingYield,
                             UserId = user.FirstName + " " + user.LastName,
-                            BuyVolume = quotation.BuyVolume,
-                            SellVolume = quotation.SellVolume,
+                            TotalBuyVolume = quotation.BuyVolume,
+                            TotalSellVolume = quotation.SellVolume,
                             Id = quotation.Id
                         };
                         quoteinfos.Add(quotationDTO);
@@ -378,7 +378,133 @@ namespace Quotations_Board_Backend.Controllers
             }
         }
 
-        // Gets all quotations filled by all institution 
+        // Gets all quotations Averages filled by all institutions and group by Bond
+        [HttpGet("GetAllQuotationsAveragesAndTotalsFilledByInstitutions/{From}/{To}")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        public async Task<ActionResult<QuotationDTO>> GetAllQuotationsAveragesAndTotalsFilledByInstitutions(string? From = "default", string? To = "default")
+        {
+            try
+            {
+                DateTime fromDate = DateTime.Now;
+                DateTime toDate = DateTime.Now;
+                if (From == "default")
+                {
+                    fromDate = DateTime.Now;
+                }
+                else
+                {
+                    var parsedDate = DateTime.Parse(From);
+                    // is date valid?
+                    if (fromDate == DateTime.MinValue)
+                    {
+                        return BadRequest("Invalid date");
+                    }
+                    // is date in the future?
+                    if (fromDate > DateTime.Now)
+                    {
+                        return BadRequest("Date cannot be in the future");
+                    }
+                    fromDate = parsedDate;
+                }
+
+                if (To == "default")
+                {
+                    toDate = DateTime.Now;
+                }
+                else
+                {
+                    var parsedDate = DateTime.Parse(To);
+                    // is date valid?
+                    if (toDate == DateTime.MinValue)
+                    {
+                        return BadRequest("Invalid date");
+                    }
+                    // is date in the future?
+                    if (toDate > DateTime.Now)
+                    {
+                        return BadRequest("Date cannot be in the future");
+                    }
+                    toDate = parsedDate;
+                }
+
+                using (var context = new QuotationsBoardContext())
+                {
+                    LoginTokenDTO TokenContents = UtilityService.GetUserIdFromCurrentRequest(Request);
+                    // Check if InstutionName Nairobi Security Exchange if it is then return all quotations no need to filter by institution
+                    Institution? inst = await context.Institutions.FirstOrDefaultAsync(i => i.Id == TokenContents.InstitutionId);
+                    var userId = UtilityService.GetUserIdFromToken(Request);
+                    var quotations = null as List<Quotation>;
+
+                    if (inst != null && inst.OrganizationName == "Nairobi Security Exchange")
+                    {
+                        quotations = await context.Quotations.Include(x => x.Institution)
+                       .Where(q =>
+                        q.CreatedAt.Date >= fromDate.Date
+                        && q.CreatedAt.Date <= toDate.Date
+                        ).ToListAsync();
+                    }
+                    else
+                    {
+                        quotations = await context.Quotations.Include(x => x.Institution)
+                       .Where(q =>
+                        q.InstitutionId == TokenContents.InstitutionId
+                        && q.CreatedAt.Date >= fromDate.Date
+                        && q.CreatedAt.Date <= toDate.Date
+                        ).ToListAsync();
+                    }
+
+                    QuotationDTO sample = new();
+                    //List<QuotationDTO> quotationDTOs = new List<QuotationDTO>();
+                    List<Quoteinfo> quoteinfos = new List<Quoteinfo>();
+
+                    var quotationsGroupedByBond = quotations.GroupBy(x => x.BondId).Select(
+                         (g => new
+                         {
+                             BondId = g.Key,
+                             AverageBuyYield = g.Average(q => q.BuyingYield),
+                             AverageSellYield = g.Average(q => q.SellingYield),
+                             TotalQuotations = g.Count(),
+                             CombinedAverageYield = g.Average(q => (q.BuyingYield + q.SellingYield) / 2),
+                             TotalBuyVolume = g.Sum(q => q.BuyVolume),
+                             TotalSellVolume = g.Sum(q => q.SellVolume),
+                             TotalBuyYield = g.Sum(q => q.BuyingYield),
+                             TotalSellYield = g.Sum(q => q.SellingYield),
+                         })
+                    ).ToList();
+
+                    foreach (var quotation in quotationsGroupedByBond)
+                    {
+                        Bond? bd = await context.Bonds.FirstOrDefaultAsync(b => b.Id == quotation.BondId);
+                        if (bd == null)
+                        {
+                            return BadRequest("Invalid Bond");
+                        }
+                        var quotationDTO = new Quoteinfo
+                        {
+                            BondId = quotation.BondId,
+                            BondIsin = bd.Isin,
+                            IssueNumber = bd.IssueNumber,
+                            TotalBuyVolume = quotation.TotalBuyVolume,
+                            TotalBuyYield = quotation.TotalBuyYield,
+                            TotalSellVolume = quotation.TotalSellVolume,
+                            TotalSellYield = quotation.TotalSellYield,
+                            AverageYield = quotation.CombinedAverageYield,
+                            AverageVolume = (quotation.TotalBuyVolume + quotation.TotalSellVolume) / 2,
+                        };
+                        quoteinfos.Add(quotationDTO);
+                    }
+                    sample.Quotes = quoteinfos;
+                    return StatusCode(200, sample);
+                }
+
+            }
+            catch (Exception Ex)
+            {
+                UtilityService.LogException(Ex);
+                return StatusCode(500, UtilityService.HandleException(Ex));
+            }
+        }
 
         // Fetch Quaotes Filled by a Specific user
         [HttpGet("GetQuotationsFilledByUser/{From}")]
@@ -435,13 +561,13 @@ namespace Quotations_Board_Backend.Controllers
                         var quotationDTO = new Quoteinfo
                         {
                             BondId = quotation.BondId,
-                            BuyingYield = quotation.BuyingYield,
+                            TotalBuyYield = quotation.BuyingYield,
                             CreatedAt = quotation.CreatedAt,
                             InstitutionId = institution.OrganizationName,
-                            SellingYield = quotation.SellingYield,
+                            TotalSellYield = quotation.SellingYield,
                             UserId = user.FirstName + " " + user.LastName,
-                            BuyVolume = quotation.BuyVolume,
-                            SellVolume = quotation.SellVolume,
+                            TotalBuyVolume = quotation.BuyVolume,
+                            TotalSellVolume = quotation.SellVolume,
                             Id = quotation.Id
                         };
                         quoteinfos.Add(quotationDTO);
@@ -457,11 +583,11 @@ namespace Quotations_Board_Backend.Controllers
                     {
                         // Calculate the total buying yield, total selling yield, average buy yield, average sell yield and average yield
 
-                        var totalBuyingYield = quoteinfos.Sum(x => x.BuyingYield);
-                        var totalSellingYield = quoteinfos.Sum(x => x.SellingYield);
-                        var averageBuyYield = quoteinfos.Average(x => x.BuyingYield);
-                        var averageSellYield = quoteinfos.Average(x => x.SellingYield);
-                        var averageYield = quoteinfos.Average(x => (x.BuyingYield + x.SellingYield) / 2);
+                        var totalBuyingYield = quoteinfos.Sum(x => x.TotalBuyYield);
+                        var totalSellingYield = quoteinfos.Sum(x => x.TotalSellYield);
+                        var averageBuyYield = quoteinfos.Average(x => x.TotalBuyYield);
+                        var averageSellYield = quoteinfos.Average(x => x.TotalSellYield);
+                        var averageYield = quoteinfos.Average(x => (x.TotalBuyYield + x.TotalSellYield) / 2);
 
                         QuoteStatistic quoteStatistic = new QuoteStatistic
                         {
@@ -471,8 +597,8 @@ namespace Quotations_Board_Backend.Controllers
                             TotalBuyingYield = totalBuyingYield,
                             TotalSellingYield = totalSellingYield,
                             TotalQuotations = quoteinfos.Count,
-                            TotalBuyVolume = quoteinfos.Sum(x => x.BuyVolume),
-                            TotalSellVolume = quoteinfos.Sum(x => x.SellVolume)
+                            TotalBuyVolume = quoteinfos.Sum(x => x.TotalBuyVolume),
+                            TotalSellVolume = quoteinfos.Sum(x => x.TotalSellVolume)
                         };
 
                         // Add the quote statistic to the quotation DTO
@@ -544,13 +670,13 @@ namespace Quotations_Board_Backend.Controllers
                         var quotationInfo = new Quoteinfo
                         {
                             BondId = quotation.BondId,
-                            BuyingYield = quotation.BuyingYield,
+                            TotalBuyYield = quotation.BuyingYield,
                             CreatedAt = quotation.CreatedAt,
                             InstitutionId = institution.OrganizationName,
-                            SellingYield = quotation.SellingYield,
+                            TotalSellYield = quotation.SellingYield,
                             UserId = user.FirstName + " " + user.LastName,
-                            BuyVolume = quotation.BuyVolume,
-                            SellVolume = quotation.SellVolume,
+                            TotalBuyVolume = quotation.BuyVolume,
+                            TotalSellVolume = quotation.SellVolume,
                             Id = quotation.Id
                         };
                         quoteinfos.Add(quotationInfo);
@@ -564,11 +690,11 @@ namespace Quotations_Board_Backend.Controllers
                     // Calculate the total buying yield, total selling yield, average buy yield, average sell yield and average yield
                     if (quoteinfos.Count > 0)
                     {
-                        var totalBuyingYield = quoteinfos.Sum(x => x.BuyingYield);
-                        var totalSellingYield = quoteinfos.Sum(x => x.SellingYield);
-                        var averageBuyYield = quoteinfos.Average(x => x.BuyingYield);
-                        var averageSellYield = quoteinfos.Average(x => x.SellingYield);
-                        var averageYield = quoteinfos.Average(x => (x.BuyingYield + x.SellingYield) / 2);
+                        var totalBuyingYield = quoteinfos.Sum(x => x.TotalBuyYield);
+                        var totalSellingYield = quoteinfos.Sum(x => x.TotalSellYield);
+                        var averageBuyYield = quoteinfos.Average(x => x.TotalBuyYield);
+                        var averageSellYield = quoteinfos.Average(x => x.TotalSellYield);
+                        var averageYield = quoteinfos.Average(x => (x.TotalBuyYield + x.TotalSellYield) / 2);
 
                         QuoteStatistic quoteStatistic = new QuoteStatistic
                         {
@@ -578,8 +704,8 @@ namespace Quotations_Board_Backend.Controllers
                             TotalBuyingYield = totalBuyingYield,
                             TotalSellingYield = totalSellingYield,
                             TotalQuotations = quoteinfos.Count,
-                            TotalBuyVolume = quoteinfos.Sum(x => x.BuyVolume),
-                            TotalSellVolume = quoteinfos.Sum(x => x.SellVolume)
+                            TotalBuyVolume = quoteinfos.Sum(x => x.TotalBuyVolume),
+                            TotalSellVolume = quoteinfos.Sum(x => x.TotalSellVolume)
                         };
 
                         // Add the quote statistic to the quotation DTO
