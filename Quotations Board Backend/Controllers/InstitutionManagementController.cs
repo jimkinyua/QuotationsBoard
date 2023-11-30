@@ -175,14 +175,38 @@ namespace Quotations_Board_Backend.Controllers
                     return BadRequest("User does not exist");
                 }
 
-                // Enusre that user being update is not being oved from InstitutionAdmin. Only One InstitutionAdmin per Institution
-                if (existingUser.Id != portalUserDTO.Id && portalUserDTO.Role == CustomRoles.InstitutionAdmin)
+                // if user is assigend institution admin role, ensure there is at least one admin and grant the former admin role the role occupied by the new admin
+                var UserToBeUpdatedCurrentRole = await _userManager.GetRolesAsync(existingUser);
+                if (UserToBeUpdatedCurrentRole.Count > 0 && UserToBeUpdatedCurrentRole[0] != CustomRoles.InstitutionAdmin)
                 {
-                    var existingAdmin = await _userManager.FindByEmailAsync(portalUserDTO.Email);
-                    if (existingAdmin != null)
+                    // What role is the user being assigned?
+                    var newRole = await _roleManager.FindByNameAsync(portalUserDTO.Role);
+                    // is it InstitutionAdmin?
+                    if (newRole.Name == CustomRoles.InstitutionAdmin)
                     {
-                        return BadRequest("Institution already has an admin");
+                        // who holds the InstitutionAdmin role within the institution?
+                        var otherAdmins = await _userManager.GetUsersInRoleAsync(CustomRoles.InstitutionAdmin);
+
+                        // only interested in other admins within the same institution
+                        var existingSchoolAdmin = otherAdmins.FirstOrDefault(u => u.InstitutionId == institution.Id);
+                        if (existingSchoolAdmin == null)
+                        {
+                            return BadRequest("There must be at least one admin");
+                        }
+
+                        // Get Inst Amin Role
+                        var existingSchoolAdminRole = await _userManager.GetRolesAsync(existingSchoolAdmin);
+                        if (existingSchoolAdminRole.Count > 0)
+                        {
+                            // Remove Exitinsg admin from current  role
+                            await _userManager.RemoveFromRoleAsync(existingSchoolAdmin, existingSchoolAdminRole[0]);
+                            //Assign them the role previously held by the new admin
+                            await _userManager.AddToRoleAsync(existingSchoolAdmin, UserToBeUpdatedCurrentRole[0]);
+                        }
+
+
                     }
+
                 }
 
                 // update user
@@ -253,7 +277,7 @@ namespace Quotations_Board_Backend.Controllers
 
                 existingUser.LockoutEnabled = true;
                 existingUser.LockoutEnd = DateTime.Now.AddYears(100);
-
+                context.Users.Update(existingUser);
                 await context.SaveChangesAsync();
 
                 // Send email to user notifying them that their account has been disabled
