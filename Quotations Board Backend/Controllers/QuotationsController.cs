@@ -117,11 +117,12 @@ namespace Quotations_Board_Backend.Controllers
         }
 
         // Fetch all quotations filled by Institution
-        [HttpGet("GetQuotationsFilledByInstitution/{From}")]
+        [HttpGet("GetQuotationsFilledByInstitution/{bondId}/{From}")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public async Task<ActionResult<QuotationDTO>> GetQuotationsFilledByInstitution(string? From = "default")
+        public async Task<ActionResult<QuotationDTO>> GetQuotationsFilledByInstitution(string bondId, string? From = "default")
         {
+
             try
             {
                 DateTime fromDate = DateTime.Now;
@@ -145,7 +146,10 @@ namespace Quotations_Board_Backend.Controllers
                     fromDate = parsedDate;
                 }
 
-
+                if (string.IsNullOrEmpty(bondId))
+                {
+                    return BadRequest("BondId cannot be null or empty");
+                }
 
 
                 using (var context = new QuotationsBoardContext())
@@ -153,7 +157,11 @@ namespace Quotations_Board_Backend.Controllers
                     LoginTokenDTO TokenContents = UtilityService.GetUserIdFromCurrentRequest(Request);
                     var userId = UtilityService.GetUserIdFromToken(Request);
                     var quotations = await context.Quotations.Include(x => x.Institution)
-                        .Where(q => q.InstitutionId == TokenContents.InstitutionId && q.CreatedAt.Date >= fromDate.Date).ToListAsync();
+                        .Where(q =>
+                         q.InstitutionId == TokenContents.InstitutionId
+                         && q.BondId == bondId
+                         && q.CreatedAt.Date >= fromDate.Date
+                         ).ToListAsync();
                     QuotationDTO sample = new();
                     //List<QuotationDTO> quotationDTOs = new List<QuotationDTO>();
                     List<Quoteinfo> quoteinfos = new List<Quoteinfo>();
