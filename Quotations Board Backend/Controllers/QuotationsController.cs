@@ -904,14 +904,15 @@ namespace Quotations_Board_Backend.Controllers
         }
 
         // Yield Curve for a Specific Bond
-        [HttpGet("GetYieldCurveForBond/{bondId}/{From}")]
+        [HttpGet("GetYieldCurveForBond/{bondId}/{From}/{To}")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public async Task<ActionResult<List<YieldCurveDTO>>> GetYieldCurveForBond(string bondId, string? From = "default")
+        public async Task<ActionResult<List<YieldCurveDTO>>> GetYieldCurveForBond(string bondId, string? From = "default", string? To = "default")
         {
             try
             {
                 DateTime fromDate = DateTime.Now;
+                DateTime toDate = DateTime.Now;
                 if (From == "default")
                 {
                     fromDate = DateTime.Now;
@@ -931,12 +932,35 @@ namespace Quotations_Board_Backend.Controllers
                     }
                     fromDate = parsedDate;
                 }
+
+                if (To == "default")
+                {
+                    toDate = DateTime.Now;
+                }
+                else
+                {
+                    var parsedDate = DateTime.Parse(To);
+                    // is date valid?
+                    if (toDate == DateTime.MinValue)
+                    {
+                        return BadRequest("Invalid date");
+                    }
+                    // is date in the future?
+                    if (toDate > DateTime.Now)
+                    {
+                        return BadRequest("Date cannot be in the future");
+                    }
+                    toDate = parsedDate;
+                }
+
                 using (var context = new QuotationsBoardContext())
                 {
                     LoginTokenDTO TokenContents = UtilityService.GetUserIdFromCurrentRequest(Request);
                     var userId = UtilityService.GetUserIdFromToken(Request);
                     var quotations = await context.Quotations.Include(x => x.Institution).Where(q => q.BondId == bondId
-                    && q.CreatedAt.Date >= fromDate.Date).ToListAsync();
+                    && q.CreatedAt.Date >= fromDate.Date
+                    && q.CreatedAt.Date <= toDate.Date
+                    ).ToListAsync();
                     var dailyAverages = quotations.GroupBy(x => x.CreatedAt.Date).Select(
                          (g => new
                          {

@@ -277,7 +277,7 @@ namespace Quotations_Board_Backend.Controllers
 
                 existingUser.LockoutEnabled = true;
                 existingUser.LockoutEnd = DateTime.Now.AddYears(100);
-                context.Users.Update(existingUser);
+
                 await context.SaveChangesAsync();
 
                 // Send email to user notifying them that their account has been disabled
