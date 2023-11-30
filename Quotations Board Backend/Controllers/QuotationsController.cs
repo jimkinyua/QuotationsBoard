@@ -639,14 +639,15 @@ namespace Quotations_Board_Backend.Controllers
 
 
         // Fetch Quaotes Filled by a Specific user
-        [HttpGet("GetQuotationsFilledByUser/{From}")]
+        [HttpGet("GetQuotationsFilledByUser/{From}/{To}")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public async Task<ActionResult<QuotationDTO>> GetQuotationsFilledByUser(string? From = "default")
+        public async Task<ActionResult<QuotationDTO>> GetQuotationsFilledByUser(string? From = "default", string? To = "default")
         {
             try
             {
                 DateTime fromDate = DateTime.Now;
+                DateTime toDate = DateTime.Now;
                 if (From == "default")
                 {
                     fromDate = DateTime.Now;
@@ -667,6 +668,26 @@ namespace Quotations_Board_Backend.Controllers
                     fromDate = parsedDate;
                 }
 
+                if (To == "default")
+                {
+                    toDate = DateTime.Now;
+                }
+                else
+                {
+                    var parsedDate = DateTime.Parse(To);
+                    // is date valid?
+                    if (toDate == DateTime.MinValue)
+                    {
+                        return BadRequest("Invalid date");
+                    }
+                    // is date in the future?
+                    if (toDate > DateTime.Now)
+                    {
+                        return BadRequest("Date cannot be in the future");
+                    }
+                    toDate = parsedDate;
+                }
+
                 using (var context = new QuotationsBoardContext())
                 {
                     LoginTokenDTO TokenContents = UtilityService.GetUserIdFromCurrentRequest(Request);
@@ -674,8 +695,7 @@ namespace Quotations_Board_Backend.Controllers
                     var quotations = await context.Quotations.Include(x => x.Institution).Where(q =>
                      q.UserId == userId
                       && q.CreatedAt.Date >= fromDate.Date
-
-
+                        && q.CreatedAt.Date <= toDate.Date
                       )
                       .ToListAsync();
                     //List<QuotationDTO> quotationDTOs = new List<QuotationDTO>();
@@ -752,14 +772,15 @@ namespace Quotations_Board_Backend.Controllers
         }
 
         // Quotations For a Specific Bond
-        [HttpGet("GetQuotationsForBond/{bondId}/{From}")]
+        [HttpGet("GetQuotationsForBond/{bondId}/{From}/{To}")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public async Task<ActionResult<List<QuotationDTO>>> GetQuotationsForBond(string bondId, string? From = "default")
+        public async Task<ActionResult<List<QuotationDTO>>> GetQuotationsForBond(string bondId, string? From = "default", string To = "default")
         {
             try
             {
                 DateTime fromDate = DateTime.Now;
+                DateTime toDate = DateTime.Now;
                 if (From == "default")
                 {
                     fromDate = DateTime.Now;
@@ -780,11 +801,36 @@ namespace Quotations_Board_Backend.Controllers
                     fromDate = parsedDate;
                 }
 
+                if (To == "default")
+                {
+                    toDate = DateTime.Now;
+                }
+                else
+                {
+                    var parsedDate = DateTime.Parse(To);
+                    // is date valid?
+                    if (toDate == DateTime.MinValue)
+                    {
+                        return BadRequest("Invalid date");
+                    }
+                    // is date in the future?
+                    if (toDate > DateTime.Now)
+                    {
+                        return BadRequest("Date cannot be in the future");
+                    }
+                    toDate = parsedDate;
+                }
+
+
                 using (var context = new QuotationsBoardContext())
                 {
                     LoginTokenDTO TokenContents = UtilityService.GetUserIdFromCurrentRequest(Request);
                     var userId = UtilityService.GetUserIdFromToken(Request);
-                    var quotations = await context.Quotations.Include(x => x.Institution).Where(q => q.BondId == bondId && q.CreatedAt.Date >= fromDate.Date).ToListAsync();
+                    var quotations = await context.Quotations.Include(x => x.Institution).Where(
+                        q => q.BondId == bondId
+                        && q.CreatedAt.Date >= fromDate.Date
+                        && q.CreatedAt.Date <= toDate.Date
+                         ).ToListAsync();
 
                     //List<QuotationDTO> quotationDTOs = new List<QuotationDTO>();
                     QuotationDTO sample = new();
