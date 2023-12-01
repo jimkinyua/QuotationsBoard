@@ -472,7 +472,7 @@ namespace Quotations_Board_Backend.Controllers
                              AverageBuyYield = g.Average(q => q.BuyingYield),
                              AverageSellYield = g.Average(q => q.SellingYield),
                              TotalQuotations = g.Count(),
-                             CombinedAverageYield = g.Average(q => (q.BuyingYield + q.SellingYield) / 2),
+                             CombinedAverageYield = g.Average(q => (q.BuyingYield + q.SellingYield)),
                              TotalBuyVolume = g.Sum(q => q.BuyVolume),
                              TotalSellVolume = g.Sum(q => q.SellVolume),
                              TotalBuyYield = g.Sum(q => q.BuyingYield),
@@ -496,7 +496,7 @@ namespace Quotations_Board_Backend.Controllers
                             TotalBuyYield = quotation.TotalBuyYield,
                             TotalSellVolume = quotation.TotalSellVolume,
                             TotalSellYield = quotation.TotalSellYield,
-                            AverageYield = (quotation.AverageSellYield + quotation.AverageBuyYield) / 2,
+                            AverageYield = (quotation.AverageSellYield + quotation.AverageBuyYield),
                             AverageVolume = (quotation.TotalBuyVolume + quotation.TotalSellVolume) / 2,
                             Id = quotation.BondId,
                         };
