@@ -122,5 +122,21 @@ namespace Quotations_Board_Backend.Controllers
         {
             return await Task.FromResult(new List<string> { "Corporate", "Government" });
         }
+        [HttpGet("BondIds")]
+        public async Task<ActionResult<IEnumerable<BondIds>>> GetBondIds()
+        {
+            var bonds = await _context.Bonds.ToListAsync();
+            var bondIds = new List<BondIds>();
+            foreach (var bond in bonds)
+            {
+                var bondId = new BondIds
+                {
+                    Id = bond.Id,
+                    Isin = bond.Isin
+                };
+                bondIds.Add(bondId);
+            }
+            return bondIds;
+        }
     }
 }
