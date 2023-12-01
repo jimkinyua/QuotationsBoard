@@ -368,7 +368,9 @@ namespace Quotations_Board_Backend.Controllers
                             UserId = user.FirstName + " " + user.LastName,
                             TotalBuyVolume = quotation.BuyVolume,
                             TotalSellVolume = quotation.SellVolume,
-                            Id = quotation.Id
+                            Id = quotation.Id,
+                            AverageVolume = (quotation.BuyVolume + quotation.SellVolume) / 2,
+                            AverageYield = (quotation.BuyingYield + quotation.SellingYield) / 2
                         };
                         quoteinfos.Add(quotationDTO);
                     }
