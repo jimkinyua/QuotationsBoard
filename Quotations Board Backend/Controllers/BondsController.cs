@@ -132,7 +132,7 @@ namespace Quotations_Board_Backend.Controllers
                 var bondId = new BondIds
                 {
                     Id = bond.Id,
-                    Isin = bond.Isin
+                    IssueNumber = bond.IssueNumber
                 };
                 bondIds.Add(bondId);
             }
