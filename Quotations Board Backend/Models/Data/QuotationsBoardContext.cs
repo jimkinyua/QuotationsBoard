@@ -13,7 +13,7 @@ public class QuotationsBoardContext : IdentityDbContext<PortalUser>
     // On Configuring. Called when the DbContextOptions are not provided to the constructor
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
-        var config = new ConfigurationBuilder().SetBasePath(Directory.GetCurrentDirectory()).AddJsonFile("appsettings.json").Build();
+        var config = new ConfigurationBuilder().SetBasePath(Directory.GetCurrentDirectory()).AddJsonFile("appsettings.Development.json").Build();
         optionsBuilder.UseSqlServer(config.GetConnectionString("DefaultConnection"));
     }
 
@@ -27,4 +27,6 @@ public class QuotationsBoardContext : IdentityDbContext<PortalUser>
     public DbSet<Institution> Institutions { get; set; } = null!;
     public DbSet<Bond> Bonds { get; set; } = null!;
     public DbSet<Quotation> Quotations { get; set; } = null!;
+    public DbSet<GorvermentBondTradeStage> GorvermentBondTradeStages { get; set; } = null!;
+    public DbSet<GorvermentBondTradeLineStage> GorvermentBondTradeLinesStage { get; set; } = null!;
 }
