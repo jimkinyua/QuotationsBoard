@@ -22,10 +22,10 @@ namespace Quotations_Board_Backend.Controllers
 
             // check if the file is an excel file
             var UploadFile = uploadTradedBondValue.ExcelFile;
-            if (UploadFile.ContentType != "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+            /*if (UploadFile.ContentType != "text/csv")
             {
                 return BadRequest("The file is not an excel file");
-            }
+            }*/
 
             try
             {
@@ -71,22 +71,56 @@ namespace Quotations_Board_Backend.Controllers
 
                 }
             }
-            catch (System.Exception)
+            catch (Exception Ex)
             {
+                UtilityService.LogException(Ex);
+                return StatusCode(500, UtilityService.HandleException(Ex));
 
-                throw;
             }
 
 
+        }
+        private int CountNonEmptyRows(IXLWorksheet worksheet)
+        {
+            int nonEmptyRowCount = 0;
+            int maxColumnCount = worksheet.ColumnsUsed().Count(); // Count only the used columns
+
+            foreach (var row in worksheet.RowsUsed())
+            {
+                for (int col = 1; col <= maxColumnCount; col++)
+                {
+                    if (!string.IsNullOrWhiteSpace(row.Cell(col).Value.ToString()))
+                    {
+                        nonEmptyRowCount++;
+                        break; // Move to the next row once a non-empty cell is found
+                    }
+                }
+            }
+
+            return nonEmptyRowCount;
         }
 
         private List<GorvermentBondTradeLineStage> ReadExcelData(IXLWorksheet worksheet, GorvermentBondTradeStage gorvermentBondTradeStage)
         {
             var trades = new List<GorvermentBondTradeLineStage>();
-            int rowCount = worksheet.RowCount();
+            int rowCount = CountNonEmptyRows(worksheet);
+            int maxColumnCount = worksheet.ColumnsUsed().Count();
 
             for (int row = 2; row <= rowCount; row++)
             {
+                // Check if the row is empty
+                bool isEmptyRow = true;
+                for (int col = 1; col <= maxColumnCount; col++)
+                {
+                    if (!string.IsNullOrWhiteSpace(worksheet.Cell(row, col).Value.ToString()))
+                    {
+                        isEmptyRow = false;
+                        break;
+                    }
+                }
+
+                if (isEmptyRow) continue; // Skip this row if it's empty
+
                 // Assuming data is already validated and can be directly parsed
                 var trade = new GorvermentBondTradeLineStage
                 {
@@ -94,6 +128,7 @@ namespace Quotations_Board_Backend.Controllers
                     SecurityId = worksheet.Cell(row, 3).Value.ToString(),
                     ExecutedSize = decimal.Parse(worksheet.Cell(row, 4).Value.ToString()),
                     ExcecutedPrice = decimal.Parse(worksheet.Cell(row, 5).Value.ToString()),
+                    ExecutionID = worksheet.Cell(row, 6).Value.ToString(),
                     TransactionTime = DateTime.Parse(worksheet.Cell(row, 7).Value.ToString()),
                     DirtyPrice = decimal.Parse(worksheet.Cell(row, 8).Value.ToString()),
                     Yield = decimal.Parse(worksheet.Cell(row, 9).Value.ToString()),
@@ -109,10 +144,25 @@ namespace Quotations_Board_Backend.Controllers
         private List<string> ValidateExcelData(IXLWorksheet worksheet)
         {
             var errors = new List<string>();
-            int rowCount = worksheet.RowCount();
+            int rowCount = CountNonEmptyRows(worksheet);
+            int maxColumnCount = worksheet.ColumnsUsed().Count();
+
 
             for (int rowToBeginAt = 2; rowToBeginAt <= rowCount; rowToBeginAt++)
             {
+                // Check if the row is empty
+                bool isEmptyRow = true;
+                for (int col = 1; col <= maxColumnCount; col++)
+                {
+                    if (!string.IsNullOrWhiteSpace(worksheet.Cell(rowToBeginAt, col).Value.ToString()))
+                    {
+                        isEmptyRow = false;
+                        break; // Exit the loop as soon as a non-empty cell is found
+                    }
+                }
+
+                if (isEmptyRow) continue; // Skip this row if it's empty
+
                 var board = worksheet.Cell(rowToBeginAt, 1).Value.ToString();
                 var side = worksheet.Cell(rowToBeginAt, 2).Value.ToString();
                 var dirtySecurityID = worksheet.Cell(rowToBeginAt, 3).Value.ToString();
@@ -130,7 +180,7 @@ namespace Quotations_Board_Backend.Controllers
                 if (string.IsNullOrWhiteSpace(side))
                     errors.Add($"Row {rowToBeginAt} Cell B: 'Side' is required.");
 
-                if (string.IsNullOrWhiteSpace(dirtySecurityID) || !long.TryParse(dirtySecurityID, out _))
+                if (string.IsNullOrWhiteSpace(dirtySecurityID))
                     errors.Add($"Row {rowToBeginAt} Cell C: 'Dirty Security ID' is invalid or missing.");
 
                 if (!decimal.TryParse(executedSize, out _))
