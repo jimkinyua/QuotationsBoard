@@ -181,6 +181,138 @@ namespace Quotations_Board_Backend.Controllers
             }
         }
 
+        // gets a list of all uploaded and confirmed Bond Trades
+        [HttpGet]
+        [Route("GetConfirmedBondTrades/{For}")]
+        public async Task<ActionResult<List<UploadedBondTrade>>> GetConfirmedBondTrades(string? For = "default")
+        {
+
+            List<BondTrade> uploadedTrades = new List<BondTrade>();
+            List<UploadedTradeBond> uploadedTradesDTO = new List<UploadedTradeBond>();
+            try
+            {
+                using (var db = new QuotationsBoardContext())
+                {
+                    db.Database.EnsureCreated();
+                    if (For == "default" || For == null || string.IsNullOrWhiteSpace(For))
+                    {
+                        uploadedTrades = await db.BondTrades.ToListAsync();
+                        foreach (var trade in uploadedTrades)
+                        {
+
+                            uploadedTradesDTO.Add(new UploadedTradeBond
+                            {
+                                Id = trade.Id,
+                                UploadedBy = trade.UploadedBy,
+                                UploadedOn = trade.UploadedOn,
+                                TradeDate = trade.TradeDate,
+                            });
+                        }
+                    }
+                    else
+                    {
+                        var parsedDate = DateTime.ParseExact(For, "dd/MM/yyyy", CultureInfo.InvariantCulture);
+                        uploadedTrades = await db.BondTrades.Where(t => t.TradeDate == parsedDate).ToListAsync();
+                        foreach (var trade in uploadedTrades)
+                        {
+
+                            uploadedTradesDTO.Add(new UploadedTradeBond
+                            {
+                                Id = trade.Id,
+                                UploadedBy = trade.UploadedBy,
+                                UploadedOn = trade.UploadedOn,
+                                TradeDate = trade.TradeDate,
+                            });
+                        }
+                    }
+                    return Ok(uploadedTradesDTO);
+                }
+            }
+            catch (Exception Ex)
+            {
+                UtilityService.LogException(Ex);
+                return StatusCode(500, UtilityService.HandleException(Ex));
+            }
+        }
+
+        // Gives the details of a specific Bond Trade
+
+        [HttpGet]
+        [Route("GetConfirmedBondTradeDetails/{BondTradeId}")]
+        public async Task<ActionResult<List<UploadedBondTradeLineDTO>>> GetConfirmedBondTradeDetails(string BondTradeId)
+        {
+            if (string.IsNullOrWhiteSpace(BondTradeId))
+            {
+                return BadRequest("The Bond Trade Id is required");
+            }
+            List<UploadedBondTradeLineDTO> uploadedTradesDTO = new List<UploadedBondTradeLineDTO>();
+            try
+            {
+                using (var db = new QuotationsBoardContext())
+                {
+                    db.Database.EnsureCreated();
+                    var bondTrade = await db.BondTrades.Include(x => x.BondTradeLines).Where(t => t.Id == BondTradeId).FirstOrDefaultAsync();
+                    if (bondTrade == null)
+                    {
+                        return BadRequest("The Bond Trade you are looking for does not exist");
+                    }
+                    foreach (var trade in bondTrade.BondTradeLines)
+                    {
+                        uploadedTradesDTO.Add(new UploadedBondTradeLineDTO
+                        {
+                            Id = trade.Id,
+                            GorvermentBondTradeStageId = trade.BondTradeId,
+                            Side = trade.Side,
+                            SecurityId = trade.SecurityId,
+                            ExecutedSize = trade.ExecutedSize,
+                            ExcecutedPrice = trade.ExcecutedPrice,
+                            ExecutionID = trade.ExecutionID,
+                            TransactionTime = trade.TransactionTime,
+                            DirtyPrice = trade.DirtyPrice,
+                            Yield = trade.Yield,
+                            TradeDate = trade.TransactionTime
+                        });
+                    }
+                    return Ok(uploadedTradesDTO);
+                }
+            }
+            catch (Exception Ex)
+            {
+                UtilityService.LogException(Ex);
+                return StatusCode(500, UtilityService.HandleException(Ex));
+            }
+        }
+
+        // deletes a specific Bond Trade
+        [HttpDelete]
+        [Route("DeleteConfirmedBondTrade/{BondTradeId}")]
+        public async Task<IActionResult> DeleteConfirmedBondTrade(string BondTradeId)
+        {
+            if (string.IsNullOrWhiteSpace(BondTradeId))
+            {
+                return BadRequest("The Bond Trade Id is required");
+            }
+            try
+            {
+                using (var db = new QuotationsBoardContext())
+                {
+                    db.Database.EnsureCreated();
+                    var bondTrade = await db.BondTrades.Include(x => x.BondTradeLines).Where(t => t.Id == BondTradeId).FirstOrDefaultAsync();
+                    if (bondTrade == null)
+                    {
+                        return BadRequest("The Bond Trade you are looking for does not exist");
+                    }
+                    db.BondTrades.Remove(bondTrade);
+                    await db.SaveChangesAsync();
+                    return Ok("Bond Trade Deleted Successfully");
+                }
+            }
+            catch (Exception Ex)
+            {
+                UtilityService.LogException(Ex);
+                return StatusCode(500, UtilityService.HandleException(Ex));
+            }
+        }
         private string TransformSecurityId(string excelSecurityId)
         {
             try
