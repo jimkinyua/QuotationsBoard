@@ -1,4 +1,5 @@
 using System.Text;
+using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -105,11 +106,13 @@ internal class Program
             };
         });
 
+
         // Add services to the container.
         builder.Services.AddAutoMapper(typeof(Program));
         builder.Services.AddControllers().AddJsonOptions(options =>
         {
             options.JsonSerializerOptions.PropertyNamingPolicy = null;
+            options.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
         });
         // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
         builder.Services.AddEndpointsApiExplorer();
@@ -117,6 +120,9 @@ internal class Program
 
         var app = builder.Build();
         app.UseCors(CORS_SPECIFICATIONS);
+
+        // JSON Serializer
+
 
 
         // Configure the HTTP request pipeline.

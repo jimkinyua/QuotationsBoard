@@ -8,6 +8,6 @@ public class GorvermentBondTradeStage
     public string Id { get; set; } = null!;
     public DateTime UploadedAt { get; set; }
     public string UploadedBy { get; set; } = null!;
-    public virtual GorvermentBondTradeLineStage GorvermentBondTradeLineStage { get; set; } = null!;
+    public virtual ICollection<GorvermentBondTradeLineStage> GorvermentBondTradeLineStage { get; set; } = null!;
 
 }

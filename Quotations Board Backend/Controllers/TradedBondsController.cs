@@ -55,18 +55,38 @@ namespace Quotations_Board_Backend.Controllers
                             await db.SaveChangesAsync();
 
                             // fetch details about the trades
-                            var tradesDetails = db.GorvermentBondTradeStages
+                            var tradesDetails = await db.GorvermentBondTradeStages
                                 .Where(t => t.Id == gorvermentBondTradeStage.Id)
                                 .Include(t => t.GorvermentBondTradeLineStage)
-                               .ToList();
-
-                            return Ok(tradesDetails);
-
+                                .FirstOrDefaultAsync();
+                            // construc to UploadedBondTrade DTO
+                            var tradesDetailsDTO = new UploadedBondTrade
+                            {
+                                Id = tradesDetails.Id,
+                                UploadedAt = tradesDetails.UploadedAt,
+                                UploadedBy = tradesDetails.UploadedBy,
+                                UploadedBondTradeLineDTO = new List<UploadedBondTradeLineDTO>()
+                            };
+                            foreach (var trade in tradesDetails.GorvermentBondTradeLineStage)
+                            {
+                                var tradeDTO = new UploadedBondTradeLineDTO
+                                {
+                                    Id = trade.Id,
+                                    GorvermentBondTradeStageId = trade.GorvermentBondTradeStageId,
+                                    Side = trade.Side,
+                                    SecurityId = trade.SecurityId,
+                                    ExecutedSize = trade.ExecutedSize,
+                                    ExcecutedPrice = trade.ExcecutedPrice,
+                                    ExecutionID = trade.ExecutionID,
+                                    TransactionTime = trade.TransactionTime,
+                                    DirtyPrice = trade.DirtyPrice,
+                                    Yield = trade.Yield,
+                                    TradeDate = trade.TradeDate
+                                };
+                                tradesDetailsDTO.UploadedBondTradeLineDTO.Add(tradeDTO);
+                            }
+                            return Ok(tradesDetailsDTO);
                         }
-
-
-
-
                     }
 
                 }
@@ -79,6 +99,36 @@ namespace Quotations_Board_Backend.Controllers
             }
 
 
+        }
+
+        // Allows user to confirm the trdes uploaded are correct so that we can move them to the main table
+        [HttpPost]
+        [Route("ConfirmTradedBondsValues")]
+        public async Task<IActionResult> ConfirmTradedBondsValues([FromBody] ConfirmTradedBondValue confirmTradedBondValue)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            try
+            {
+                using (var db = new QuotationsBoardContext())
+                {
+                    db.Database.EnsureCreated();
+                    var tradesDetails = await db.GorvermentBondTradeStages
+                        .Where(t => t.Id == confirmTradedBondValue.Id)
+                        .Include(t => t.GorvermentBondTradeLineStage)
+                        .FirstOrDefaultAsync();
+                    return Ok(tradesDetails);
+                }
+            }
+            catch (Exception Ex)
+            {
+                UtilityService.LogException(Ex);
+                return StatusCode(500, UtilityService.HandleException(Ex));
+
+            }
         }
         private int CountNonEmptyRows(IXLWorksheet worksheet)
         {
