@@ -29,4 +29,6 @@ public class QuotationsBoardContext : IdentityDbContext<PortalUser>
     public DbSet<Quotation> Quotations { get; set; } = null!;
     public DbSet<GorvermentBondTradeStage> GorvermentBondTradeStages { get; set; } = null!;
     public DbSet<GorvermentBondTradeLineStage> GorvermentBondTradeLinesStage { get; set; } = null!;
+    public DbSet<BondTrade> BondTrades { get; set; } = null!;
+    public DbSet<BondTradeLine> BondTradeLines { get; set; } = null!;
 }

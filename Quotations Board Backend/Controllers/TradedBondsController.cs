@@ -120,6 +120,7 @@ namespace Quotations_Board_Backend.Controllers
                         .Where(t => t.Id == confirmTradedBondValue.Id)
                         .Include(t => t.GorvermentBondTradeLineStage)
                         .FirstOrDefaultAsync();
+
                     return Ok(tradesDetails);
                 }
             }
