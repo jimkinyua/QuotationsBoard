@@ -8,6 +8,8 @@ public class BondTradeLine
     public string Id { get; set; } = null!;
     [ForeignKey("BondTrade")]
     public string BondTradeId { get; set; } = null!;
+    [ForeignKey("Bond")]
+    public string BondId { get; set; } = null!;
     public string Side { get; set; } = null!;
     public string SecurityId { get; set; } = null!;
     public decimal ExecutedSize { get; set; }
@@ -16,7 +18,6 @@ public class BondTradeLine
     public DateTime TransactionTime { get; set; }
     public decimal DirtyPrice { get; set; }
     public decimal Yield { get; set; }
-    public DateTime TradedAt { get; set; }
     public virtual BondTrade BondTrade { get; set; } = null!;
 
 }

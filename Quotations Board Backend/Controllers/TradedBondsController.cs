@@ -26,7 +26,7 @@ namespace Quotations_Board_Backend.Controllers
             {
                 return BadRequest("The file is not an excel file");
             }*/
-
+            DateTime TargetTradeDate = DateTime.ParseExact(uploadTradedBondValue.TradeDate, "dd/MM/yyyy", CultureInfo.InvariantCulture);
             try
             {
                 using (var stream = new MemoryStream())
@@ -46,7 +46,7 @@ namespace Quotations_Board_Backend.Controllers
                             db.Database.EnsureCreated();
                             GorvermentBondTradeStage gorvermentBondTradeStage = new GorvermentBondTradeStage
                             {
-                                UploadedAt = DateTime.Now,
+                                TargetDate = TargetTradeDate,
                                 UploadedBy = "Admin"
                             };
                             db.GorvermentBondTradeStages.Add(gorvermentBondTradeStage);
@@ -63,7 +63,7 @@ namespace Quotations_Board_Backend.Controllers
                             var tradesDetailsDTO = new UploadedBondTrade
                             {
                                 Id = tradesDetails.Id,
-                                UploadedAt = tradesDetails.UploadedAt,
+                                UploadedAt = tradesDetails.TargetDate,
                                 UploadedBy = tradesDetails.UploadedBy,
                                 UploadedBondTradeLineDTO = new List<UploadedBondTradeLineDTO>()
                             };
@@ -120,6 +120,55 @@ namespace Quotations_Board_Backend.Controllers
                         .Where(t => t.Id == confirmTradedBondValue.Id)
                         .Include(t => t.GorvermentBondTradeLineStage)
                         .FirstOrDefaultAsync();
+                    if (tradesDetails == null)
+                    {
+                        return BadRequest("The trades you are trying to confirm do not exist");
+                    }
+                    var targetedDate = tradesDetails.TargetDate;
+                    // Any Trades that been uploaded for this date? Only one should be uploaded
+                    var trades = await db.BondTrades.Where(t => t.TradeDate == targetedDate).ToListAsync();
+                    if (trades.Any())
+                    {
+                        return BadRequest("The trades for this date have already been uploaded");
+                    }
+
+                    // create a new bond trade
+                    BondTrade bondTrade = new BondTrade
+                    {
+                        UploadedBy = "Admin",
+                        UploadedOn = DateTime.Now,
+                        TradeDate = targetedDate
+                    };
+
+                    db.BondTrades.Add(bondTrade);
+
+                    // Loop the GorvermentBondTradeLineStage if any and add them to the BondTradeLine
+                    foreach (var trade in tradesDetails.GorvermentBondTradeLineStage)
+                    {
+                        // ensure the bond exists
+                        var TransformedSecId = TransformSecurityId(trade.SecurityId);
+                        var bond = await db.Bonds.Where(b => b.IssueNumber == TransformedSecId).FirstOrDefaultAsync();
+                        if (bond == null)
+                        {
+                            return BadRequest($"The bond with security id {trade.SecurityId} does not exist");
+                        }
+                        BondTradeLine bondTradeLine = new BondTradeLine
+                        {
+                            BondTradeId = bondTrade.Id,
+                            Side = trade.Side,
+                            SecurityId = trade.SecurityId,
+                            ExecutedSize = trade.ExecutedSize,
+                            ExcecutedPrice = trade.ExcecutedPrice,
+                            ExecutionID = trade.ExecutionID,
+                            TransactionTime = trade.TransactionTime,
+                            DirtyPrice = trade.DirtyPrice,
+                            Yield = trade.Yield,
+                            BondId = bond.Id
+                        };
+                        db.BondTradeLines.Add(bondTradeLine);
+                        await db.SaveChangesAsync();
+                    }
+
 
                     return Ok(tradesDetails);
                 }
@@ -129,6 +178,39 @@ namespace Quotations_Board_Backend.Controllers
                 UtilityService.LogException(Ex);
                 return StatusCode(500, UtilityService.HandleException(Ex));
 
+            }
+        }
+
+        private string TransformSecurityId(string excelSecurityId)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(excelSecurityId))
+                    throw new ArgumentException("Excel Security ID is null or whitespace.");
+
+                // Excel format is "PREFIX.BondCode/Year/Year"
+                // Remove the prefix up to the first dot (.)
+                var parts = excelSecurityId.Split(new char[] { '.' }, 2);
+                if (parts.Length < 2)
+                    throw new FormatException("Excel Security ID does not contain a valid format with a dot separator.");
+
+                string transformedId = parts[1]; // Take the second part
+
+                // Check if the last segment ends with a digit, then append "Yr"
+                var lastSegmentParts = transformedId.Split(new char[] { '/' });
+                if (lastSegmentParts.Length >= 2 && char.IsDigit(lastSegmentParts.Last().Last()))
+                {
+                    transformedId += "Yr";
+                }
+
+                return transformedId;
+            }
+            catch (Exception ex)
+            {
+                // Log the error, return null, or throw a custom exception as appropriate for your application's error handling policy
+                // Example: Log to console or application logs
+                Console.WriteLine($"Error transforming Security ID: {ex.Message}");
+                return null; // or handle differently as per your requirements
             }
         }
         private int CountNonEmptyRows(IXLWorksheet worksheet)
@@ -211,6 +293,29 @@ namespace Quotations_Board_Backend.Controllers
                         break; // Exit the loop as soon as a non-empty cell is found
                     }
                 }
+
+                string excelSecurityId = worksheet.Cell(rowToBeginAt, 3).Value.ToString();
+                string transformedSecurityId = TransformSecurityId(excelSecurityId);
+
+                if (string.IsNullOrEmpty(transformedSecurityId))
+                {
+                    errors.Add($"Row {rowToBeginAt}: Security ID format is invalid.");
+                    continue; // Skip further validation for this row
+                }
+
+                using (var dbContext = new QuotationsBoardContext())
+                {
+                    dbContext.Database.EnsureCreated();
+                    // Check if transformedSecurityId exists in the database
+                    var bondExists = dbContext.Bonds.Any(b => b.IssueNumber == transformedSecurityId);
+                    if (!bondExists)
+                    {
+                        errors.Add($"Row {rowToBeginAt}: Security ID '{transformedSecurityId}' does not exist in the system.");
+                    }
+                }
+
+
+
 
                 if (isEmptyRow) continue; // Skip this row if it's empty
 

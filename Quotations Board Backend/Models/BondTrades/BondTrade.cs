@@ -7,7 +7,6 @@ public class BondTrade
     [Key]
     [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
     public string Id { get; set; } = null!;
-    public string BondId { get; set; } = null!;
     public string UploadedBy { get; set; } = null!;
     public DateTime UploadedOn { get; set; }
     public DateTime TradeDate { get; set; }
