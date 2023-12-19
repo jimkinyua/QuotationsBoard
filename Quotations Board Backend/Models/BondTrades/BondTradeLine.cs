@@ -8,7 +8,6 @@ public class BondTradeLine
     public string Id { get; set; } = null!;
     [ForeignKey("BondTrade")]
     public string BondTradeId { get; set; } = null!;
-    [ForeignKey("Bond")]
     public string BondId { get; set; } = null!;
     public string Side { get; set; } = null!;
     public string SecurityId { get; set; } = null!;

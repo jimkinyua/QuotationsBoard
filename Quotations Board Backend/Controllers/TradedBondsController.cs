@@ -163,7 +163,6 @@ namespace Quotations_Board_Backend.Controllers
                             TransactionTime = trade.TransactionTime,
                             DirtyPrice = trade.DirtyPrice,
                             Yield = trade.Yield,
-                            BondId = bond.Id
                         };
                         db.BondTradeLines.Add(bondTradeLine);
                         await db.SaveChangesAsync();
