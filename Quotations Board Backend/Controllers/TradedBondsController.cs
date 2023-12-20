@@ -1,5 +1,6 @@
 ﻿using System.Globalization;
 using ClosedXML.Excel;
+using DocumentFormat.OpenXml.Bibliography;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -19,14 +20,20 @@ namespace Quotations_Board_Backend.Controllers
             {
                 return BadRequest(ModelState);
             }
-
+            string[] formats = { "dd/MM/yyyy", "yyyy-MM-dd", "MM/dd/yyyy", "dd-MM-yyyy", "dd/MM/yyyy HH:mm:ss", "yyyy-MM-dd HH:mm:ss", "MM/dd/yyyy HH:mm:ss", "dd-MM-yyyy HH:mm:ss" };
+            DateTime targetTradeDate;
+            bool success = DateTime.TryParseExact(uploadTradedBondValue.TradeDate, formats, CultureInfo.InvariantCulture, DateTimeStyles.None, out targetTradeDate);
+            if (!success)
+            {
+                return BadRequest("The date format is invalid");
+            }
+            var TargetTradeDate = targetTradeDate.Date;
             // check if the file is an excel file
             var UploadFile = uploadTradedBondValue.ExcelFile;
             /*if (UploadFile.ContentType != "text/csv")
             {
                 return BadRequest("The file is not an excel file");
             }*/
-            DateTime TargetTradeDate = DateTime.ParseExact(uploadTradedBondValue.TradeDate, "dd/MM/yyyy", CultureInfo.InvariantCulture);
             try
             {
                 using (var stream = new MemoryStream())
@@ -313,6 +320,146 @@ namespace Quotations_Board_Backend.Controllers
                 return StatusCode(500, UtilityService.HandleException(Ex));
             }
         }
+
+        // gets average statistics for all bonds (both traded and quoted) for a specific date
+        [HttpGet]
+        [Route("GetAverageStatistics/{For}")]
+        public async Task<ActionResult<List<BondAverageStatistic>>> GetAverageStatistics(string? For = "default")
+        {
+
+            var parsedDate = DateTime.Now;
+            // if no date is specified, use today's date
+            if (For == "default" || For == null || string.IsNullOrWhiteSpace(For))
+            {
+                parsedDate = DateTime.Now;
+            }
+            else
+            {
+                string[] formats = { "dd/MM/yyyy", "yyyy-MM-dd", "MM/dd/yyyy", "dd-MM-yyyy", "dd/MM/yyyy HH:mm:ss", "yyyy-MM-dd HH:mm:ss", "MM/dd/yyyy HH:mm:ss", "dd-MM-yyyy HH:mm:ss" };
+                DateTime targetTradeDate;
+                bool success = DateTime.TryParseExact(For, formats, CultureInfo.InvariantCulture, DateTimeStyles.None, out targetTradeDate);
+                if (!success)
+                {
+                    return BadRequest("The date format is invalid");
+                }
+                parsedDate = targetTradeDate.Date;
+            }
+
+            List<Bond> bonds = new List<Bond>();
+            List<BondAverageStatistic> bondAverageStatistics = new List<BondAverageStatistic>();
+            BondTrade? bondTrade = new BondTrade();
+            var bondStatisticsDict = new Dictionary<string, BondAverageStatistic>();
+            try
+            {
+                using (var db = new QuotationsBoardContext())
+                {
+                    db.Database.EnsureCreated();
+
+                    var _quotations = await db.Quotations
+                        .Include(x => x.Bond)
+                        .Where(q => q.CreatedAt.Date == parsedDate.Date)
+                        .ToListAsync();
+
+                    var groupedQuotations = _quotations.GroupBy(x => x.BondId);
+
+                    // get all trades for the day selected
+                    bondTrade = await db.BondTrades
+                        .Include(x => x.BondTradeLines)
+                        .Where(t => t.TradeDate.Date == parsedDate.Date)
+                        .FirstOrDefaultAsync();
+
+                    foreach (var _quote in groupedQuotations)
+                    {
+                        if (!bondStatisticsDict.TryGetValue(_quote.Key, out var bondStatistic))
+                        {
+                            bondStatistic = new BondAverageStatistic
+                            {
+                                BondId = _quote.Key,
+                            };
+                            bondStatisticsDict[_quote.Key] = bondStatistic;
+                        }
+
+                        var numberOfQuotes = _quote.Count();
+                        var totalWeightedQuotedBuyYield = _quote.Where(x => x.BuyingYield > 0).Sum(x => x.BuyingYield * x.BuyVolume);
+                        var totalWeightedQuotedSellYield = _quote.Where(x => x.SellingYield > 0).Sum(x => x.SellingYield * x.SellVolume);
+                        var totalQuotedBuyVolume = _quote.Where(x => x.BuyingYield > 0).Sum(x => x.BuyVolume);
+                        var totalQuotedSellVolume = _quote.Where(x => x.SellingYield > 0).Sum(x => x.SellVolume);
+                        var combinedQuotedYield = totalWeightedQuotedBuyYield + totalWeightedQuotedSellYield;
+                        var averageQuotedYield = combinedQuotedYield / (totalQuotedBuyVolume + totalQuotedSellVolume);
+                        var totalQuotedVolume = _quote.Sum(x => x.BuyVolume + x.SellVolume);
+                        var averageQuotedVolume = totalQuotedVolume / numberOfQuotes;
+
+                        bondStatistic.BondName = _quote.First().Bond.IssueNumber;
+                        bondStatistic.AverageWeightedQuotedYield = Math.Round(averageQuotedYield, 4, MidpointRounding.AwayFromZero);
+                        bondStatistic.QuotedVolume = totalQuotedVolume;
+                        bondStatistic.NumberofQuotes = numberOfQuotes;
+                        bondStatistic.TotalWeightedQuotedBuyYield = Math.Round(totalWeightedQuotedBuyYield, 4, MidpointRounding.AwayFromZero);
+                        bondStatistic.TotalWeightedQuotedSellYield = Math.Round(totalWeightedQuotedSellYield, 4, MidpointRounding.AwayFromZero);
+                    }
+
+                    if (bondTrade != null)
+                    {
+                        // group the BondTradeLines by BondId
+                        var bondTradeLinesGroupedByBondId = bondTrade.BondTradeLines.GroupBy(x => x.BondId);
+
+
+                        foreach (var bond_trade_line in bondTradeLinesGroupedByBondId)
+                        {
+
+                            if (!bondStatisticsDict.TryGetValue(bond_trade_line.Key, out var bondStatistic))
+                            {
+                                bondStatistic = new BondAverageStatistic
+                                {
+                                    BondId = bond_trade_line.Key,
+                                };
+                                bondStatisticsDict[bond_trade_line.Key] = bondStatistic;
+                            }
+
+                            //get related bond
+                            var bond = await db.Bonds.Where(b => b.Id == bond_trade_line.Key).FirstOrDefaultAsync();
+
+                            if (bond != null)
+                            {
+                                bondStatistic.BondName = bond.IssueNumber;
+                            }
+                            else
+                            {
+                                bondStatistic.BondName = "Bond not found";
+                            }
+
+
+                            var volTraded = bond_trade_line.Sum(x => x.ExecutedSize);
+                            var totalweightedBuyYield = bond_trade_line.Where(x => x.Side == "BUY").Sum(x => x.Yield * x.ExecutedSize);
+                            var totalweightedSellYield = bond_trade_line.Where(x => x.Side == "SELL").Sum(x => x.Yield * x.ExecutedSize);
+                            var totalBuyVolume = bond_trade_line.Where(x => x.Side == "BUY").Sum(x => x.ExecutedSize);
+                            var totalSellVolume = bond_trade_line.Where(x => x.Side == "SELL").Sum(x => x.ExecutedSize);
+                            var numberofTrades = bond_trade_line.Count();
+                            var combinedYield = totalweightedBuyYield + totalweightedSellYield;
+                            var averageYield = combinedYield / volTraded;
+                            var averageTradeVolume = volTraded / numberofTrades;
+
+                            bondStatistic.AverageWeightedTradeYield = Math.Round(averageYield, 4, MidpointRounding.AwayFromZero);
+                            bondStatistic.TradedVolume = volTraded;
+                            bondStatistic.NumberofTrades = numberofTrades;
+                            bondStatistic.TotalWeightedTradeBuyYield = Math.Round(totalweightedBuyYield, 4, MidpointRounding.AwayFromZero);
+                            bondStatistic.TotalWeightedTradeSellYield = Math.Round(totalweightedSellYield, 4, MidpointRounding.AwayFromZero);
+
+                        }
+                    }
+
+                    bondAverageStatistics = bondStatisticsDict.Values.ToList();
+                    return Ok(bondAverageStatistics);
+                }
+            }
+            catch (Exception Ex)
+            {
+                UtilityService.LogException(Ex);
+                return StatusCode(500, UtilityService.HandleException(Ex));
+            }
+
+
+        }
+
         private string TransformSecurityId(string excelSecurityId)
         {
             try
