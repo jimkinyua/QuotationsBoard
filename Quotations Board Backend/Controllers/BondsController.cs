@@ -193,13 +193,15 @@ namespace Quotations_Board_Backend.Controllers
                         var averageQuotedYield = combinedQuotedYield / (totalQuotedBuyVolume + totalQuotedSellVolume);
                         var totalQuotedVolume = _quote.Sum(x => x.BuyVolume + x.SellVolume);
                         var averageQuotedVolume = totalQuotedVolume / numberOfQuotes;
+                        var averageQuotedBuyVolume = totalQuotedBuyVolume / numberOfQuotes;
+                        var averageQuotedSellVolume = totalQuotedSellVolume / numberOfQuotes;
 
                         bondStatistic.BondName = _quote.First().Bond.IssueNumber;
                         bondStatistic.AverageWeightedQuotedYield = Math.Round(averageQuotedYield, 4, MidpointRounding.AwayFromZero);
                         bondStatistic.QuotedVolume = totalQuotedVolume;
                         bondStatistic.NumberofQuotes = numberOfQuotes;
-                        bondStatistic.TotalWeightedQuotedBuyYield = Math.Round(totalWeightedQuotedBuyYield, 4, MidpointRounding.AwayFromZero);
-                        bondStatistic.TotalWeightedQuotedSellYield = Math.Round(totalWeightedQuotedSellYield, 4, MidpointRounding.AwayFromZero);
+                        // bondStatistic.TotalWeightedQuotedBuyYield = Math.Round(totalWeightedQuotedBuyYield, 4, MidpointRounding.AwayFromZero);
+                        // bondStatistic.TotalWeightedQuotedSellYield = Math.Round(totalWeightedQuotedSellYield, 4, MidpointRounding.AwayFromZero);
                     }
 
                     var bondTrade = await db.BondTrades
@@ -251,8 +253,8 @@ namespace Quotations_Board_Backend.Controllers
                             bondStatistic.AverageWeightedTradeYield = Math.Round(averageYield, 4, MidpointRounding.AwayFromZero);
                             bondStatistic.TradedVolume = volTraded;
                             bondStatistic.NumberofTrades = numberofTrades;
-                            bondStatistic.TotalWeightedTradeBuyYield = Math.Round(totalweightedBuyYield, 4, MidpointRounding.AwayFromZero);
-                            bondStatistic.TotalWeightedTradeSellYield = Math.Round(totalweightedSellYield, 4, MidpointRounding.AwayFromZero);
+                            // bondStatistic.TotalWeightedTradeBuyYield = Math.Round(totalweightedBuyYield, 4, MidpointRounding.AwayFromZero);
+                            // bondStatistic.TotalWeightedTradeSellYield = Math.Round(totalweightedSellYield, 4, MidpointRounding.AwayFromZero);
 
                         }
 
