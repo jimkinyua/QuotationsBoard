@@ -14,7 +14,7 @@ namespace Quotations_Board_Backend.Controllers
         // handle upload of ecel file with the traded bonds
         [HttpPost]
         [Route("UploadTradedBondsValues")]
-        public async Task<IActionResult> UploadTradedBondsValues([FromForm] UploadTradedBondValue uploadTradedBondValue)
+        public async Task<ActionResult<UploadedBondTrade>> UploadTradedBondsValues([FromForm] UploadTradedBondValue uploadTradedBondValue)
         {
             if (!ModelState.IsValid)
             {
@@ -191,11 +191,13 @@ namespace Quotations_Board_Backend.Controllers
         // gets a list of all uploaded and confirmed Bond Trades
         [HttpGet]
         [Route("GetConfirmedBondTrades/{For}")]
-        public async Task<ActionResult<List<UploadedBondTrade>>> GetConfirmedBondTrades(string? For = "default")
+        public async Task<ActionResult<UploadedBondTrade>> GetConfirmedBondTrades(string? For = "default")
         {
 
-            List<BondTrade> uploadedTrades = new List<BondTrade>();
-            List<UploadedTradeBond> uploadedTradesDTO = new List<UploadedTradeBond>();
+
+            BondTrade? uploadedTrade = new BondTrade();
+            UploadedBondTrade uploadedTradesDTO = new UploadedBondTrade();
+            var parsedDate = DateTime.Now;
             try
             {
                 using (var db = new QuotationsBoardContext())
@@ -203,35 +205,51 @@ namespace Quotations_Board_Backend.Controllers
                     db.Database.EnsureCreated();
                     if (For == "default" || For == null || string.IsNullOrWhiteSpace(For))
                     {
-                        uploadedTrades = await db.BondTrades.ToListAsync();
-                        foreach (var trade in uploadedTrades)
-                        {
-
-                            uploadedTradesDTO.Add(new UploadedTradeBond
-                            {
-                                Id = trade.Id,
-                                UploadedBy = trade.UploadedBy,
-                                UploadedOn = trade.UploadedOn,
-                                TradeDate = trade.TradeDate,
-                            });
-                        }
+                        parsedDate = DateTime.Now;
                     }
                     else
                     {
-                        var parsedDate = DateTime.ParseExact(For, "dd/MM/yyyy", CultureInfo.InvariantCulture);
-                        uploadedTrades = await db.BondTrades.Where(t => t.TradeDate == parsedDate).ToListAsync();
-                        foreach (var trade in uploadedTrades)
-                        {
 
-                            uploadedTradesDTO.Add(new UploadedTradeBond
+                        string[] formats = { "dd/MM/yyyy", "yyyy-MM-dd", "MM/dd/yyyy", "dd-MM-yyyy", "dd/MM/yyyy HH:mm:ss", "yyyy-MM-dd HH:mm:ss", "MM/dd/yyyy HH:mm:ss", "dd-MM-yyyy HH:mm:ss" };
+                        DateTime targetTradeDate;
+                        bool success = DateTime.TryParseExact(For, formats, CultureInfo.InvariantCulture, DateTimeStyles.None, out targetTradeDate);
+                        if (!success)
+                        {
+                            return BadRequest("The date format is invalid");
+                        }
+                        parsedDate = targetTradeDate.Date;
+                    }
+
+                    uploadedTrade = await db.BondTrades
+                        .Include(x => x.BondTradeLines)
+                        .Where(t => t.TradeDate.Date == parsedDate.Date)
+                        .FirstOrDefaultAsync();
+
+                    if (uploadedTrade != null)
+                    {
+                        uploadedTradesDTO.Id = uploadedTrade.Id;
+                        uploadedTradesDTO.UploadedAt = uploadedTrade.UploadedOn;
+                        uploadedTradesDTO.UploadedBy = uploadedTrade.UploadedBy;
+                        uploadedTradesDTO.UploadedBondTradeLineDTO = new List<UploadedBondTradeLineDTO>();
+                        foreach (var trade in uploadedTrade.BondTradeLines)
+                        {
+                            uploadedTradesDTO.UploadedBondTradeLineDTO.Add(new UploadedBondTradeLineDTO
                             {
                                 Id = trade.Id,
-                                UploadedBy = trade.UploadedBy,
-                                UploadedOn = trade.UploadedOn,
-                                TradeDate = trade.TradeDate,
+                                GorvermentBondTradeStageId = trade.BondTradeId,
+                                Side = trade.Side,
+                                SecurityId = trade.SecurityId,
+                                ExecutedSize = trade.ExecutedSize,
+                                ExcecutedPrice = trade.ExcecutedPrice,
+                                ExecutionID = trade.ExecutionID,
+                                TransactionTime = trade.TransactionTime,
+                                DirtyPrice = trade.DirtyPrice,
+                                Yield = trade.Yield,
+                                TradeDate = trade.TransactionTime
                             });
                         }
                     }
+
                     return Ok(uploadedTradesDTO);
                 }
             }
