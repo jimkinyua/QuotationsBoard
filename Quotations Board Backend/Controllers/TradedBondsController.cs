@@ -188,6 +188,77 @@ namespace Quotations_Board_Backend.Controllers
             }
         }
 
+        // Allows user to add a a single trade to the main table without having to upload an excel file
+        [HttpPost]
+        [Route("AddSingleTrade")]
+        public async Task<IActionResult> AddSingleTrade([FromBody] AddSingleTrade addSingleTrade)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            try
+            {
+                using (var db = new QuotationsBoardContext())
+                {
+                    db.Database.EnsureCreated();
+                    var targetedDate = addSingleTrade.TradeDate;
+                    // Any Trades that been uploaded for this date? Only one should be uploaded
+                    var trades = await db.BondTrades.Where(t => t.TradeDate == targetedDate).ToListAsync();
+                    if (trades.Any())
+                    {
+                        return BadRequest("The trades for this date have already been uploaded");
+                    }
+
+                    // create a new bond trade
+                    BondTrade bondTrade = new BondTrade
+                    {
+                        UploadedBy = "Admin",
+                        UploadedOn = DateTime.Now,
+                        TradeDate = targetedDate
+                    };
+
+                    db.BondTrades.Add(bondTrade);
+
+                    // Loop the GorvermentBondTradeLineStage if any and add them to the BondTradeLine
+                    foreach (var trade in addSingleTrade.Trades)
+                    {
+                        // ensure the bond exists
+                        var bond = await db.Bonds.Where(b => b.IssueNumber == trade.BondId).FirstOrDefaultAsync();
+                        if (bond == null)
+                        {
+                            return BadRequest($"The bond with bond id {trade.BondId} does not exist");
+                        }
+                        BondTradeLine bondTradeLine = new BondTradeLine
+                        {
+                            BondTradeId = bondTrade.Id,
+                            Side = trade.Side,
+                            SecurityId = bond.IssueNumber,
+                            ExecutedSize = trade.ExecutedSize,
+                            ExcecutedPrice = trade.ExcecutedPrice,
+                            ExecutionID = trade.ExecutionID,
+                            TransactionTime = trade.TransactionTime,
+                            DirtyPrice = trade.DirtyPrice,
+                            Yield = trade.Yield,
+                            BondId = bond.Id
+                        };
+                        db.BondTradeLines.Add(bondTradeLine);
+                    }
+
+                    await db.SaveChangesAsync();
+
+                    return Ok(bondTrade);
+                }
+            }
+            catch (Exception Ex)
+            {
+                UtilityService.LogException(Ex);
+                return StatusCode(500, UtilityService.HandleException(Ex));
+
+            }
+        }
+
         // gets a list of all uploaded and confirmed Bond Trades
         [HttpGet]
         [Route("GetConfirmedBondTrades/{For}")]
