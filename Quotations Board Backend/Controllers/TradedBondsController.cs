@@ -533,7 +533,7 @@ namespace Quotations_Board_Backend.Controllers
                             var averageWeightedBuyYield = totalBuyExecutedVolume > 0 ? totalWeightedBuyYield / totalBuyExecutedVolume : 0;
                             var averageWeightedSellYield = totalSellExecutedVolume > 0 ? totalWeightedSellYield / totalSellExecutedVolume : 0;
 
-                            bondStatistic.AverageWeightedTradeYield = Math.Round(totalCombinedWeightedYield, 4, MidpointRounding.AwayFromZero);
+                            bondStatistic.AverageWeightedTradeYield = Math.Round(averageCombinedYield, 4, MidpointRounding.AwayFromZero);
                             bondStatistic.TradedVolume = totalExecutedVolume;
                             bondStatistic.NumberofTrades = totalTradeCount;
                             bondStatistic.WeightedTradeBuyYield = Math.Round(averageWeightedBuyYield, 4, MidpointRounding.AwayFromZero);
