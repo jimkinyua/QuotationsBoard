@@ -232,7 +232,10 @@ namespace Quotations_Board_Backend.Controllers
                         var totalSellingYield = quoteinfos.Sum(x => x.TotalSellYield);
                         var averageBuyYield = quoteinfos.Average(x => x.TotalBuyYield);
                         var averageSellYield = quoteinfos.Average(x => x.TotalSellYield);
-                        var averageYield = quoteinfos.Average(x => (x.TotalBuyYield + x.TotalSellYield) / 2);
+                        var weightedSellingYield = quoteinfos.Sum(x => x.TotalSellYield * x.TotalSellVolume) / quoteinfos.Sum(x => x.TotalSellVolume);
+                        var weightedBuyingYield = quoteinfos.Sum(x => x.TotalBuyYield * x.TotalBuyVolume) / quoteinfos.Sum(x => x.TotalBuyVolume);
+                        var averageWeightedYield = (weightedBuyingYield + weightedSellingYield) / 2;
+                        var averageYield = averageWeightedYield; //quoteinfos.Average(x => (x.TotalBuyYield + x.TotalSellYield) / 2);
 
                         QuoteStatistic quoteStatistic = new QuoteStatistic
                         {
@@ -471,6 +474,9 @@ namespace Quotations_Board_Backend.Controllers
                          (g => new
                          {
                              BondId = g.Key,
+                             WeightedAverageBuyYield = g.Sum(q => q.BuyingYield * q.BuyVolume) / g.Sum(q => q.BuyVolume),
+                             WeightedAverageSellYield = g.Sum(q => q.SellingYield * q.SellVolume) / g.Sum(q => q.SellVolume),
+                             AverageWeightedYield = (g.Sum(q => q.BuyingYield * q.BuyVolume) / g.Sum(q => q.BuyVolume) + g.Sum(q => q.SellingYield * q.SellVolume) / g.Sum(q => q.SellVolume)) / 2,
                              AverageBuyYield = g.Average(q => q.BuyingYield),
                              AverageSellYield = g.Average(q => q.SellingYield),
                              TotalQuotations = g.Count(),
@@ -498,7 +504,7 @@ namespace Quotations_Board_Backend.Controllers
                             TotalBuyYield = quotation.TotalBuyYield,
                             TotalSellVolume = quotation.TotalSellVolume,
                             TotalSellYield = quotation.TotalSellYield,
-                            AverageYield = (quotation.AverageSellYield + quotation.AverageBuyYield),
+                            AverageYield = quotation.AverageWeightedYield,//(quotation.AverageSellYield + quotation.AverageBuyYield),
                             AverageVolume = (quotation.TotalBuyVolume + quotation.TotalSellVolume) / 2,
                             Id = quotation.BondId,
                         };
@@ -600,6 +606,9 @@ namespace Quotations_Board_Backend.Controllers
                          (g => new
                          {
                              BondId = g.Key,
+                             WeightedAverageBuyYield = g.Sum(q => q.BuyingYield * q.BuyVolume) / g.Sum(q => q.BuyVolume),
+                             WeightedAverageSellYield = g.Sum(q => q.SellingYield * q.SellVolume) / g.Sum(q => q.SellVolume),
+                             AverageWeightedYield = (g.Sum(q => q.BuyingYield * q.BuyVolume) / g.Sum(q => q.BuyVolume) + g.Sum(q => q.SellingYield * q.SellVolume) / g.Sum(q => q.SellVolume)) / 2,
                              AverageBuyYield = g.Average(q => q.BuyingYield),
                              AverageSellYield = g.Average(q => q.SellingYield),
                              TotalQuotations = g.Count(),
@@ -626,9 +635,9 @@ namespace Quotations_Board_Backend.Controllers
                             BondId = quotation.BondId,
                             BondIsin = bd.Isin,
                             IssueNumber = bd.IssueNumber,
-                            AverageBuyYield = quotation.AverageBuyYield,
-                            AverageSellYield = quotation.AverageSellYield,
-                            AverageYield = quotation.CombinedAverageYield,
+                            AverageBuyYield = quotation.WeightedAverageBuyYield,
+                            AverageSellYield = quotation.WeightedAverageSellYield,
+                            AverageYield = quotation.AverageWeightedYield, // quotation.CombinedAverageYield,
                             AverageVolume = quotation.AverageVolume,
                             AverageSellVolume = quotation.AverageSellVolume,
                             AverageBuyVolume = quotation.AverageBuyVolume,
@@ -747,15 +756,18 @@ namespace Quotations_Board_Backend.Controllers
 
                         var totalBuyingYield = quoteinfos.Sum(x => x.TotalBuyYield);
                         var totalSellingYield = quoteinfos.Sum(x => x.TotalSellYield);
+                        var weightedBuyingYield = quoteinfos.Sum(x => x.TotalBuyYield * x.TotalBuyVolume) / quoteinfos.Sum(x => x.TotalBuyVolume);
+                        var weightedSellingYield = quoteinfos.Sum(x => x.TotalSellYield * x.TotalSellVolume) / quoteinfos.Sum(x => x.TotalSellVolume);
+                        var averageWeightedYield = (weightedBuyingYield + weightedSellingYield) / 2;
                         var averageBuyYield = quoteinfos.Average(x => x.TotalBuyYield);
                         var averageSellYield = quoteinfos.Average(x => x.TotalSellYield);
                         var averageYield = quoteinfos.Average(x => (x.TotalBuyYield + x.TotalSellYield) / 2);
 
                         QuoteStatistic quoteStatistic = new QuoteStatistic
                         {
-                            AverageBuyYield = averageBuyYield,
-                            AverageSellYield = averageSellYield,
-                            AverageYield = averageYield,
+                            AverageBuyYield = weightedBuyingYield,
+                            AverageSellYield = weightedSellingYield,
+                            AverageYield = averageWeightedYield, //averageYield,
                             TotalBuyingYield = totalBuyingYield,
                             TotalSellingYield = totalSellingYield,
                             TotalQuotations = quoteinfos.Count,
@@ -880,15 +892,18 @@ namespace Quotations_Board_Backend.Controllers
                     {
                         var totalBuyingYield = quoteinfos.Sum(x => x.TotalBuyYield);
                         var totalSellingYield = quoteinfos.Sum(x => x.TotalSellYield);
+                        var weightedBuyingYield = quoteinfos.Sum(x => x.TotalBuyYield * x.TotalBuyVolume) / quoteinfos.Sum(x => x.TotalBuyVolume);
+                        var weightedSellingYield = quoteinfos.Sum(x => x.TotalSellYield * x.TotalSellVolume) / quoteinfos.Sum(x => x.TotalSellVolume);
+                        var averageWeightedYield = (weightedBuyingYield + weightedSellingYield) / 2;
                         var averageBuyYield = quoteinfos.Average(x => x.TotalBuyYield);
                         var averageSellYield = quoteinfos.Average(x => x.TotalSellYield);
                         var averageYield = quoteinfos.Average(x => (x.TotalBuyYield + x.TotalSellYield) / 2);
 
                         QuoteStatistic quoteStatistic = new QuoteStatistic
                         {
-                            AverageBuyYield = averageBuyYield,
-                            AverageSellYield = averageSellYield,
-                            AverageYield = averageYield,
+                            AverageBuyYield = weightedBuyingYield, //averageBuyYield,
+                            AverageSellYield = weightedSellingYield, //averageSellYield,
+                            AverageYield = averageWeightedYield, //averageYield,
                             TotalBuyingYield = totalBuyingYield,
                             TotalSellingYield = totalSellingYield,
                             TotalQuotations = quoteinfos.Count,

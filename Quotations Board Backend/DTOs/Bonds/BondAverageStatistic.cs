@@ -8,9 +8,9 @@ public class BondAverageStatistic
     public decimal QuotedVolume { get; set; }
     public decimal NumberofTrades { get; set; }
     public decimal NumberofQuotes { get; set; }
-    public decimal TotalWeightedTradeBuyYield { get; set; }
-    public decimal TotalWeightedTradeSellYield { get; set; }
-    public decimal TotalWeightedQuotedBuyYield { get; set; }
-    public decimal TotalWeightedQuotedSellYield { get; set; }
+    public decimal WeightedTradeBuyYield { get; set; }
+    public decimal WeightedTradeSellYield { get; set; }
+    public decimal WeightedQuotedBuyYield { get; set; }
+    public decimal WeightedQuotedSellYield { get; set; }
 
 }
