@@ -271,11 +271,99 @@ namespace Quotations_Board_Backend.Controllers
                 UtilityService.LogException(Ex);
                 return StatusCode(500, UtilityService.HandleException(Ex));
             }
-
-
-
         }
 
+        // Fetches the Implied yields for all bonds for a given date
+        [HttpGet("GetImpliedYieldsForAllBonds/{ForDate}")]
+        public async Task<ActionResult<IEnumerable<BondImpliedYield>>> GetImpliedYieldsForAllBonds(string ForDate)
+        {
+            var parsedDate = DateTime.Now;
+            IEnumerable<BondImpliedYield> bondImpliedYields = new List<BondImpliedYield>();
+            // if no date is specified, use today's date
+            if (ForDate == "default" || ForDate == null || string.IsNullOrWhiteSpace(ForDate))
+            {
+                parsedDate = DateTime.Now;
+            }
+            else
+            {
+                string[] formats = { "dd/MM/yyyy", "yyyy-MM-dd", "MM/dd/yyyy", "dd-MM-yyyy", "dd/MM/yyyy HH:mm:ss", "yyyy-MM-dd HH:mm:ss", "MM/dd/yyyy HH:mm:ss", "dd-MM-yyyy HH:mm:ss" };
+                DateTime targetTradeDate;
+                bool success = DateTime.TryParseExact(ForDate, formats, CultureInfo.InvariantCulture, DateTimeStyles.None, out targetTradeDate);
+                if (!success)
+                {
+                    return BadRequest("The date format is invalid");
+                }
+                parsedDate = targetTradeDate.Date;
+            }
+            try
+            {
+                using (var db = new QuotationsBoardContext())
+                {
+                    var _impliedYields = await db.ImpliedYields
+                       .Include(x => x.Bond)
+                       .Where(q => q.YieldDate.Date == parsedDate.Date)
+                       .ToListAsync();
 
+                    bondImpliedYields = _impliedYields.Select(x => new BondImpliedYield
+                    {
+                        BondId = x.BondId,
+                        Yield = x.Yield,
+                        YieldDate = x.YieldDate,
+                        IssueNumber = x.Bond.IssueNumber
+                    });
+
+                    return Ok(bondImpliedYields);
+                }
+            }
+            catch (Exception Ex)
+            {
+                UtilityService.LogException(Ex);
+                return StatusCode(500, UtilityService.HandleException(Ex));
+            }
+        }
+
+        // Allows user to Add Implied Yields for a given bond and date
+        [HttpPost("AddImpliedYield")]
+        public async Task<IActionResult> AddImpliedYield(AddImpliedYieldDTO impliedYield)
+        {
+            // Model is valid?
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            try
+            {
+                // Ensure Bond exists
+                var bond = await _context.Bonds.FindAsync(impliedYield.BondId);
+                if (bond == null)
+                {
+                    return BadRequest("Bond with this Id does not exist");
+                }
+
+                // Ensure Implied Yield does not exist for the specified bond and date
+                var impliedYieldExists = await _context.ImpliedYields.AnyAsync(i => i.BondId == impliedYield.BondId && i.YieldDate.Date == impliedYield.YieldDate.Date);
+                if (impliedYieldExists)
+                {
+                    return BadRequest("Implied Yield for this bond and date already exists");
+                }
+
+                ImpliedYield impliedYieldModel = new ImpliedYield
+                {
+                    BondId = impliedYield.BondId,
+                    Yield = impliedYield.Yield,
+                    YieldDate = impliedYield.YieldDate
+                };
+
+                _context.ImpliedYields.Add(impliedYieldModel);
+                await _context.SaveChangesAsync();
+                return Ok();
+            }
+            catch (System.Exception)
+            {
+
+                throw;
+            }
+        }
     }
 }
