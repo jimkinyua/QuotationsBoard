@@ -275,7 +275,7 @@ namespace Quotations_Board_Backend.Controllers
 
         // Fetches the Implied yields for all bonds for a given date
         [HttpGet("GetImpliedYieldsForAllBonds/{ForDate}")]
-        public async Task<ActionResult<IEnumerable<BondImpliedYield>>> GetImpliedYieldsForAllBonds(string ForDate)
+        public async Task<ActionResult<IEnumerable<BondImpliedYield>>> GetImpliedYieldsForAllBonds(string? ForDate = "default")
         {
             var parsedDate = DateTime.Now;
             IEnumerable<BondImpliedYield> bondImpliedYields = new List<BondImpliedYield>();
