@@ -14,5 +14,6 @@ public class Bond
     public decimal CouponRate { get; set; }
     public string BondType { get; set; } = null!;
     public string IssueNumber { get; set; } = null!;
-    public ICollection<Quotation> Quotations { get; set; } = null!;
+    public virtual ICollection<Quotation> Quotations { get; set; } = null!;
+    public virtual ICollection<ImpliedYield> ImpliedYields { get; set; } = null!;
 }
