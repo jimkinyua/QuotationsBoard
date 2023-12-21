@@ -117,7 +117,7 @@ namespace Quotations_Board_Backend.Controllers
         [HttpGet("GetAllTbills")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public async Task<ActionResult> GetAllTbills()
+        public async Task<ActionResult<List<TBillDTO>>> GetAllTbills()
         {
             try
             {
