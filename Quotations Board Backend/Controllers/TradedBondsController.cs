@@ -480,7 +480,8 @@ namespace Quotations_Board_Backend.Controllers
                         var averageWeightedSellYield = totalSellVolumeForPositiveYield > 0 ? totalWeightedSellYield / totalSellVolumeForPositiveYield : 0;
                         var averageWeightedBuyYield = totalBuyVolumeForPositiveYield > 0 ? totalWeightedBuyYield / totalBuyVolumeForPositiveYield : 0;
 
-                        var averageTotalWeightedYield = totalCombinedVolume > 0 ? (totalWeightedBuyYield + totalWeightedSellYield) / totalCombinedVolume : 0;
+                        // var averageTotalWeightedYield = totalCombinedVolume > 0 ? (totalWeightedBuyYield + totalWeightedSellYield) / totalCombinedVolume : 0;
+                        var averageTotalWeightedYield = (averageWeightedSellYield + averageWeightedBuyYield) / 2;
 
                         bondStatistic.BondName = _quote.First().Bond.IssueNumber;
                         bondStatistic.AverageWeightedQuotedYield = Math.Round(averageTotalWeightedYield, 4, MidpointRounding.AwayFromZero);
