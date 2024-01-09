@@ -66,6 +66,15 @@ namespace Quotations_Board_Backend.Controllers
                     }
 
                     var result = await _signInManager.PasswordSignInAsync(user, login.Password, false, false);
+                    if (result.RequiresTwoFactor)
+                    {
+                        var token = await _userManager.GenerateTwoFactorTokenAsync(user, "Email");
+                        var subject = "Your Login Code";
+                        var body = $"Your Login Code is: {token}";
+                        await UtilityService.SendEmailAsync(user.Email, subject, body);
+                        return Ok("Please check your email for a two factor login code.");
+
+                    }
                     if (result.Succeeded)
                     {
                         LoginTokenDTO loginTokenDTO = new LoginTokenDTO();
@@ -159,6 +168,103 @@ namespace Quotations_Board_Backend.Controllers
                     var adminBody = $"Please reset your password by <a href='{HtmlEncoder.Default.Encode(callbackUrl)}'>clicking here</a>.";
                     await UtilityService.SendEmailAsync(user.Email, adminSubject, adminBody);
                     return Ok("Please check your email for a password reset link.");
+                }
+            }
+            catch (Exception Ex)
+            {
+                UtilityService.LogException(Ex);
+                return StatusCode(500, UtilityService.HandleException(Ex));
+            }
+        }
+
+        // Vaidate 2FA Token and Login
+        [AllowAnonymous]
+        [HttpPost("TwoFactorLogin")]
+        public async Task<IActionResult> TwoFactorLogin(TwoFactorLoginDTO twoFactorLoginDTO)
+        {
+            try
+            {
+                if (!ModelState.IsValid)
+                {
+                    return BadRequest(ModelState);
+                }
+                using (var context = new QuotationsBoardContext())
+                {
+                    PortalUser? user = await context.Users.FirstOrDefaultAsync(x => x.Email == twoFactorLoginDTO.Email);
+                    if (user == null)
+                    {
+                        return BadRequest("Seems like you provided an invalid login attempt.");
+                    }
+                    var result = await _signInManager.TwoFactorSignInAsync("Email", twoFactorLoginDTO.TwoFactorCode, false, false);
+                    if (result.Succeeded)
+                    {
+                        LoginTokenDTO loginTokenDTO = new LoginTokenDTO();
+                        var roles = await _userManager.GetRolesAsync(user);
+                        if (roles.Contains(CustomRoles.SuperAdmin))
+                        {
+                            loginTokenDTO.IsSuperAdmin = true;
+                            loginTokenDTO.Role = CustomRoles.SuperAdmin;
+                            loginTokenDTO.InstitutionId = "0";
+                            loginTokenDTO.InstitutionName = "Agile Business Solutions";
+                            loginTokenDTO.Name = user.FirstName + " " + user.LastName;
+                            loginTokenDTO.Email = user.Email;
+                        }
+                        else if (roles.Contains(CustomRoles.InstitutionAdmin))
+                        {
+                            loginTokenDTO.Role = CustomRoles.InstitutionAdmin;
+                            loginTokenDTO.InstitutionId = user.InstitutionId;
+                            loginTokenDTO.InstitutionName = user.Institution.OrganizationName;
+                            loginTokenDTO.Name = user.FirstName + " " + user.LastName;
+                            loginTokenDTO.Email = user.Email;
+                        }
+                        else if (roles.Contains(CustomRoles.Dealer))
+                        {
+                            loginTokenDTO.IsSuperAdmin = false;
+                            loginTokenDTO.Role = CustomRoles.Dealer;
+                            loginTokenDTO.InstitutionId = user.InstitutionId;
+                            loginTokenDTO.InstitutionName = user.Institution.OrganizationName;
+                            loginTokenDTO.Name = user.FirstName + " " + user.LastName;
+                            loginTokenDTO.Email = user.Email;
+                        }
+                        else if (roles.Contains(CustomRoles.ChiefDealer))
+                        {
+                            loginTokenDTO.IsSuperAdmin = false;
+                            loginTokenDTO.Role = CustomRoles.ChiefDealer;
+                            loginTokenDTO.InstitutionId = user.InstitutionId;
+                            loginTokenDTO.InstitutionName = user.Institution.OrganizationName;
+                            loginTokenDTO.Name = user.FirstName + " " + user.LastName;
+                            loginTokenDTO.Email = user.Email;
+                        }
+                        else
+                        {
+                            return BadRequest("Invalid login attempt. No Role");
+                        }
+
+                        var claims = new List<Claim>
+                        {
+                            new Claim(ClaimTypes.NameIdentifier, user.Id),
+                            new Claim(ClaimTypes.Email, user.Email),
+                            new Claim(ClaimTypes.Role, string.Join(",", roles)),
+                            new Claim("InstitutionId", user.InstitutionId),
+                            new Claim("InstitutionName", user.Institution.OrganizationName),
+                            new Claim("IsSuperAdmin", loginTokenDTO.IsSuperAdmin.ToString())
+                        };
+                        JwtSecurityToken jwtSecurityToken = UtilityService.GenerateToken(claims);
+                        loginTokenDTO.token = new JwtSecurityTokenHandler().WriteToken(jwtSecurityToken);
+                        return Ok(loginTokenDTO);
+                    }
+
+                    if (result.IsLockedOut)
+                    {
+                        return BadRequest("Your account is locked out. Please try again later.");
+                    }
+
+                    if (result.IsNotAllowed)
+                    {
+                        return BadRequest("Seems like you are not allowed to login. Please contact your administrator.");
+                    }
+
+                    return BadRequest("Invalid login attempt.");
                 }
             }
             catch (Exception Ex)
