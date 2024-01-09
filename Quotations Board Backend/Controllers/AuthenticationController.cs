@@ -55,9 +55,9 @@ namespace Quotations_Board_Backend.Controllers
                     }
                     if (!await _userManager.IsEmailConfirmedAsync(user))
                     {
-                        var token = await _userManager.GenerateEmailConfirmationTokenAsync(user);
+                        var token1 = await _userManager.GenerateEmailConfirmationTokenAsync(user);
                         var encodedUserId = HttpUtility.UrlEncode(user.Id);
-                        var encodedCode = HttpUtility.UrlEncode(token);
+                        var encodedCode = HttpUtility.UrlEncode(token1);
                         var callbackUrl = $"{_configuration["FrontEndUrl"]}/complete-institution-setup?userId={encodedUserId}&code={encodedCode}";
                         var adminSubject = "Confirm your email (Resend)";
                         var adminBody = $"Please confirm your account by <a href='{HtmlEncoder.Default.Encode(callbackUrl)}'>clicking here</a>.";
@@ -66,16 +66,16 @@ namespace Quotations_Board_Backend.Controllers
                     }
 
                     var result = await _signInManager.PasswordSignInAsync(user, login.Password, false, false);
-                    if (result.RequiresTwoFactor)
-                    {
+                    /*if (result.RequiresTwoFactor)
+                    {*/
                         var token = await _userManager.GenerateTwoFactorTokenAsync(user, "Email");
                         var subject = "Your Login Code";
                         var body = $"Your Login Code is: {token}";
                         await UtilityService.SendEmailAsync(user.Email, subject, body);
                         return Ok("Please check your email for a two factor login code.");
 
-                    }
-                    if (result.Succeeded)
+                    /*}*/
+           /*         if (result.Succeeded)
                     {
                         LoginTokenDTO loginTokenDTO = new LoginTokenDTO();
                         var roles = await _userManager.GetRolesAsync(user);
@@ -131,7 +131,7 @@ namespace Quotations_Board_Backend.Controllers
                         JwtSecurityToken jwtSecurityToken = UtilityService.GenerateToken(claims);
                         loginTokenDTO.token = new JwtSecurityTokenHandler().WriteToken(jwtSecurityToken);
                         return Ok(loginTokenDTO);
-                    }
+                    }*/
                     return BadRequest("Invalid login attempt. Pass Wong");
                 }
             }
