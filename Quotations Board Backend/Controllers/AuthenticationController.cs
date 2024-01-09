@@ -71,6 +71,8 @@ namespace Quotations_Board_Backend.Controllers
                     {
                         return BadRequest("Invalid login attempt. Pass Wrong");
                     }
+                    // get role of current user. If SuperAdmin No Need for 2FA. Just return token
+                    var roles = await _userManager.GetRolesAsync(user);
                     var TwoFactor = await _userManager.GetTwoFactorEnabledAsync(user);
                     if (TwoFactor)
                     {
@@ -80,64 +82,59 @@ namespace Quotations_Board_Backend.Controllers
                         await UtilityService.SendEmailAsync(user.Email, subject, body);
                         return Ok("Please check your email for a two factor login code.");
                     }
-                    // if (result.Succeeded)
-                    // {
-                    //     LoginTokenDTO loginTokenDTO = new LoginTokenDTO();
-                    //     var roles = await _userManager.GetRolesAsync(user);
-                    //     if (roles.Contains(CustomRoles.SuperAdmin))
-                    //     {
-                    //         loginTokenDTO.IsSuperAdmin = true;
-                    //         loginTokenDTO.Role = CustomRoles.SuperAdmin;
-                    //         loginTokenDTO.InstitutionId = "0";
-                    //         loginTokenDTO.InstitutionName = "Agile Business Solutions";
-                    //         loginTokenDTO.Name = user.FirstName + " " + user.LastName;
-                    //         loginTokenDTO.Email = user.Email;
-                    //     }
-                    //     else if (roles.Contains(CustomRoles.InstitutionAdmin))
-                    //     {
-                    //         loginTokenDTO.Role = CustomRoles.InstitutionAdmin;
-                    //         loginTokenDTO.InstitutionId = institution.Id;
-                    //         loginTokenDTO.InstitutionName = institution.OrganizationName;
-                    //         loginTokenDTO.Name = user.FirstName + " " + user.LastName;
-                    //         loginTokenDTO.Email = user.Email;
-                    //     }
-                    //     else if (roles.Contains(CustomRoles.Dealer))
-                    //     {
-                    //         loginTokenDTO.IsSuperAdmin = false;
-                    //         loginTokenDTO.Role = CustomRoles.Dealer;
-                    //         loginTokenDTO.InstitutionId = institution.Id;
-                    //         loginTokenDTO.InstitutionName = institution.OrganizationName;
-                    //         loginTokenDTO.Name = user.FirstName + " " + user.LastName;
-                    //         loginTokenDTO.Email = user.Email;
-                    //     }
-                    //     else if (roles.Contains(CustomRoles.ChiefDealer))
-                    //     {
-                    //         loginTokenDTO.IsSuperAdmin = false;
-                    //         loginTokenDTO.Role = CustomRoles.ChiefDealer;
-                    //         loginTokenDTO.InstitutionId = institution.Id;
-                    //         loginTokenDTO.InstitutionName = institution.OrganizationName;
-                    //         loginTokenDTO.Name = user.FirstName + " " + user.LastName;
-                    //         loginTokenDTO.Email = user.Email;
-                    //     }
-                    //     else
-                    //     {
-                    //         return BadRequest("Invalid login attempt. No Role");
-                    //     }
 
-                    //     var claims = new List<Claim>
-                    //              {
-                    //                  new Claim(ClaimTypes.NameIdentifier, user.Id),
-                    //                  new Claim(ClaimTypes.Email, user.Email),
-                    //                  new Claim(ClaimTypes.Role, string.Join(",", roles)),
-                    //                  new Claim("InstitutionId", institution.Id),
-                    //                  new Claim("InstitutionName", institution.OrganizationName),
-                    //                  new Claim("IsSuperAdmin", loginTokenDTO.IsSuperAdmin.ToString())
-                    //              };
-                    //     JwtSecurityToken jwtSecurityToken = UtilityService.GenerateToken(claims);
-                    //     loginTokenDTO.token = new JwtSecurityTokenHandler().WriteToken(jwtSecurityToken);
-                    //     return Ok(loginTokenDTO);
-                    // }
-                    return BadRequest("Invalid login attempt. Pass Wrong");
+                    LoginTokenDTO loginTokenDTO = new LoginTokenDTO();
+                    if (roles.Contains(CustomRoles.SuperAdmin))
+                    {
+                        loginTokenDTO.IsSuperAdmin = true;
+                        loginTokenDTO.Role = CustomRoles.SuperAdmin;
+                        loginTokenDTO.InstitutionId = "0";
+                        loginTokenDTO.InstitutionName = "Agile Business Solutions";
+                        loginTokenDTO.Name = user.FirstName + " " + user.LastName;
+                        loginTokenDTO.Email = user.Email;
+                    }
+                    else if (roles.Contains(CustomRoles.InstitutionAdmin))
+                    {
+                        loginTokenDTO.Role = CustomRoles.InstitutionAdmin;
+                        loginTokenDTO.InstitutionId = institution.Id;
+                        loginTokenDTO.InstitutionName = institution.OrganizationName;
+                        loginTokenDTO.Name = user.FirstName + " " + user.LastName;
+                        loginTokenDTO.Email = user.Email;
+                    }
+                    else if (roles.Contains(CustomRoles.Dealer))
+                    {
+                        loginTokenDTO.IsSuperAdmin = false;
+                        loginTokenDTO.Role = CustomRoles.Dealer;
+                        loginTokenDTO.InstitutionId = institution.Id;
+                        loginTokenDTO.InstitutionName = institution.OrganizationName;
+                        loginTokenDTO.Name = user.FirstName + " " + user.LastName;
+                        loginTokenDTO.Email = user.Email;
+                    }
+                    else if (roles.Contains(CustomRoles.ChiefDealer))
+                    {
+                        loginTokenDTO.IsSuperAdmin = false;
+                        loginTokenDTO.Role = CustomRoles.ChiefDealer;
+                        loginTokenDTO.InstitutionId = institution.Id;
+                        loginTokenDTO.InstitutionName = institution.OrganizationName;
+                        loginTokenDTO.Name = user.FirstName + " " + user.LastName;
+                        loginTokenDTO.Email = user.Email;
+                    }
+                    else
+                    {
+                        return BadRequest("Invalid login attempt. No Role");
+                    }
+                    var claims = new List<Claim>
+                                 {
+                                     new Claim(ClaimTypes.NameIdentifier, user.Id),
+                                     new Claim(ClaimTypes.Email, user.Email),
+                                     new Claim(ClaimTypes.Role, string.Join(",", roles)),
+                                     new Claim("InstitutionId", institution.Id),
+                                     new Claim("InstitutionName", institution.OrganizationName),
+                                     new Claim("IsSuperAdmin", loginTokenDTO.IsSuperAdmin.ToString())
+                                 };
+                    JwtSecurityToken jwtSecurityToken = UtilityService.GenerateToken(claims);
+                    loginTokenDTO.token = new JwtSecurityTokenHandler().WriteToken(jwtSecurityToken);
+                    return Ok(loginTokenDTO);
                 }
             }
             catch (Exception Ex)
@@ -195,7 +192,7 @@ namespace Quotations_Board_Backend.Controllers
                 }
                 using (var context = new QuotationsBoardContext())
                 {
-                    PortalUser? user = await context.Users.Include(x=>x.Institution).FirstOrDefaultAsync(x => x.Email == twoFactorLoginDTO.Email);
+                    PortalUser? user = await context.Users.Include(x => x.Institution).FirstOrDefaultAsync(x => x.Email == twoFactorLoginDTO.Email);
                     if (user == null)
                     {
                         return BadRequest("Seems like you provided an invalid login attempt.");
