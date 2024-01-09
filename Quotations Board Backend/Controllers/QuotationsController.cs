@@ -74,7 +74,7 @@ namespace Quotations_Board_Backend.Controllers
         [HttpPost("BulkUploadQuotations")]
         [ProducesResponseType(StatusCodes.Status201Created)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public async Task<ActionResult> BulkUploadQuotations(BulkUpload bulkUpload)
+        public async Task<ActionResult> BulkUploadQuotations([FromForm] BulkUpload bulkUpload)
         {
             try
             {
