@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using ClosedXML.Excel;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -68,6 +69,192 @@ namespace Quotations_Board_Backend.Controllers
                 return StatusCode(500, UtilityService.HandleException(Ex));
             }
         }
+
+        // Bulk upload quotations
+        [HttpPost("BulkUploadQuotations")]
+        [ProducesResponseType(StatusCodes.Status201Created)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        public async Task<ActionResult> BulkUploadQuotations(BulkUpload bulkUpload)
+        {
+            try
+            {
+                // validate Model
+                if (!ModelState.IsValid)
+                {
+                    return BadRequest(ModelState);
+                }
+                using (var context = new QuotationsBoardContext())
+                {
+                    LoginTokenDTO TokenContents = UtilityService.GetUserIdFromCurrentRequest(Request);
+                    var userId = UtilityService.GetUserIdFromToken(Request);
+
+                    // Read the excel file
+                    var excelFile = bulkUpload.ExcelFile;
+
+                    using (var stream = new MemoryStream())
+                    {
+                        await excelFile.CopyToAsync(stream);
+                        using (var workbook = new XLWorkbook(stream))
+                        {
+                            var sheetWhereDataIsLocated = workbook.Worksheet(1);
+                            var errors = ValidateBondData(sheetWhereDataIsLocated);
+                            if (errors.Count > 0)
+                            {
+                                return BadRequest(errors);
+                            }
+
+                            using (var db = new QuotationsBoardContext())
+                            {
+
+                                db.Database.EnsureCreated();
+                                var quotes = ReadExcelData(sheetWhereDataIsLocated);
+                                await db.Quotations.AddRangeAsync(quotes);
+                                await db.SaveChangesAsync();
+                                return StatusCode(201);
+                            }
+                        }
+
+                    }
+
+                }
+
+            }
+            catch (Exception Ex)
+            {
+                UtilityService.LogException(Ex);
+                return StatusCode(500, UtilityService.HandleException(Ex));
+            }
+
+        }
+
+        private List<Quotation> ReadExcelData(IXLWorksheet worksheet)
+        {
+            var quotationRows = new List<Quotation>();
+            int rowCount = CountNonEmptyRows(worksheet);
+            int maxColumnCount = worksheet.ColumnsUsed().Count();
+            for (int row = 2; row <= rowCount; row++)
+            {
+                // Check if the row is empty
+                bool isEmptyRow = true;
+                for (int col = 1; col <= maxColumnCount; col++)
+                {
+                    if (!string.IsNullOrWhiteSpace(worksheet.Cell(row, col).Value.ToString()))
+                    {
+                        isEmptyRow = false;
+                        break;
+                    }
+                }
+
+                if (isEmptyRow) continue; // Skip this row if it's empty
+
+                var bondId = worksheet.Cell(row, 1).Value.ToString();
+                using (var dbContext = new QuotationsBoardContext())
+                {
+                    dbContext.Database.EnsureCreated();
+                    var bond = dbContext.Bonds.FirstOrDefault(b => b.IssueNumber == bondId);
+                    if (bond == null)
+                    {
+                        throw new Exception($"Bond ID '{bondId}' does not exist in the system.");
+                    }
+                }
+
+                Quotation quote = new Quotation
+                {
+                    BondId = bondId,
+                    BuyingYield = decimal.Parse(worksheet.Cell(row, 2).Value.ToString()),
+                    BuyVolume = int.Parse(worksheet.Cell(row, 3).Value.ToString()),
+                    SellingYield = decimal.Parse(worksheet.Cell(row, 4).Value.ToString()),
+                    SellVolume = int.Parse(worksheet.Cell(row, 5).Value.ToString()),
+                    UserId = UtilityService.GetUserIdFromToken(Request),
+                    CreatedAt = DateTime.Now,
+                    InstitutionId = UtilityService.GetUserIdFromToken(Request)
+                };
+
+                quotationRows.Add(quote);
+
+            }
+            return quotationRows;
+        }
+
+        private int CountNonEmptyRows(IXLWorksheet worksheet)
+        {
+            int nonEmptyRowCount = 0;
+            int maxColumnCount = worksheet.ColumnsUsed().Count(); // Count only the used columns
+
+            foreach (var row in worksheet.RowsUsed())
+            {
+                for (int col = 1; col <= maxColumnCount; col++)
+                {
+                    if (!string.IsNullOrWhiteSpace(row.Cell(col).Value.ToString()))
+                    {
+                        nonEmptyRowCount++;
+                        break; // Move to the next row once a non-empty cell is found
+                    }
+                }
+            }
+
+            return nonEmptyRowCount;
+        }
+
+        private List<string> ValidateBondData(IXLWorksheet worksheet)
+        {
+            var errors = new List<string>();
+            int rowCount = CountNonEmptyRows(worksheet);
+            int maxColumnCount = worksheet.ColumnsUsed().Count();
+
+            for (int rowToBeginAt = 2; rowToBeginAt <= rowCount; rowToBeginAt++)
+            {
+                // Check if the row is empty
+                bool isEmptyRow = true;
+                for (int col = 1; col <= maxColumnCount; col++)
+                {
+                    if (!string.IsNullOrWhiteSpace(worksheet.Cell(rowToBeginAt, col).Value.ToString()))
+                    {
+                        isEmptyRow = false;
+                        break; // Exit the loop as soon as a non-empty cell is found
+                    }
+                }
+
+                if (isEmptyRow) continue; // Skip this row if it's empty
+
+                var bondId = worksheet.Cell(rowToBeginAt, 1).Value.ToString();
+                var buyYield = worksheet.Cell(rowToBeginAt, 2).Value.ToString();
+                var buyVolume = worksheet.Cell(rowToBeginAt, 3).Value.ToString();
+                var sellYield = worksheet.Cell(rowToBeginAt, 4).Value.ToString();
+                var sellQuantity = worksheet.Cell(rowToBeginAt, 5).Value.ToString();
+
+                // Example validations:
+                if (string.IsNullOrWhiteSpace(bondId))
+                    errors.Add($"Row {rowToBeginAt} Cell A: 'Bond Id' is required.");
+
+                if (!decimal.TryParse(buyYield, out _))
+                    errors.Add($"Row {rowToBeginAt} Cell B: 'Buy Yield' is not a valid decimal number.");
+
+                if (!int.TryParse(buyVolume, out _))
+                    errors.Add($"Row {rowToBeginAt} Cell C: 'Buy Volume' is not a valid integer.");
+
+                if (!decimal.TryParse(sellYield, out _))
+                    errors.Add($"Row {rowToBeginAt} Cell D: 'Sell Yield' is not a valid decimal number.");
+
+                if (!int.TryParse(sellQuantity, out _))
+                    errors.Add($"Row {rowToBeginAt} Cell E: 'Sell Quantity' is not a valid integer.");
+
+                // Check if bondId exists in the database
+                using (var dbContext = new QuotationsBoardContext())
+                {
+                    dbContext.Database.EnsureCreated();
+                    var bondExists = dbContext.Bonds.Any(b => b.IssueNumber == bondId);
+                    if (!bondExists)
+                    {
+                        errors.Add($"Row {rowToBeginAt}: Bond ID '{bondId}' does not exist in the system.");
+                    }
+                }
+            }
+
+            return errors;
+        }
+
+
 
         // Edit a quotation
         [HttpPut("EditQuotation")]
