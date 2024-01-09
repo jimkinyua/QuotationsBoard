@@ -195,7 +195,7 @@ namespace Quotations_Board_Backend.Controllers
                 }
                 using (var context = new QuotationsBoardContext())
                 {
-                    PortalUser? user = await context.Users.FirstOrDefaultAsync(x => x.Email == twoFactorLoginDTO.Email);
+                    PortalUser? user = await context.Users.Include(x=>x.Institution).FirstOrDefaultAsync(x => x.Email == twoFactorLoginDTO.Email);
                     if (user == null)
                     {
                         return BadRequest("Seems like you provided an invalid login attempt.");
