@@ -235,7 +235,8 @@ namespace Quotations_Board_Backend.Controllers
                         PhoneNumberConfirmed = false,
                         FirstName = institutionApplication.AdministratorName,
                         LastName = "",
-                        InstitutionId = newInstitution.Id
+                        InstitutionId = newInstitution.Id,
+                        TwoFactorEnabled = true
                     };
                     context.Users.Add(newPortalUser);
 

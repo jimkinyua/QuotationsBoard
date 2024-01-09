@@ -344,6 +344,9 @@ namespace Quotations_Board_Backend.Controllers
                 var result = await _userManager.ResetPasswordAsync(user, resetPassword.Token, resetPassword.Password);
                 if (result.Succeeded)
                 {
+                    // update the user and set TwoFactorEnabled to true
+                    user.TwoFactorEnabled = true;
+                    await _userManager.UpdateAsync(user);
                     return Ok();
                 }
 
@@ -386,6 +389,8 @@ namespace Quotations_Board_Backend.Controllers
 
                 if (result.Succeeded)
                 {
+                    user.TwoFactorEnabled = true;
+                    await _userManager.UpdateAsync(user);
                     return Ok("Password changed successfully");
                 }
 
