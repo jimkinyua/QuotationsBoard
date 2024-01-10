@@ -20,14 +20,14 @@ namespace Quotations_Board_Backend.Controllers
             {
                 return BadRequest(ModelState);
             }
-            string[] formats = { "dd/MM/yyyy", "yyyy-MM-dd", "MM/dd/yyyy", "dd-MM-yyyy", "dd/MM/yyyy HH:mm:ss", "yyyy-MM-dd HH:mm:ss", "MM/dd/yyyy HH:mm:ss", "dd-MM-yyyy HH:mm:ss" };
-            DateTime targetTradeDate;
-            bool success = DateTime.TryParseExact(uploadTradedBondValue.TradeDate, formats, CultureInfo.InvariantCulture, DateTimeStyles.None, out targetTradeDate);
-            if (!success)
-            {
-                return BadRequest("The date format is invalid");
-            }
-            var TargetTradeDate = targetTradeDate.Date;
+            // string[] formats = { "dd/MM/yyyy", "yyyy-MM-dd", "MM/dd/yyyy", "dd-MM-yyyy", "dd/MM/yyyy HH:mm:ss", "yyyy-MM-dd HH:mm:ss", "MM/dd/yyyy HH:mm:ss", "dd-MM-yyyy HH:mm:ss" };
+            // DateTime targetTradeDate;
+            // bool success = DateTime.TryParseExact(uploadTradedBondValue.TradeDate, formats, CultureInfo.InvariantCulture, DateTimeStyles.None, out targetTradeDate);
+            // if (!success)
+            // {
+            //     return BadRequest("The date format is invalid");
+            // }
+            // var TargetTradeDate = targetTradeDate.Date;
             // check if the file is an excel file
             var UploadFile = uploadTradedBondValue.ExcelFile;
             /*if (UploadFile.ContentType != "text/csv")
@@ -51,48 +51,50 @@ namespace Quotations_Board_Backend.Controllers
                         using (var db = new QuotationsBoardContext())
                         {
                             db.Database.EnsureCreated();
-                            GorvermentBondTradeStage gorvermentBondTradeStage = new GorvermentBondTradeStage
+                            var trades = ReadExcelData(sheetWhereDataIsLocated);
+                            // Group By Trades by TransactionTime Date
+                            var groupedTrades = trades.GroupBy(x => x.TransactionTime.Date);
+                            foreach (var tradeGroup in groupedTrades)
                             {
-                                TargetDate = TargetTradeDate,
-                                UploadedBy = "Admin"
-                            };
-                            db.GorvermentBondTradeStages.Add(gorvermentBondTradeStage);
-                            var trades = ReadExcelData(sheetWhereDataIsLocated, gorvermentBondTradeStage);
-                            await db.GorvermentBondTradeLinesStage.AddRangeAsync(trades);
-                            await db.SaveChangesAsync();
+                                // Check if GorvermentBondTradeStage with the TargetDate already exists
+                                var existingGorvermentBondTradeStage = db.GorvermentBondTradeStages
+                                    .FirstOrDefault(g => g.TargetDate == tradeGroup.Key);
 
-                            // fetch details about the trades
-                            var tradesDetails = await db.GorvermentBondTradeStages
-                                .Where(t => t.Id == gorvermentBondTradeStage.Id)
-                                .Include(t => t.GorvermentBondTradeLineStage)
-                                .FirstOrDefaultAsync();
-                            // construc to UploadedBondTrade DTO
-                            var tradesDetailsDTO = new UploadedBondTrade
-                            {
-                                Id = tradesDetails.Id,
-                                UploadedAt = tradesDetails.TargetDate,
-                                UploadedBy = tradesDetails.UploadedBy,
-                                UploadedBondTradeLineDTO = new List<UploadedBondTradeLineDTO>()
-                            };
-                            foreach (var trade in tradesDetails.GorvermentBondTradeLineStage)
-                            {
-                                var tradeDTO = new UploadedBondTradeLineDTO
+                                if (existingGorvermentBondTradeStage == null)
                                 {
-                                    Id = trade.Id,
-                                    GorvermentBondTradeStageId = trade.GorvermentBondTradeStageId,
-                                    Side = trade.Side,
-                                    SecurityId = trade.SecurityId,
-                                    ExecutedSize = trade.ExecutedSize,
-                                    ExcecutedPrice = trade.ExcecutedPrice,
-                                    ExecutionID = trade.ExecutionID,
-                                    TransactionTime = trade.TransactionTime,
-                                    DirtyPrice = trade.DirtyPrice,
-                                    Yield = trade.Yield,
-                                    TradeDate = trade.TradeDate
-                                };
-                                tradesDetailsDTO.UploadedBondTradeLineDTO.Add(tradeDTO);
+                                    existingGorvermentBondTradeStage = new GorvermentBondTradeStage
+                                    {
+                                        TargetDate = tradeGroup.Key,
+                                        UploadedBy = "Admin"
+                                    };
+                                    db.GorvermentBondTradeStages.Add(existingGorvermentBondTradeStage);
+                                }
+                                // else
+                                // {
+                                // save the trades for this date
+                                foreach (var _trade in tradeGroup)
+                                {
+                                    GorvermentBondTradeLineStage gorvermentBondTradeLineStage = new GorvermentBondTradeLineStage
+                                    {
+                                        GorvermentBondTradeStageId = existingGorvermentBondTradeStage.Id,
+                                        Side = _trade.Side,
+                                        SecurityId = _trade.SecurityId,
+                                        ExecutedSize = _trade.ExecutedSize,
+                                        ExcecutedPrice = _trade.ExecutedPrice,
+                                        ExecutionID = _trade.ExecutionID,
+                                        TransactionTime = _trade.TransactionTime,
+                                        DirtyPrice = _trade.DirtyPrice,
+                                        Yield = _trade.Yield,
+                                        TradeDate = existingGorvermentBondTradeStage.TargetDate
+                                    };
+                                    db.GorvermentBondTradeLinesStage.Add(gorvermentBondTradeLineStage);
+                                }
+                                // }
+
+
                             }
-                            return Ok(tradesDetailsDTO);
+                            await db.SaveChangesAsync();
+                            return Ok("Trades uploaded successfully");
                         }
                     }
 
@@ -629,9 +631,9 @@ namespace Quotations_Board_Backend.Controllers
             return nonEmptyRowCount;
         }
 
-        private List<GorvermentBondTradeLineStage> ReadExcelData(IXLWorksheet worksheet, GorvermentBondTradeStage gorvermentBondTradeStage)
+        private List<UploadedTrade> ReadExcelData(IXLWorksheet worksheet)
         {
-            var trades = new List<GorvermentBondTradeLineStage>();
+            var UploadedTrades = new List<UploadedTrade>();
             int rowCount = CountNonEmptyRows(worksheet);
             int maxColumnCount = worksheet.ColumnsUsed().Count();
 
@@ -651,23 +653,21 @@ namespace Quotations_Board_Backend.Controllers
                 if (isEmptyRow) continue; // Skip this row if it's empty
 
                 // Assuming data is already validated and can be directly parsed
-                var trade = new GorvermentBondTradeLineStage
+                var UploadedTrade = new UploadedTrade
                 {
                     Side = worksheet.Cell(row, 2).Value.ToString(),
                     SecurityId = worksheet.Cell(row, 3).Value.ToString(),
                     ExecutedSize = decimal.Parse(worksheet.Cell(row, 4).Value.ToString()),
-                    ExcecutedPrice = decimal.Parse(worksheet.Cell(row, 5).Value.ToString()),
+                    ExecutedPrice = decimal.Parse(worksheet.Cell(row, 5).Value.ToString()),
                     ExecutionID = worksheet.Cell(row, 6).Value.ToString(),
                     TransactionTime = DateTime.Parse(worksheet.Cell(row, 7).Value.ToString()),
                     DirtyPrice = decimal.Parse(worksheet.Cell(row, 8).Value.ToString()),
                     Yield = decimal.Parse(worksheet.Cell(row, 9).Value.ToString()),
-                    TradeDate = DateTime.Parse(worksheet.Cell(row, 13).Value.ToString()),
-                    GorvermentBondTradeStageId = gorvermentBondTradeStage.Id
                 };
-                trades.Add(trade);
+                UploadedTrades.Add(UploadedTrade);
             }
 
-            return trades;
+            return UploadedTrades;
         }
 
         private List<string> ValidateExcelData(IXLWorksheet worksheet)
