@@ -14,22 +14,18 @@ namespace Quotations_Board_Backend.Controllers
         // handle upload of ecel file with the traded bonds
         [HttpPost]
         [Route("UploadTradedBondsValues")]
-        public async Task<ActionResult<UploadedBondTrade>> UploadTradedBondsValues([FromForm] UploadTradedBondValue uploadTradedBondValue)
+        public async Task<ActionResult<Dictionary<string, List<UploadedTrade>>>> UploadTradedBondsValues([FromForm] UploadTradedBondValue uploadTradedBondValue)
         {
             if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
             }
-            // string[] formats = { "dd/MM/yyyy", "yyyy-MM-dd", "MM/dd/yyyy", "dd-MM-yyyy", "dd/MM/yyyy HH:mm:ss", "yyyy-MM-dd HH:mm:ss", "MM/dd/yyyy HH:mm:ss", "dd-MM-yyyy HH:mm:ss" };
-            // DateTime targetTradeDate;
-            // bool success = DateTime.TryParseExact(uploadTradedBondValue.TradeDate, formats, CultureInfo.InvariantCulture, DateTimeStyles.None, out targetTradeDate);
-            // if (!success)
-            // {
-            //     return BadRequest("The date format is invalid");
-            // }
-            // var TargetTradeDate = targetTradeDate.Date;
+
             // check if the file is an excel file
             var UploadFile = uploadTradedBondValue.ExcelFile;
+            // Dictionary to store new GorvermentBondTradeLineStages grouped by GorvermentBondTradeStageId
+            var newTradeLineStages = new Dictionary<string, List<UploadedTrade>>();
+
             /*if (UploadFile.ContentType != "text/csv")
             {
                 return BadRequest("The file is not an excel file");
@@ -51,7 +47,7 @@ namespace Quotations_Board_Backend.Controllers
                         using (var db = new QuotationsBoardContext())
                         {
                             db.Database.EnsureCreated();
-                            var trades = ReadExcelData(sheetWhereDataIsLocated);
+                            List<UploadedTrade> trades = ReadExcelData(sheetWhereDataIsLocated);
                             // Group By Trades by TransactionTime Date
                             var groupedTrades = trades.GroupBy(x => x.TransactionTime.Date);
                             foreach (var tradeGroup in groupedTrades)
@@ -69,9 +65,7 @@ namespace Quotations_Board_Backend.Controllers
                                     };
                                     db.GorvermentBondTradeStages.Add(existingGorvermentBondTradeStage);
                                 }
-                                // else
-                                // {
-                                // save the trades for this date
+
                                 foreach (var _trade in tradeGroup)
                                 {
                                     GorvermentBondTradeLineStage gorvermentBondTradeLineStage = new GorvermentBondTradeLineStage
@@ -88,13 +82,17 @@ namespace Quotations_Board_Backend.Controllers
                                         TradeDate = existingGorvermentBondTradeStage.TargetDate
                                     };
                                     db.GorvermentBondTradeLinesStage.Add(gorvermentBondTradeLineStage);
+
+                                    // Add to newTradeLineStages
+                                    if (!newTradeLineStages.ContainsKey(existingGorvermentBondTradeStage.Id))
+                                    {
+                                        newTradeLineStages[existingGorvermentBondTradeStage.Id] = new List<UploadedTrade>();
+                                    }
+                                    newTradeLineStages[existingGorvermentBondTradeStage.Id].Add(_trade);
                                 }
-                                // }
-
-
                             }
                             await db.SaveChangesAsync();
-                            return Ok("Trades uploaded successfully");
+                            return Ok(newTradeLineStages);
                         }
                     }
 

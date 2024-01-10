@@ -57,7 +57,7 @@ namespace Quotations_Board_Backend.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Bonds");
+                    b.ToTable("Bonds", (string)null);
                 });
 
             modelBuilder.Entity("BondTrade", b =>
@@ -78,7 +78,7 @@ namespace Quotations_Board_Backend.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("BondTrades");
+                    b.ToTable("BondTrades", (string)null);
                 });
 
             modelBuilder.Entity("BondTradeLine", b =>
@@ -126,7 +126,7 @@ namespace Quotations_Board_Backend.Migrations
 
                     b.HasIndex("BondTradeId");
 
-                    b.ToTable("BondTradeLines");
+                    b.ToTable("BondTradeLines", (string)null);
                 });
 
             modelBuilder.Entity("GorvermentBondTradeLineStage", b =>
@@ -173,7 +173,7 @@ namespace Quotations_Board_Backend.Migrations
 
                     b.HasIndex("GorvermentBondTradeStageId");
 
-                    b.ToTable("GorvermentBondTradeLinesStage");
+                    b.ToTable("GorvermentBondTradeLinesStage", (string)null);
                 });
 
             modelBuilder.Entity("GorvermentBondTradeStage", b =>
@@ -191,7 +191,7 @@ namespace Quotations_Board_Backend.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("GorvermentBondTradeStages");
+                    b.ToTable("GorvermentBondTradeStages", (string)null);
                 });
 
             modelBuilder.Entity("ImpliedYield", b =>
@@ -214,7 +214,7 @@ namespace Quotations_Board_Backend.Migrations
 
                     b.HasIndex("BondId");
 
-                    b.ToTable("ImpliedYields");
+                    b.ToTable("ImpliedYields", (string)null);
                 });
 
             modelBuilder.Entity("Institution", b =>
@@ -244,7 +244,7 @@ namespace Quotations_Board_Backend.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Institutions");
+                    b.ToTable("Institutions", (string)null);
                 });
 
             modelBuilder.Entity("InstitutionApplication", b =>
@@ -293,7 +293,7 @@ namespace Quotations_Board_Backend.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("InstitutionApplications");
+                    b.ToTable("InstitutionApplications", (string)null);
                 });
 
             modelBuilder.Entity("InstitutionType", b =>
@@ -312,7 +312,7 @@ namespace Quotations_Board_Backend.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("InstitutionTypes");
+                    b.ToTable("InstitutionTypes", (string)null);
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole", b =>
@@ -567,7 +567,7 @@ namespace Quotations_Board_Backend.Migrations
 
                     b.HasIndex("InstitutionId");
 
-                    b.ToTable("Quotations");
+                    b.ToTable("Quotations", (string)null);
                 });
 
             modelBuilder.Entity("TBill", b =>
@@ -598,7 +598,7 @@ namespace Quotations_Board_Backend.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("TBills");
+                    b.ToTable("TBills", (string)null);
                 });
 
             modelBuilder.Entity("TBillYield", b =>
@@ -621,7 +621,7 @@ namespace Quotations_Board_Backend.Migrations
 
                     b.HasIndex("TBillId");
 
-                    b.ToTable("TBillYields");
+                    b.ToTable("TBillYields", (string)null);
                 });
 
             modelBuilder.Entity("BondTradeLine", b =>
