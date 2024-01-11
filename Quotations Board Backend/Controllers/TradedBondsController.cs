@@ -123,61 +123,66 @@ namespace Quotations_Board_Backend.Controllers
                 using (var db = new QuotationsBoardContext())
                 {
                     db.Database.EnsureCreated();
-                    var tradesDetails = await db.GorvermentBondTradeStages
-                        .Where(t => t.Id == confirmTradedBondValue.Id)
-                        .Include(t => t.GorvermentBondTradeLineStage)
-                        .FirstOrDefaultAsync();
-                    if (tradesDetails == null)
-                    {
-                        return BadRequest("The trades you are trying to confirm do not exist");
-                    }
-                    var targetedDate = tradesDetails.TargetDate;
-                    // Any Trades that been uploaded for this date? Only one should be uploaded
-                    var trades = await db.BondTrades.Where(t => t.TradeDate == targetedDate).ToListAsync();
-                    if (trades.Any())
-                    {
-                        return BadRequest("The trades for this date have already been uploaded");
-                    }
 
-                    // create a new bond trade
-                    BondTrade bondTrade = new BondTrade
+                    // Loop through the Ids and confirm the trades
+                    foreach (var _GorvermentBondTradeStageId in confirmTradedBondValue.Id)
                     {
-                        UploadedBy = "Admin",
-                        UploadedOn = DateTime.Now,
-                        TradeDate = targetedDate
-                    };
+                        var tradesDetails = await db.GorvermentBondTradeStages
+                            .Where(t => t.Id == _GorvermentBondTradeStageId)
+                            .Include(t => t.GorvermentBondTradeLineStage)
+                            .FirstOrDefaultAsync();
 
-                    db.BondTrades.Add(bondTrade);
-
-                    // Loop the GorvermentBondTradeLineStage if any and add them to the BondTradeLine
-                    foreach (var trade in tradesDetails.GorvermentBondTradeLineStage)
-                    {
-                        // ensure the bond exists
-                        var TransformedSecId = TransformSecurityId(trade.SecurityId);
-                        var bond = await db.Bonds.Where(b => b.IssueNumber == TransformedSecId).FirstOrDefaultAsync();
-                        if (bond == null)
+                        if (tradesDetails == null)
                         {
-                            return BadRequest($"The bond with security id {trade.SecurityId} does not exist");
+                            return BadRequest("The trades you are trying to confirm do not exist");
                         }
-                        BondTradeLine bondTradeLine = new BondTradeLine
+
+                        var targetedDate = tradesDetails.TargetDate;
+                        // Any Trades that been uploaded for this date? Only one should be uploaded
+                        var trades = await db.BondTrades.Where(t => t.TradeDate == targetedDate).ToListAsync();
+                        if (trades.Any())
                         {
-                            BondTradeId = bondTrade.Id,
-                            Side = trade.Side,
-                            SecurityId = trade.SecurityId,
-                            ExecutedSize = trade.ExecutedSize,
-                            ExcecutedPrice = trade.ExcecutedPrice,
-                            ExecutionID = trade.ExecutionID,
-                            TransactionTime = trade.TransactionTime,
-                            DirtyPrice = trade.DirtyPrice,
-                            Yield = trade.Yield,
-                            BondId = bond.Id
+                            return BadRequest("The trades for this date have already been uploaded");
+                        }
+
+                        // create a new bond trade
+                        BondTrade bondTrade = new BondTrade
+                        {
+                            UploadedBy = "Admin",
+                            UploadedOn = DateTime.Now,
+                            TradeDate = targetedDate
                         };
-                        db.BondTradeLines.Add(bondTradeLine);
+
+                        db.BondTrades.Add(bondTrade);
+
+                        // Loop the GorvermentBondTradeLineStage if any and add them to the BondTradeLine
+                        foreach (var trade in tradesDetails.GorvermentBondTradeLineStage)
+                        {
+                            // ensure the bond exists
+                            var TransformedSecId = TransformSecurityId(trade.SecurityId);
+                            var bond = await db.Bonds.Where(b => b.IssueNumber == TransformedSecId).FirstOrDefaultAsync();
+                            if (bond == null)
+                            {
+                                return BadRequest($"The bond with security id {trade.SecurityId} does not exist");
+                            }
+                            BondTradeLine bondTradeLine = new BondTradeLine
+                            {
+                                BondTradeId = bondTrade.Id,
+                                Side = trade.Side,
+                                SecurityId = trade.SecurityId,
+                                ExecutedSize = trade.ExecutedSize,
+                                ExcecutedPrice = trade.ExcecutedPrice,
+                                ExecutionID = trade.ExecutionID,
+                                TransactionTime = trade.TransactionTime,
+                                DirtyPrice = trade.DirtyPrice,
+                                Yield = trade.Yield,
+                                BondId = bond.Id
+                            };
+                            db.BondTradeLines.Add(bondTradeLine);
+                        }
+                        await db.SaveChangesAsync();
                     }
-
-                    await db.SaveChangesAsync();
-
-                    return Ok(bondTrade);
+                    return Ok();
                 }
             }
             catch (Exception Ex)
