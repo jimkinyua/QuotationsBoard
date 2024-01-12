@@ -570,50 +570,47 @@ namespace Quotations_Board_Backend.Controllers
                 if (string.IsNullOrWhiteSpace(excelSecurityId))
                     throw new ArgumentException("Excel Security ID is null or whitespace.");
 
-                // Excel format is "PREFIX.BondCode/Year/Year"
-                // Remove the prefix up to the first dot (.)
-                var parts = excelSecurityId.Split(new char[] { '.' }, 2);
-                if (parts.Length < 2)
-                    throw new FormatException("Excel Security ID does not contain a valid format with a dot separator.");
+                // Remove any prefix ending in "."
+                int dotIndex = excelSecurityId.LastIndexOf('.');
+                if (dotIndex == -1)
+                    throw new FormatException("Excel Security ID does not contain a dot separator.");
 
-                string transformedId = parts[1]; // Take the second part
+                string transformedId = excelSecurityId.Substring(dotIndex + 1);
 
-                // Split the second part into segments
+                // Split the ID into segments and validate the structure
                 var segments = transformedId.Split('/');
-                if (segments.Length < 3)
-                    throw new FormatException("Excel Security ID does not contain enough segments after the dot separator.");
+                if (segments.Length != 3)
+                    throw new FormatException("Transformed Security ID does not contain the correct number of segments.");
 
-                // Determine if the rate is a whole number or a decimal
-                if (decimal.TryParse(segments[2], out decimal rate))
-                {
-                    // Format the rate with no leading zeros and two decimal places if it's not a whole number
-                    string rateWithYear = rate % 1 == 0 ? $"{rate:0}" : $"{rate:0.0}";
+                // Validate the prefix segment (e.g., IFB1 or FXD1)
+                if (!segments[0].StartsWith("IFB") && !segments[0].StartsWith("FXD"))
+                    throw new FormatException("The prefix segment does not start with a recognized identifier.");
 
-                    // Reconstruct the transformed ID
-                    transformedId = $"{segments[0]}/{segments[1]}/{rateWithYear}Yr";
-                }
-                else
-                {
-                    throw new FormatException("The rate segment is not a valid decimal number.");
-                }
+                // Validate the year segment
+                if (segments[1].Length != 4 || !int.TryParse(segments[1], out int year))
+                    throw new FormatException("The year segment is not a valid 4-digit year.");
 
-                // // Check if the last segment ends with a digit, then append "Yr"
-                // var lastSegmentParts = transformedId.Split(new char[] { '/' });
-                // if (lastSegmentParts.Length >= 2 && char.IsDigit(lastSegmentParts.Last().Last()))
-                // {
-                //     transformedId += "Yr";
-                // }
+                // Validate and format the rate/number segment
+                if (!decimal.TryParse(segments[2], out decimal rate))
+                    throw new FormatException("The rate/number segment is not a valid decimal number.");
+
+                string rateSegment = rate % 1 == 0 ? rate.ToString("0") : rate.ToString("0.0");
+
+                // Reconstruct the transformed ID with properly formatted rate
+                transformedId = $"{segments[0]}/{segments[1]}/{rateSegment}";
 
                 return transformedId;
             }
             catch (Exception ex)
             {
                 // Log the error, return null, or throw a custom exception as appropriate for your application's error handling policy
-                // Example: Log to console or application logs
                 Console.WriteLine($"Error transforming Security ID: {ex.Message}");
                 return null; // or handle differently as per your requirements
             }
         }
+
+
+
         private int CountNonEmptyRows(IXLWorksheet worksheet)
         {
             int nonEmptyRowCount = 0;
@@ -694,9 +691,9 @@ namespace Quotations_Board_Backend.Controllers
                 }
 
                 string excelSecurityId = worksheet.Cell(rowToBeginAt, 3).Value.ToString();
-                string transformedSecurityId = TransformSecurityId(excelSecurityId);
+                // string transformedSecurityId = TransformSecurityId(excelSecurityId);
 
-                if (string.IsNullOrEmpty(transformedSecurityId))
+                if (string.IsNullOrEmpty(excelSecurityId))
                 {
                     errors.Add($"Row {rowToBeginAt}: Security ID format is invalid.");
                     continue; // Skip further validation for this row
@@ -706,10 +703,10 @@ namespace Quotations_Board_Backend.Controllers
                 {
                     dbContext.Database.EnsureCreated();
                     // Check if transformedSecurityId exists in the database
-                    var bondExists = dbContext.Bonds.Any(b => b.IssueNumber == transformedSecurityId);
+                    var bondExists = dbContext.Bonds.Any(b => b.IssueNumber == excelSecurityId);
                     if (!bondExists)
                     {
-                        errors.Add($"Row {rowToBeginAt}: Security ID '{transformedSecurityId}' does not exist in the system.");
+                        errors.Add($"Row {rowToBeginAt}: Security ID '{excelSecurityId}' does not exist in the system.");
                     }
                 }
 
