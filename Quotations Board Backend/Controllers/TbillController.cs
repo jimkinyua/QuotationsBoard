@@ -27,14 +27,21 @@ namespace Quotations_Board_Backend.Controllers
                 var maturityDate = newTbill.IssueDate.AddMonths((int)newTbill.Tenor);
                 using (var context = new QuotationsBoardContext())
                 {
+                    // Make sure that for this IssueDate, there is no TBill with the same Tenor
+                    var _existingTbill = await context.TBills.FirstOrDefaultAsync(x => x.IssueDate.Date == newTbill.IssueDate.Date && x.Tenor == newTbill.Tenor);
+                    if (_existingTbill != null)
+                    {
+                        return BadRequest("TBill with same Tenor already exists for this Issue Date");
+                    }
                     TBill newTBill = new TBill
                     {
                         IssueNumber = IssueNo, //newTbill.IssueNumber,
                         IssueDate = newTbill.IssueDate,
-                        MaturityDate = maturityDate,
+                        MaturityDate = newTbill.IssueDate.AddDays((int)newTbill.Tenor),
                         Tenor = newTbill.Tenor,
                         CreatedBy = "Admin",
-                        CreatedOn = DateTime.Now
+                        CreatedOn = DateTime.Now,
+                        Yield = newTbill.Yield
                     };
                     context.TBills.Add(newTBill);
                     await context.SaveChangesAsync();
@@ -71,7 +78,6 @@ namespace Quotations_Board_Backend.Controllers
                     {
                         return NotFound();
                     }
-                    // tbill.IssueNumber = editTbill.IssueNumber;
                     tbill.IssueDate = editTbill.IssueDate;
                     tbill.MaturityDate = maturityDate;
                     tbill.Tenor = editTbill.Tenor;
@@ -125,28 +131,22 @@ namespace Quotations_Board_Backend.Controllers
                 using (var context = new QuotationsBoardContext())
                 {
                     var tbills = await context.TBills
-                        .Include(t => t.TBillYields)
-                        .ToListAsync();
+                    .OrderByDescending(x => x.IssueDate)
+                    .ToListAsync();
                     var tbillDTOs = new List<TBillDTO>();
                     foreach (var tbill in tbills)
                     {
                         decimal TBillYiled = 0;
-                        var _yield = tbill.TBillYields.OrderByDescending(t => t.YieldDate).FirstOrDefault();
-                        if (_yield != null)
-                        {
-                            TBillYiled = _yield.Yield;
-                        }
-                        var tbillDTO = new TBillDTO
+                        TBillDTO billDTO = new TBillDTO
                         {
                             Id = tbill.Id,
                             IssueNumber = tbill.IssueNumber,
                             IssueDate = tbill.IssueDate,
                             MaturityDate = tbill.MaturityDate,
                             Tenor = tbill.Tenor,
-                            CreatedOn = tbill.CreatedOn,
                             Yield = TBillYiled
                         };
-                        tbillDTOs.Add(tbillDTO);
+                        tbillDTOs.Add(billDTO);
                     }
                     return StatusCode(200, tbillDTOs);
                 }
@@ -158,93 +158,6 @@ namespace Quotations_Board_Backend.Controllers
             }
         }
 
-        // Allows user to capture the Yield of a TBill. Tbill can only have one Yield
-        [HttpPost("AddTbillYield")]
-        [ProducesResponseType(StatusCodes.Status201Created)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public async Task<ActionResult> AddTbillYield([FromBody] NewTbillYield newTbillYield)
-        {
-            // validate Model
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
-
-            try
-            {
-                using (var context = new QuotationsBoardContext())
-                {
-                    var tbill = await context.TBills.Include(x => x.TBillYields).FirstOrDefaultAsync(x => x.Id == newTbillYield.TBillId);
-                    if (tbill == null)
-                    {
-                        return NotFound("TBill not found");
-                    }
-                    // Ensure that TBill has no Yield 
-                    if (tbill.TBillYields.Count > 0)
-                    {
-                        return BadRequest("TBill already has a Yield");
-                    }
-                    TBillYield newTBillYield = new TBillYield
-                    {
-                        YieldDate = tbill.IssueDate,
-                        Yield = newTbillYield.Yield,
-                        TBillId = newTbillYield.TBillId
-                    };
-                    context.TBillYields.Add(newTBillYield);
-                    await context.SaveChangesAsync();
-                    return StatusCode(201, newTBillYield);
-                }
-            }
-            catch (Exception Ex)
-            {
-                UtilityService.LogException(Ex);
-                return StatusCode(500, UtilityService.HandleException(Ex));
-            }
-        }
-
-        // Allows user to edit the Yield of a TBill. Tbill can only have one Yield
-        [HttpPut("EditTbillYield/{id}")]
-        [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public async Task<ActionResult> EditTbillYield([FromBody] NewTbillYield editTbillYield)
-        {
-            // validate Model
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
-
-            try
-            {
-                using (var context = new QuotationsBoardContext())
-                {
-                    var tbill = await context.TBills.Include(x => x.TBillYields).FirstOrDefaultAsync(x => x.Id == editTbillYield.TBillId);
-                    if (tbill == null)
-                    {
-                        return NotFound("TBill not found");
-                    }
-                    // Ensure that TBill has a Yield 
-                    if (tbill.TBillYields.Count == 0)
-                    {
-                        return BadRequest("TBill has no Yield");
-                    }
-                    var tbillYield = tbill.TBillYields.FirstOrDefault();
-                    if (tbillYield == null)
-                    {
-                        return NotFound("TBill Yield not found");
-                    }
-                    tbillYield.Yield = editTbillYield.Yield;
-                    context.Entry(tbillYield).State = EntityState.Modified;
-                    await context.SaveChangesAsync();
-                    return StatusCode(200, tbillYield);
-                }
-            }
-            catch (Exception Ex)
-            {
-                UtilityService.LogException(Ex);
-                return StatusCode(500, UtilityService.HandleException(Ex));
-            }
-        }
 
     }
 }

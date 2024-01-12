@@ -12,5 +12,5 @@ public class TBill
     public decimal Tenor { get; set; }
     public string CreatedBy { get; set; } = null!;
     public DateTime CreatedOn { get; set; }
-    public virtual ICollection<TBillYield> TBillYields { get; set; } = null!;
+    public decimal Yield { get; set; }
 }
