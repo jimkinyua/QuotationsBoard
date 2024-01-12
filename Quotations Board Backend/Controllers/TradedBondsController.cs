@@ -494,7 +494,7 @@ namespace Quotations_Board_Backend.Controllers
                         bondStatistic.NumberofQuotes = totalQuotesCount;
                         bondStatistic.WeightedQuotedSellYield = Math.Round(averageWeightedSellYield, 4, MidpointRounding.AwayFromZero);
                         bondStatistic.WeightedQuotedBuyYield = Math.Round(averageWeightedBuyYield, 4, MidpointRounding.AwayFromZero);
-                        bondStatistic.DaysLeftToMaturity = diffrenceBetweenSelectedDateAndMaturityDate.Days;
+                        bondStatistic.YearsToMaturity = diffrenceBetweenSelectedDateAndMaturityDate.Days / 365;
 
                     }
 

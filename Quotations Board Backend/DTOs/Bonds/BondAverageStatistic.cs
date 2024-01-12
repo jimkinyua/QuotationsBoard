@@ -12,6 +12,6 @@ public class BondAverageStatistic
     public decimal WeightedTradeSellYield { get; set; }
     public decimal WeightedQuotedBuyYield { get; set; }
     public decimal WeightedQuotedSellYield { get; set; }
-    public decimal DaysLeftToMaturity { get; set; }
+    public decimal YearsToMaturity { get; set; }
 
 }
