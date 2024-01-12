@@ -156,22 +156,28 @@ namespace Quotations_Board_Backend.Controllers
                     {
                         throw new Exception($"Bond ID '{bondId}' does not exist in the system.");
                     }
+                    var userId = UtilityService.GetUserIdFromToken(Request);
+                    // Get Institution User belongs to
+                    var institution = dbContext.Institutions.FirstOrDefault(i => i.Id == userId);
+                    if (institution == null)
+                    {
+                        throw new Exception($"User does not belong to any institution");
+                    }
+
+                    Quotation quote = new Quotation
+                    {
+                        BondId = bond.Id,
+                        BuyingYield = decimal.Parse(worksheet.Cell(row, 2).Value.ToString()),
+                        BuyVolume = int.Parse(worksheet.Cell(row, 3).Value.ToString()),
+                        SellingYield = decimal.Parse(worksheet.Cell(row, 4).Value.ToString()),
+                        SellVolume = int.Parse(worksheet.Cell(row, 5).Value.ToString()),
+                        UserId = UtilityService.GetUserIdFromToken(Request),
+                        CreatedAt = DateTime.Now,
+                        InstitutionId = institution.Id
+                    };
+
+                    quotationRows.Add(quote);
                 }
-
-                Quotation quote = new Quotation
-                {
-                    BondId = bondId,
-                    BuyingYield = decimal.Parse(worksheet.Cell(row, 2).Value.ToString()),
-                    BuyVolume = int.Parse(worksheet.Cell(row, 3).Value.ToString()),
-                    SellingYield = decimal.Parse(worksheet.Cell(row, 4).Value.ToString()),
-                    SellVolume = int.Parse(worksheet.Cell(row, 5).Value.ToString()),
-                    UserId = UtilityService.GetUserIdFromToken(Request),
-                    CreatedAt = DateTime.Now,
-                    InstitutionId = UtilityService.GetUserIdFromToken(Request)
-                };
-
-                quotationRows.Add(quote);
-
             }
             return quotationRows;
         }
