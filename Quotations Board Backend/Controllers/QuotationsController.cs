@@ -49,6 +49,20 @@ namespace Quotations_Board_Backend.Controllers
                         return BadRequest("Selling yield cannot be greater than buying yield");
                     }
 
+                    // ensure Selling Yield is not greater than 100
+                    if (quotation.SellingYield > 100)
+                    {
+                        return BadRequest("Selling yield cannot be greater than 100");
+                    }
+
+                    // ensure Buying Yield is not greater than 100
+                    if (quotation.BuyingYield > 100)
+                    {
+                        return BadRequest("Buying yield cannot be greater than 100");
+                    }
+
+
+
                     // Ensure that today this institution has not already filled a quotation for this bond
                     var existingQuotation = await context.Quotations.FirstOrDefaultAsync(q => q.InstitutionId == quotation.InstitutionId && q.BondId == quotation.BondId && q.CreatedAt.Date == quotation.CreatedAt.Date);
                     if (existingQuotation != null)
@@ -172,10 +186,26 @@ namespace Quotations_Board_Backend.Controllers
                     // Ensure selling yield is not greater than buying yield
                     var buyYield = decimal.Parse(worksheet.Cell(row, 2).Value.ToString());
                     var sellYield = decimal.Parse(worksheet.Cell(row, 4).Value.ToString());
+
+                    //  Ensure selling yield is not greater than 100
+                    if (sellYield > 100)
+                    {
+                        throw new Exception($"Selling yield cannot be greater than 100.");
+                    }
+
+                    //  Ensure buying yield is not greater than 100
+                    if (buyYield > 100)
+                    {
+                        throw new Exception($"Buying yield cannot be greater than 100.");
+                    }
+
                     if (sellYield > buyYield)
                     {
                         throw new Exception($"Selling yield cannot be greater than buying yield.");
                     }
+
+
+
 
                     // Enusre that today this institution has not already filled a quotation for this bond
                     var existingQuotation = dbContext.Quotations.FirstOrDefault(q => q.InstitutionId == user.InstitutionId && q.BondId == bondId && q.CreatedAt.Date == DateTime.Now.Date);
@@ -304,6 +334,20 @@ namespace Quotations_Board_Backend.Controllers
                     {
                         return BadRequest("Quotation does not exist");
                     }
+
+                    // Essure selling Yield is not greater than 100
+                    if (editQuotation.SellYield > 100)
+                    {
+                        return BadRequest("Selling yield cannot be greater than 100");
+                    }
+
+                    // Essure buying Yield is not greater than 100
+                    if (editQuotation.BuyYield > 100)
+                    {
+                        return BadRequest("Buying yield cannot be greater than 100");
+                    }
+
+
                     Quotation quotation = new Quotation
                     {
                         Id = editQuotation.Id,
