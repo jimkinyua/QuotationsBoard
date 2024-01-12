@@ -22,13 +22,14 @@ namespace Quotations_Board_Backend.Controllers
 
             try
             {
+                var IssueNo = Guid.NewGuid().ToString().Substring(0, 6);
                 // Maturity date is calculated from Issue date and Tenor
                 var maturityDate = newTbill.IssueDate.AddMonths((int)newTbill.Tenor);
                 using (var context = new QuotationsBoardContext())
                 {
                     TBill newTBill = new TBill
                     {
-                        IssueNumber = newTbill.IssueNumber,
+                        IssueNumber = IssueNo, //newTbill.IssueNumber,
                         IssueDate = newTbill.IssueDate,
                         MaturityDate = maturityDate,
                         Tenor = newTbill.Tenor,
@@ -70,7 +71,7 @@ namespace Quotations_Board_Backend.Controllers
                     {
                         return NotFound();
                     }
-                    tbill.IssueNumber = editTbill.IssueNumber;
+                    // tbill.IssueNumber = editTbill.IssueNumber;
                     tbill.IssueDate = editTbill.IssueDate;
                     tbill.MaturityDate = maturityDate;
                     tbill.Tenor = editTbill.Tenor;
