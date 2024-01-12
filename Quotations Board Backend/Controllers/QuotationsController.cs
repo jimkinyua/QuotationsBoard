@@ -157,12 +157,18 @@ namespace Quotations_Board_Backend.Controllers
                         throw new Exception($"Bond ID '{bondId}' does not exist in the system.");
                     }
                     var userId = UtilityService.GetUserIdFromToken(Request);
-                    // Get Institution User belongs to
-                    var institution = dbContext.Institutions.FirstOrDefault(i => i.Id == userId);
-                    if (institution == null)
+                    // Get User details
+                    var user = dbContext.Users.FirstOrDefault(u => u.Id == userId);
+                    if (user == null)
                     {
-                        throw new Exception($"User does not belong to any institution");
+                        throw new Exception($"User ID '{userId}' does not exist in the system.");
                     }
+
+                    if (user.InstitutionId == null)
+                    {
+                        throw new Exception($"User ID '{userId}' does not have an institution.");
+                    }
+
 
                     Quotation quote = new Quotation
                     {
@@ -173,7 +179,7 @@ namespace Quotations_Board_Backend.Controllers
                         SellVolume = int.Parse(worksheet.Cell(row, 5).Value.ToString()),
                         UserId = UtilityService.GetUserIdFromToken(Request),
                         CreatedAt = DateTime.Now,
-                        InstitutionId = institution.Id
+                        InstitutionId = user.InstitutionId
                     };
 
                     quotationRows.Add(quote);
