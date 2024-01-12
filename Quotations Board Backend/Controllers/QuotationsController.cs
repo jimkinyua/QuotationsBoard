@@ -535,8 +535,8 @@ namespace Quotations_Board_Backend.Controllers
                     {
                         quotations = await context.Quotations.Include(x => x.Institution)
                        .Where(q =>
-                        // q.InstitutionId == TokenContents.InstitutionId
-                        q.CreatedAt.Date >= fromDate.Date
+                        q.InstitutionId == TokenContents.InstitutionId
+                        && q.CreatedAt.Date >= fromDate.Date
                         && q.CreatedAt.Date <= toDate.Date
                         ).ToListAsync();
                     }
@@ -791,8 +791,8 @@ namespace Quotations_Board_Backend.Controllers
                     {
                         quotations = await context.Quotations.Include(x => x.Institution)
                        .Where(q =>
-                        q.InstitutionId == TokenContents.InstitutionId
-                        && q.CreatedAt.Date >= fromDate.Date
+                        // q.InstitutionId == TokenContents.InstitutionId &&
+                        q.CreatedAt.Date >= fromDate.Date
                         && q.CreatedAt.Date <= toDate.Date
                         ).ToListAsync();
                     }
