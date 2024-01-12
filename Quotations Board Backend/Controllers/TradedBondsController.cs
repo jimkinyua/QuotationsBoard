@@ -159,7 +159,7 @@ namespace Quotations_Board_Backend.Controllers
                         foreach (var trade in tradesDetails.GorvermentBondTradeLineStage)
                         {
                             // ensure the bond exists
-                            var TransformedSecId = TransformSecurityId(trade.SecurityId);
+                            var TransformedSecId = trade.SecurityId; //TransformSecurityId(trade.SecurityId);
                             var bond = await db.Bonds.Where(b => b.IssueNumber == TransformedSecId).FirstOrDefaultAsync();
                             if (bond == null)
                             {
