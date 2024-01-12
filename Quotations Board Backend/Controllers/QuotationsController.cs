@@ -169,6 +169,20 @@ namespace Quotations_Board_Backend.Controllers
                         throw new Exception($"User ID '{userId}' does not have an institution.");
                     }
 
+                    // Ensure selling yield is not greater than buying yield
+                    var buyYield = decimal.Parse(worksheet.Cell(row, 2).Value.ToString());
+                    var sellYield = decimal.Parse(worksheet.Cell(row, 4).Value.ToString());
+                    if (sellYield > buyYield)
+                    {
+                        throw new Exception($"Selling yield cannot be greater than buying yield.");
+                    }
+
+                    // Enusre that today this institution has not already filled a quotation for this bond
+                    var existingQuotation = dbContext.Quotations.FirstOrDefault(q => q.InstitutionId == user.InstitutionId && q.BondId == bondId && q.CreatedAt.Date == DateTime.Now.Date);
+                    if (existingQuotation != null)
+                    {
+                        throw new Exception($"A quotation for this bond at cell {row} has already been filled for today.");
+                    }
 
                     Quotation quote = new Quotation
                     {
