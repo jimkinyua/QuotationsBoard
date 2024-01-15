@@ -140,7 +140,7 @@ namespace Quotations_Board_Backend.Controllers
                         TBillDTO billDTO = new TBillDTO
                         {
                             Id = tbill.Id,
-                            IssueNumber = tbill.IssueNumber,
+                            // IssueNumber = tbill.IssueNumber,
                             IssueDate = tbill.IssueDate,
                             MaturityDate = tbill.MaturityDate,
                             Tenor = tbill.Tenor,
