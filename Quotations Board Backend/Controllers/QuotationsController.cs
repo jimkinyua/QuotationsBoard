@@ -106,6 +106,10 @@ namespace Quotations_Board_Backend.Controllers
                         decimal totalVolume = 0;
                         foreach (var q in mostRecentDayQuotations)
                         {
+                            if (q.BuyVolume < 50000000 || q.SellVolume < 50000000)
+                            {
+                                continue;
+                            }
                             totalWeightedYield += (q.BuyingYield * q.BuyVolume) + (q.SellingYield * q.SellVolume);
                             totalVolume += q.BuyVolume + q.SellVolume;
                         }
@@ -318,6 +322,10 @@ namespace Quotations_Board_Backend.Controllers
                         decimal totalVolume = 0;
                         foreach (var q in mostRecentDayQuotations)
                         {
+                            if (q.BuyVolume < 50000000 || q.SellVolume < 50000000)
+                            {
+                                continue;
+                            }
                             totalWeightedYield += (q.BuyingYield * q.BuyVolume) + (q.SellingYield * q.SellVolume);
                             totalVolume += q.BuyVolume + q.SellVolume;
                         }
@@ -513,6 +521,11 @@ namespace Quotations_Board_Backend.Controllers
                         decimal totalVolume = 0;
                         foreach (var q in mostRecentDayQuotations)
                         {
+                            if (q.BuyVolume < 50000000 || q.SellVolume < 50000000)
+                            {
+                                continue;
+                            }
+
                             totalWeightedYield += (q.BuyingYield * q.BuyVolume) + (q.SellingYield * q.SellVolume);
                             totalVolume += q.BuyVolume + q.SellVolume;
                         }
