@@ -151,7 +151,8 @@ namespace Quotations_Board_Backend.Controllers
                             Tenor = tbill.Tenor,
                             Yield = tbill.Yield,
                             CreatedOn = tbill.CreatedOn,
-                            Variance = Variance
+                            Variance = Variance,
+                            LastAuction = ThenYield
                         };
                         tbillDTOs.Add(billDTO);
                     }

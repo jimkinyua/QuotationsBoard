@@ -8,4 +8,5 @@ public class TBillDTO
     public DateTime CreatedOn { get; set; }
     public decimal Yield { get; set; }
     public decimal Variance { get; set; }
+    public decimal LastAuction { get; set; }
 }
