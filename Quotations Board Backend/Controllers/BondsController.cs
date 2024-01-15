@@ -44,6 +44,14 @@ namespace Quotations_Board_Backend.Controllers
             return bond;
         }
 
+        // returns Bon Categories
+
+        [HttpGet("BondCategories")]
+        public async Task<ActionResult<IEnumerable<string>>> GetBondCategories()
+        {
+            return await Task.FromResult(new List<string> { "IFB", "FDX" });
+        }
+
         // PUT: api/Bonds/5
         [HttpPut("UpdateBond")]
         public async Task<IActionResult> PutBond(UpdateBondDTO bond)
