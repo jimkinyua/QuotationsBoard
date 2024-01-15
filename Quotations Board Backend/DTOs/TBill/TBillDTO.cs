@@ -7,4 +7,5 @@ public class TBillDTO
     public decimal Tenor { get; set; }
     public DateTime CreatedOn { get; set; }
     public decimal Yield { get; set; }
+    public decimal Variance { get; set; }
 }

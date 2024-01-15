@@ -136,15 +136,22 @@ namespace Quotations_Board_Backend.Controllers
                     var tbillDTOs = new List<TBillDTO>();
                     foreach (var tbill in tbills)
                     {
-                        decimal TBillYiled = 0;
+                        var MostRecentTBillBeforeThis = await context.TBills
+                        .Where(x => x.Tenor == tbill.Tenor && x.IssueDate < tbill.IssueDate)
+                        .OrderByDescending(x => x.IssueDate)
+                        .FirstOrDefaultAsync();
+                        var ThenYield = MostRecentTBillBeforeThis != null ? MostRecentTBillBeforeThis.Yield : 0;
+                        var Variance = tbill.Yield - ThenYield;
+
                         TBillDTO billDTO = new TBillDTO
                         {
                             Id = tbill.Id,
-                            // IssueNumber = tbill.IssueNumber,
                             IssueDate = tbill.IssueDate,
                             MaturityDate = tbill.MaturityDate,
                             Tenor = tbill.Tenor,
-                            Yield = TBillYiled
+                            Yield = tbill.Yield,
+                            CreatedOn = tbill.CreatedOn,
+                            Variance = Variance
                         };
                         tbillDTOs.Add(billDTO);
                     }
