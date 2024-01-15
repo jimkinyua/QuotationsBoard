@@ -472,6 +472,12 @@ namespace Quotations_Board_Backend.Controllers
                             };
                             bondStatisticsDict[_quote.Key] = bondStatistic;
                         }
+                        var _quotedBuyVolume = _quote.Where(x => x.BuyingYield > 0).Sum(x => x.BuyVolume);
+                        var _quotedSellVolume = _quote.Where(x => x.SellingYield > 0).Sum(x => x.SellVolume);
+                        if (_quotedBuyVolume < 50000000 || _quotedSellVolume < 50000000)
+                        {
+                            continue;
+                        }
 
                         var totalQuotesCount = _quote.Count();
                         var totalBuyVolumeForPositiveYield = _quote.Where(x => x.BuyingYield > 0).Sum(x => x.BuyVolume);
@@ -530,6 +536,14 @@ namespace Quotations_Board_Backend.Controllers
                                 bondStatistic.BondName = "Bond not found";
                             }
 
+                            var _buyVolume = bond_trade_line.Where(x => x.Side == "BUY").Sum(x => x.ExecutedSize);
+                            var _sellVolume = bond_trade_line.Where(x => x.Side == "SELL").Sum(x => x.ExecutedSize);
+
+                            // if _buyVolume is less than 50 Million skip the trade
+                            if (_buyVolume < 50000000 || _sellVolume < 50000000)
+                            {
+                                continue;
+                            }
 
                             var totalExecutedVolume = bond_trade_line.Sum(x => x.ExecutedSize);
                             var totalWeightedBuyYield = bond_trade_line.Where(x => x.Side == "BUY").Sum(x => x.Yield * x.ExecutedSize);
