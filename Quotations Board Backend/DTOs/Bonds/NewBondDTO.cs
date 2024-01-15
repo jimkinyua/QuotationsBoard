@@ -8,4 +8,5 @@ public class NewBondDTO
     public decimal CouponRate { get; set; }
     public string BondType { get; set; } = null!;
     public string IssueNumber { get; set; } = null!;
+    public string BondCategory { get; set; } = null!;
 }
