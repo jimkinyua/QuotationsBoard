@@ -452,11 +452,17 @@ namespace Quotations_Board_Backend.Controllers
 
                     foreach (var bond in allBonds)
                     {
+                        var diffrenceBetweenSelectedDateAndMaturityDate = bond.MaturityDate.Date - DateTime.Now.Date;
+                        var m = diffrenceBetweenSelectedDateAndMaturityDate.TotalDays / 365.25;
+                        var yearsToMaturity = Math.Round(m, 2, MidpointRounding.AwayFromZero);
+
                         bondStatisticsDict[bond.Id] = new BondAverageStatistic
                         {
                             BondId = bond.Id,
-                            BondName = bond.IssueNumber
+                            BondName = bond.IssueNumber,
+                            YearsToMaturity = yearsToMaturity
                         };
+
 
                         var _quotations = await db.Quotations
                        .Include(x => x.Bond)
@@ -501,9 +507,6 @@ namespace Quotations_Board_Backend.Controllers
 
                             var averageWeightedSellYield = totalSellVolumeForPositiveYield > 0 ? totalWeightedSellYield / totalSellVolumeForPositiveYield : 0;
                             var averageWeightedBuyYield = totalBuyVolumeForPositiveYield > 0 ? totalWeightedBuyYield / totalBuyVolumeForPositiveYield : 0;
-                            var diffrenceBetweenSelectedDateAndMaturityDate = _quote.First().Bond.MaturityDate.Date - DateTime.Now.Date;
-                            var m = diffrenceBetweenSelectedDateAndMaturityDate.TotalDays / 365.25;
-                            var yearsToMaturity = Math.Round(m, 2, MidpointRounding.AwayFromZero);
 
                             // var averageTotalWeightedYield = totalCombinedVolume > 0 ? (totalWeightedBuyYield + totalWeightedSellYield) / totalCombinedVolume : 0;
                             var averageTotalWeightedYield = (averageWeightedSellYield + averageWeightedBuyYield) / 2;
@@ -513,7 +516,6 @@ namespace Quotations_Board_Backend.Controllers
                             bondStatistic.NumberofQuotes = totalQuotesCount;
                             bondStatistic.WeightedQuotedSellYield = Math.Round(averageWeightedSellYield, 4, MidpointRounding.AwayFromZero);
                             bondStatistic.WeightedQuotedBuyYield = Math.Round(averageWeightedBuyYield, 4, MidpointRounding.AwayFromZero);
-                            bondStatistic.YearsToMaturity = yearsToMaturity;
 
                         }
 
