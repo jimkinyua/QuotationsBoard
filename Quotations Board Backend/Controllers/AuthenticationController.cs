@@ -71,6 +71,12 @@ namespace Quotations_Board_Backend.Controllers
                     {
                         return BadRequest("Invalid login attempt. Pass Wrong");
                     }
+
+                    // Has user been locked out?
+                    if (await _userManager.IsLockedOutAsync(user))
+                    {
+                        return BadRequest("User account locked out.");
+                    }
                     // get role of current user. If SuperAdmin No Need for 2FA. Just return token
                     var roles = await _userManager.GetRolesAsync(user);
                     var TwoFactor = await _userManager.GetTwoFactorEnabledAsync(user);
@@ -161,6 +167,11 @@ namespace Quotations_Board_Backend.Controllers
                     if (user == null)
                     {
                         return BadRequest("Invalid login attempt.");
+                    }
+                    // locked out ?
+                    if (await _userManager.IsLockedOutAsync(user))
+                    {
+                        return BadRequest("User account locked out.");
                     }
                     var token = await _userManager.GeneratePasswordResetTokenAsync(user);
                     var encodedUserId = HttpUtility.UrlEncode(user.Id);
@@ -328,6 +339,12 @@ namespace Quotations_Board_Backend.Controllers
                 if (user == null)
                 {
                     return NotFound($"Unable to load user with ID '{resetPassword.UserId}'.");
+                }
+
+                // is account locked out?
+                if (await _userManager.IsLockedOutAsync(user))
+                {
+                    return BadRequest("User account locked out.");
                 }
 
                 // Calidate Password
