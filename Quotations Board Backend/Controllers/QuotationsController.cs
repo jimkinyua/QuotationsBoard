@@ -43,10 +43,10 @@ namespace Quotations_Board_Backend.Controllers
                         SellVolume = newQuotation.SellVolume
                     };
                     // Quotes Past 9 am will not be accepted
-                    // if (quotation.CreatedAt.Hour >= 9)
-                    // {
-                    //     return BadRequest("Quotations past 9 am are not accepted");
-                    // }
+                    if (quotation.CreatedAt.Hour >= 9)
+                    {
+                        return BadRequest("Quotations past 9 am are not accepted");
+                    }
                     // Ensure selling yield is not greater than buying yield
                     if (quotation.SellingYield > quotation.BuyingYield)
                     {
@@ -165,10 +165,10 @@ namespace Quotations_Board_Backend.Controllers
                     var userId = UtilityService.GetUserIdFromToken(Request);
 
                     // Is it past 9 am?
-                    // if (DateTime.Now.Hour >= 9)
-                    // {
-                    //     return BadRequest("Bulk upload quotations past 9 am are not accepted");
-                    // }
+                    if (DateTime.Now.Hour >= 9)
+                    {
+                        return BadRequest("Bulk upload quotations past 9 am are not accepted");
+                    }
 
                     // Read the excel file
                     var excelFile = bulkUpload.ExcelFile;
