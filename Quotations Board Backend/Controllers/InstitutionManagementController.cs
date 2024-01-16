@@ -251,8 +251,9 @@ namespace Quotations_Board_Backend.Controllers
                 // update user details if any have changed
                 existingUser.FirstName = portalUserDTO.FirstName;
                 existingUser.LastName = portalUserDTO.LastName;
+                await _userManager.UpdateAsync(existingUser);
 
-                await context.SaveChangesAsync();
+                // await context.SaveChangesAsync();
 
                 // return user
                 return Ok();
@@ -299,8 +300,8 @@ namespace Quotations_Board_Backend.Controllers
 
                 existingUser.LockoutEnabled = true;
                 existingUser.LockoutEnd = DateTime.Now.AddYears(100);
-
-                await context.SaveChangesAsync();
+                await _userManager.UpdateAsync(existingUser);
+                // await context.SaveChangesAsync();
 
                 // Send email to user notifying them that their account has been disabled
                 string emailBody = $"<p>Dear {existingUser.FirstName},</p>" +
