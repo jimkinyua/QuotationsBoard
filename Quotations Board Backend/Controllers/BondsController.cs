@@ -49,7 +49,7 @@ namespace Quotations_Board_Backend.Controllers
         [HttpGet("BondCategories")]
         public async Task<ActionResult<IEnumerable<string>>> GetBondCategories()
         {
-            return await Task.FromResult(new List<string> { "IFB", "FDX" });
+            return await Task.FromResult(new List<string> { "IFB", "FXD" });
         }
 
         // PUT: api/Bonds/5
