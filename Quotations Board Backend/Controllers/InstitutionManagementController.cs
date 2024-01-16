@@ -81,7 +81,7 @@ namespace Quotations_Board_Backend.Controllers
                                 Email = user.Email,
                                 InstitutionId = user.InstitutionId,
                                 Role = userRole[0],
-                                IsActive = user.LockoutEnabled,
+                                IsActive = !user.LockoutEnabled,
                                 CreatedAt = institution.CreatedAt
                             });
                         }
