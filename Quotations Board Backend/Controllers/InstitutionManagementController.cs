@@ -343,7 +343,7 @@ namespace Quotations_Board_Backend.Controllers
 
                 existingUser.LockoutEnabled = false;
                 existingUser.LockoutEnd = null;
-
+                await _userManager.UpdateAsync(existingUser);
                 await context.SaveChangesAsync();
                 // Send email to user notifying them that their account has been enabled
                 string emailBody = $"<p>Dear {existingUser.FirstName},</p>" +
