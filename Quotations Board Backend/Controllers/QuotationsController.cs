@@ -67,10 +67,10 @@ namespace Quotations_Board_Backend.Controllers
 
                     // Ensure difrence between selling yield and buying yield is not greater than 1%
                     var difference = Math.Abs(quotation.BuyingYield - quotation.SellingYield);
-                    var percentageDifference = Math.Round((difference / quotation.BuyingYield) * 100, 2);
-                    if (percentageDifference > 1)
+                    // var percentageDifference = Math.Round((difference / quotation.BuyingYield) * 100, 2);
+                    if (difference > 1)
                     {
-                        return BadRequest("The difference between selling yield and buying yield divided by Buying Yield, cannot be greater than 1%. The current difference is " + percentageDifference + "%");
+                        return BadRequest("The difference between selling yield and buying yield divided by Buying Yield, cannot be greater than 1%. The current difference is " + difference + "%");
                     }
 
 
@@ -277,10 +277,10 @@ namespace Quotations_Board_Backend.Controllers
 
                     // Ensure difrence between selling yield and buying yield is not greater than 1%
                     var difference = buyYield - sellYield;
-                    var percentageDifference = (difference / buyYield) * 100;
-                    if (percentageDifference > 1)
+
+                    if (difference > 1)
                     {
-                        throw new Exception($"The difference between selling yield and buying yield cannot be greater than 1%. The current difference is {percentageDifference}% check on row {row}");
+                        throw new Exception($"The difference between selling yield and buying yield cannot be greater than 1%. The current difference is {difference}% check on row {row}");
                     }
 
                     // Enusre that today this institution has not already filled a quotation for this bond
@@ -480,10 +480,10 @@ namespace Quotations_Board_Backend.Controllers
 
                     // Ensure difrence between selling yield and buying yield is not greater than 1%
                     var difference = editQuotation.BuyYield - editQuotation.SellYield;
-                    var percentageDifference = (difference / editQuotation.BuyYield) * 100;
-                    if (percentageDifference > 1)
+                    // var percentageDifference = (difference / editQuotation.BuyYield) * 100;
+                    if (difference > 1)
                     {
-                        return BadRequest("The difference between selling yield and buying yield cannot be greater than 1%. The current difference is " + percentageDifference + "%");
+                        return BadRequest("The difference between selling yield and buying yield cannot be greater than 1%. The current difference is " + difference + "%");
                     }
 
                     Quotation quotation = new Quotation
