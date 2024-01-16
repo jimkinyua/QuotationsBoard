@@ -38,32 +38,54 @@ namespace Quotations_Board_Backend.Controllers
             {
                 return Unauthorized();
             }
-
+            var userId = UtilityService.GetUserIdFromToken(Request);
             using (var context = new QuotationsBoardContext())
             {
-                Institution? institution = await context.Institutions
-                    .Include(i => i.PortalUsers)
-                    .FirstOrDefaultAsync(i => i.Id == TokenContents.InstitutionId);
-                if (institution == null)
+                // get roles of curren logged in user if they are superAdmin, fetch all Institution and include Users
+
+                var userRoles = await _userManager.GetRolesAsync(await _userManager.FindByIdAsync(userId));
+                List<Institution> institutions = null;
+                if (userRoles.Count > 0 && userRoles[0] == CustomRoles.SuperAdmin)
+                {
+                    institutions = await context.Institutions
+                       .Include(i => i.PortalUsers)
+                       .ToListAsync();
+                }
+                else
+                {
+                    institutions = await context.Institutions
+                       .Include(i => i.PortalUsers)
+                       .Where(i => i.Id == TokenContents.InstitutionId)
+                       .ToListAsync();
+                }
+
+                if (institutions.Count == 0)
                 {
                     return NotFound();
                 }
                 //var mapper = new MapperConfiguration(cfg => cfg.CreateMap<PortalUser, PortalUserDTO>()).CreateMapper();
                 //var portalUsers = mapper.Map<List<PortalUserDTO>>(institution.PortalUsers);
                 List<PortalUserDTO> portalUserDTO = new List<PortalUserDTO>();
-                foreach (var user in institution.PortalUsers)
+                foreach (var institution in institutions)
                 {
-                    var roles = await _userManager.GetRolesAsync(user);
-                    PortalUserDTO portalUser = new PortalUserDTO
+                    foreach (var user in institution.PortalUsers)
                     {
-                        Id = user.Id,
-                        FirstName = user.FirstName,
-                        LastName = user.LastName,
-                        Email = user.Email,
-                        Role = roles[0],
-                        IsActive = user.LockoutEnabled,
-                    };
-                    portalUserDTO.Add(portalUser);
+                        var userRole = await _userManager.GetRolesAsync(user);
+                        if (userRole.Count > 0)
+                        {
+                            portalUserDTO.Add(new PortalUserDTO
+                            {
+                                Id = user.Id,
+                                FirstName = user.FirstName,
+                                LastName = user.LastName,
+                                Email = user.Email,
+                                InstitutionId = user.InstitutionId,
+                                Role = userRole[0],
+                                IsActive = user.LockoutEnabled,
+                                CreatedAt = institution.CreatedAt
+                            });
+                        }
+                    }
                 }
 
                 return Ok(portalUserDTO);
