@@ -151,9 +151,27 @@ namespace Quotations_Board_Backend.Controllers
 
                 var yieldValue = worksheet.Cell(rowToBeginAt, 2).Value.ToString();
 
-
+                if (string.IsNullOrWhiteSpace(yieldValue))
+                {
+                    errors.Add($"Row {rowToBeginAt}: 'Issue No' is required.");
+                    continue;
+                }
                 if (!decimal.TryParse(yieldValue, out _))
+                {
                     errors.Add($"Row {rowToBeginAt} Cell D: 'Executed Size' is not a valid decimal number.");
+                }
+
+                var yieldDate = worksheet.Cell(rowToBeginAt, 1).Value.ToString();
+
+                if (string.IsNullOrWhiteSpace(yieldDate))
+                {
+                    errors.Add($"Row {rowToBeginAt}: 'Yield Date' is required.");
+                    continue;
+                }
+                if (!DateTime.TryParse(yieldDate, out _))
+                {
+                    errors.Add($"Row {rowToBeginAt} Cell A: 'Yield Date' is not a valid date.");
+                }
 
             }
 
@@ -195,18 +213,32 @@ namespace Quotations_Board_Backend.Controllers
                     continue; // Skip the empty row
                 }
 
-                var bondId = worksheet.Cell(row, 1).Value.ToString();
+                var excelIssueNo = worksheet.Cell(row, 1).Value.ToString();
                 var yieldValue = worksheet.Cell(row, 2).Value.ToString();
+                var yieldDate = worksheet.Cell(row, 3).Value.ToString();
 
-                // Assuming data is already validated and can be directly parsed
-                var impliedYield = new ImpliedYield
+                using (var dbContext = new QuotationsBoardContext())
                 {
-                    BondId = bondId,
-                    Yield = decimal.Parse(yieldValue),
-                    YieldDate = DateTime.Now // Assuming you want to set the YieldDate to the current date/time
-                };
+                    dbContext.Database.EnsureCreated();
+                    // Check if transformedSecurityId exists in the database
+                    var bondExists = dbContext.Bonds.Where(b => b.IssueNumber == excelIssueNo).FirstOrDefault();
+                    if (bondExists == null)
+                    {
+                        throw new Exception($"Security ID '{excelIssueNo}' does not exist in the system.");
+                    }
 
-                impliedYields.Add(impliedYield);
+                    // Assuming data is already validated and can be directly parsed
+                    var impliedYield = new ImpliedYield
+                    {
+                        BondId = bondExists.Id,
+                        Yield = decimal.Parse(yieldValue),
+                        YieldDate = DateTime.Parse(yieldDate)
+                    };
+
+                    impliedYields.Add(impliedYield);
+                }
+
+
             }
 
             return impliedYields;

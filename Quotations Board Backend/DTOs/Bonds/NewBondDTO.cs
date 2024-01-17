@@ -18,6 +18,5 @@ public class NewBondDTO
     public string BondType { get; set; } = null!;
     [Required]
     public string IssueNumber { get; set; } = null!;
-    [Required]
-    public string BondCategory { get; set; } = null!;
+    public string BondCategory { get; set; } = "";
 }
