@@ -49,7 +49,7 @@ namespace Quotations_Board_Backend.Controllers
                             db.Database.EnsureCreated();
                             List<UploadedTrade> trades = ReadExcelData(sheetWhereDataIsLocated);
                             // Group By Trades by TransactionTime Date
-                            var groupedTrades = trades.GroupBy(x => x.TransactionTime.Date);
+                            var groupedTrades = trades.GroupBy(x => x.TradeDate.Date);
                             foreach (var tradeGroup in groupedTrades)
                             {
                                 // Check if GorvermentBondTradeStage with the TargetDate already exists
@@ -76,7 +76,7 @@ namespace Quotations_Board_Backend.Controllers
                                         ExecutedSize = _trade.ExecutedSize,
                                         ExcecutedPrice = _trade.ExecutedPrice,
                                         ExecutionID = _trade.ExecutionID,
-                                        TransactionTime = _trade.TransactionTime,
+                                        TransactionTime = _trade.TradeDate,
                                         DirtyPrice = _trade.DirtyPrice,
                                         Yield = _trade.Yield,
                                         TradeDate = existingGorvermentBondTradeStage.TargetDate
@@ -659,7 +659,7 @@ namespace Quotations_Board_Backend.Controllers
                     ExecutedSize = decimal.Parse(worksheet.Cell(row, 4).Value.ToString()),
                     ExecutedPrice = decimal.Parse(worksheet.Cell(row, 5).Value.ToString()),
                     ExecutionID = worksheet.Cell(row, 6).Value.ToString(),
-                    TransactionTime = DateTime.Parse(worksheet.Cell(row, 7).Value.ToString()),
+                    TradeDate = DateTime.Parse(worksheet.Cell(row, 13).Value.ToString()),
                     DirtyPrice = decimal.Parse(worksheet.Cell(row, 8).Value.ToString()),
                     Yield = decimal.Parse(worksheet.Cell(row, 9).Value.ToString()),
                 };

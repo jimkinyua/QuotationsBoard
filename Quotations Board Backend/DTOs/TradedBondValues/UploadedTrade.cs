@@ -1,6 +1,6 @@
 public class UploadedTrade
 {
-    public DateTime TransactionTime { get; set; }
+    public DateTime TradeDate { get; set; }
     public decimal ExecutedSize { get; set; }
     public decimal ExecutedPrice { get; set; }
     public string ExecutionID { get; set; } = null!;
