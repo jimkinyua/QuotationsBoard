@@ -349,7 +349,7 @@ namespace Quotations_Board_Backend.Controllers
                         }
                         computedImpliedYields.Add(new ComputedImpliedYield
                         {
-                            BondId = bond.Id,
+                            BondId = bond.Isin,
                             Yield = impliedYield,
                             YieldDate = DateInQuestion,
                             ReasonForSelection = reasonForSelection
