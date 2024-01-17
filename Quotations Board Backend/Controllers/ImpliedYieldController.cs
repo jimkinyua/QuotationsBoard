@@ -402,15 +402,14 @@ namespace Quotations_Board_Backend.Controllers
         private decimal CalculateAverageWeightedTradedYield(List<BondTradeLine> bondTradeLines)
         {
             decimal averageWeightedTradedYield = 0;
-            decimal totalWeightedBuyYield = bondTradeLines.Where(x => x.Side == "BUY").Sum(x => x.Yield * x.ExecutedSize);
-            decimal totalWeightedSellYield = bondTradeLines.Where(x => x.Side == "SELL").Sum(x => x.Yield * x.ExecutedSize);
-            decimal totalBuyVolume = bondTradeLines.Where(x => x.Side == "BUY").Sum(x => x.ExecutedSize);
-            decimal totalSellVolume = bondTradeLines.Where(x => x.Side == "SELL").Sum(x => x.ExecutedSize);
+            decimal totalWeightedBuyYield = bondTradeLines.Where(x => x.Side == "BUY" && x.ExecutedSize >= 50000000).Sum(x => x.Yield * x.ExecutedSize);
+            decimal totalWeightedSellYield = bondTradeLines.Where(x => x.Side == "SELL" && x.ExecutedSize >= 50000000).Sum(x => x.Yield * x.ExecutedSize);
+            decimal totalBuyVolume = bondTradeLines.Where(x => x.Side == "BUY" && x.ExecutedSize >= 50000000).Sum(x => x.ExecutedSize);
+            decimal totalSellVolume = bondTradeLines.Where(x => x.Side == "SELL" && x.ExecutedSize >= 50000000).Sum(x => x.ExecutedSize);
 
             decimal averageBuyYield = totalBuyVolume > 0 ? totalWeightedBuyYield / totalBuyVolume : 0;
             decimal averageSellYield = totalSellVolume > 0 ? totalWeightedSellYield / totalSellVolume : 0;
 
-            // If both volumes are zero, the average would be undefined. Handle as needed.
             if (totalBuyVolume > 0 || totalSellVolume > 0)
             {
                 averageWeightedTradedYield = (averageBuyYield + averageSellYield) / 2;
@@ -422,15 +421,14 @@ namespace Quotations_Board_Backend.Controllers
         private decimal CalculateAverageWeightedQuotedYield(List<Quotation> quotations)
         {
             decimal averageWeightedQuotedYield = 0;
-            decimal totalWeightedBuyYield = quotations.Sum(x => x.BuyingYield * x.BuyVolume);
-            decimal totalWeightedSellYield = quotations.Sum(x => x.SellingYield * x.SellVolume);
-            decimal totalBuyVolume = quotations.Sum(x => x.BuyVolume);
-            decimal totalSellVolume = quotations.Sum(x => x.SellVolume);
+            decimal totalWeightedBuyYield = quotations.Where(x => x.BuyVolume >= 50000000).Sum(x => x.BuyingYield * x.BuyVolume);
+            decimal totalWeightedSellYield = quotations.Where(x => x.SellVolume >= 50000000).Sum(x => x.SellingYield * x.SellVolume);
+            decimal totalBuyVolume = quotations.Where(x => x.BuyVolume >= 50000000).Sum(x => x.BuyVolume);
+            decimal totalSellVolume = quotations.Where(x => x.SellVolume >= 50000000).Sum(x => x.SellVolume);
 
             decimal averageBuyYield = totalBuyVolume > 0 ? totalWeightedBuyYield / totalBuyVolume : 0;
             decimal averageSellYield = totalSellVolume > 0 ? totalWeightedSellYield / totalSellVolume : 0;
 
-            // If both volumes are zero, the average would be undefined. Handle as needed.
             if (totalBuyVolume > 0 || totalSellVolume > 0)
             {
                 averageWeightedQuotedYield = (averageBuyYield + averageSellYield) / 2;
@@ -438,6 +436,7 @@ namespace Quotations_Board_Backend.Controllers
 
             return averageWeightedQuotedYield;
         }
+
 
 
 
