@@ -390,14 +390,19 @@ namespace Quotations_Board_Backend.Controllers
             decimal totalWeightedSellYield = bondTradeLines.Where(x => x.Side == "SELL").Sum(x => x.Yield * x.ExecutedSize);
             decimal totalBuyVolume = bondTradeLines.Where(x => x.Side == "BUY").Sum(x => x.ExecutedSize);
             decimal totalSellVolume = bondTradeLines.Where(x => x.Side == "SELL").Sum(x => x.ExecutedSize);
-            decimal averageBuyYield = totalWeightedBuyYield / totalBuyVolume;
-            decimal averageSellYield = totalWeightedSellYield / totalSellVolume;
-            decimal totalExecutedSize = bondTradeLines.Sum(x => x.ExecutedSize);
-            averageWeightedTradedYield = (averageBuyYield + averageSellYield) / 2;
+
+            decimal averageBuyYield = totalBuyVolume > 0 ? totalWeightedBuyYield / totalBuyVolume : 0;
+            decimal averageSellYield = totalSellVolume > 0 ? totalWeightedSellYield / totalSellVolume : 0;
+
+            // If both volumes are zero, the average would be undefined. Handle as needed.
+            if (totalBuyVolume > 0 || totalSellVolume > 0)
+            {
+                averageWeightedTradedYield = (averageBuyYield + averageSellYield) / 2;
+            }
+
             return averageWeightedTradedYield;
         }
 
-        // calculate the Average Weighted Quoted Yield for a Bond
         private decimal CalculateAverageWeightedQuotedYield(List<Quotation> quotations)
         {
             decimal averageWeightedQuotedYield = 0;
@@ -405,11 +410,19 @@ namespace Quotations_Board_Backend.Controllers
             decimal totalWeightedSellYield = quotations.Sum(x => x.SellingYield * x.SellVolume);
             decimal totalBuyVolume = quotations.Sum(x => x.BuyVolume);
             decimal totalSellVolume = quotations.Sum(x => x.SellVolume);
-            decimal averageBuyYield = totalWeightedBuyYield / totalBuyVolume;
-            decimal averageSellYield = totalWeightedSellYield / totalSellVolume;
-            averageWeightedQuotedYield = (averageBuyYield + averageSellYield) / 2;
+
+            decimal averageBuyYield = totalBuyVolume > 0 ? totalWeightedBuyYield / totalBuyVolume : 0;
+            decimal averageSellYield = totalSellVolume > 0 ? totalWeightedSellYield / totalSellVolume : 0;
+
+            // If both volumes are zero, the average would be undefined. Handle as needed.
+            if (totalBuyVolume > 0 || totalSellVolume > 0)
+            {
+                averageWeightedQuotedYield = (averageBuyYield + averageSellYield) / 2;
+            }
+
             return averageWeightedQuotedYield;
         }
+
 
 
 
