@@ -262,8 +262,8 @@ namespace Quotations_Board_Backend.Controllers
                     var TBills = db.TBills.ToList();
                     var bondsNotMatured = bonds.Where(b => b.MaturityDate.Date > DateTime.Now.Date).ToList();
                     var tBillsNotMature = TBills.Where(t => t.MaturityDate.Date > DateTime.Now.Date).ToList();
-                    var LastWeeksTBill = tBillsNotMature.Where(t => t.MaturityDate.Date == LastWeek.Date).ToList();
-                    var lastWeekButOneTBill = tBillsNotMature.Where(t => t.MaturityDate.Date == LastWeek.AddDays(-7).Date).ToList();
+                    var LastWeeksTBill = tBillsNotMature.Where(t => t.IssueDate.Date == LastWeek.Date).ToList();
+                    var lastWeekButOneTBill = tBillsNotMature.Where(t => t.IssueDate.Date == LastWeek.AddDays(-7).Date).ToList();
                     decimal AllowedMarginOfError = 0.05m;
                     var oneYearTBillForLastWeek = LastWeeksTBill.Where(t => t.Tenor >= 364).FirstOrDefault();
                     var oneYearTBillForLastWeekButOne = lastWeekButOneTBill.Where(t => t.Tenor >= 364).FirstOrDefault();
