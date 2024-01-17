@@ -537,15 +537,6 @@ namespace Quotations_Board_Backend.Controllers
                                     bondStatisticsDict[bond_trade_line.Key] = bondStatistic;
                                 }
 
-                                if (bond != null)
-                                {
-                                    bondStatistic.BondName = bond.IssueNumber;
-                                }
-                                else
-                                {
-                                    bondStatistic.BondName = "Bond not found";
-                                }
-
                                 var _buyVolume = bond_trade_line.Where(x => x.Side == "BUY").Sum(x => x.ExecutedSize);
                                 var _sellVolume = bond_trade_line.Where(x => x.Side == "SELL").Sum(x => x.ExecutedSize);
 
