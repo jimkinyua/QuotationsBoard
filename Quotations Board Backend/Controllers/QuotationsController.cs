@@ -165,10 +165,10 @@ namespace Quotations_Board_Backend.Controllers
                     var userId = UtilityService.GetUserIdFromToken(Request);
 
                     // Is it past 9 am?
-                    if (DateTime.Now.Hour >= 9)
-                    {
-                        return BadRequest("Bulk upload quotations past 9 am are not accepted");
-                    }
+                    // if (DateTime.Now.Hour >= 9)
+                    // {
+                    //     return BadRequest("Bulk upload quotations past 9 am are not accepted");
+                    // }
 
                     // Read the excel file
                     var excelFile = bulkUpload.ExcelFile;
