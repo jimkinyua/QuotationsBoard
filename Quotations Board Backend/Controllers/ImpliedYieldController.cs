@@ -265,8 +265,8 @@ namespace Quotations_Board_Backend.Controllers
                     var LastWeeksTBill = tBillsNotMature.Where(t => t.MaturityDate.Date == LastWeek.Date).ToList();
                     var lastWeekButOneTBill = tBillsNotMature.Where(t => t.MaturityDate.Date == LastWeek.AddDays(-7).Date).ToList();
                     decimal AllowedMarginOfError = 0.05m;
-                    var oneYearTBillForLastWeek = LastWeeksTBill.Where(t => t.Tenor == 1).FirstOrDefault();
-                    var oneYearTBillForLastWeekButOne = lastWeekButOneTBill.Where(t => t.Tenor == 1).FirstOrDefault();
+                    var oneYearTBillForLastWeek = LastWeeksTBill.Where(t => t.Tenor >= 364).FirstOrDefault();
+                    var oneYearTBillForLastWeekButOne = lastWeekButOneTBill.Where(t => t.Tenor >= 364).FirstOrDefault();
                     if (oneYearTBillForLastWeekButOne == null)
                     {
                         return BadRequest("No 1 Year TBill for Last Week But One");
