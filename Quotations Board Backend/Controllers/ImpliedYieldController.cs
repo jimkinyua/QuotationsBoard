@@ -108,7 +108,7 @@ namespace Quotations_Board_Backend.Controllers
             int maxColumnCount = worksheet.ColumnsUsed().Count();
 
 
-            for (int rowToBeginAt = 2; rowToBeginAt <= rowCount; rowToBeginAt++)
+            for (int rowToBeginAt = maxColumnCount; rowToBeginAt <= rowCount; rowToBeginAt++)
             {
                 // Check if the row is empty
                 bool isEmptyRow = true;
@@ -121,7 +121,7 @@ namespace Quotations_Board_Backend.Controllers
                     }
                 }
 
-                string excelIssueNo = worksheet.Cell(rowToBeginAt, 3).Value.ToString();
+                string excelIssueNo = worksheet.Cell(rowToBeginAt, 1).Value.ToString();
 
                 if (string.IsNullOrWhiteSpace(excelIssueNo))
                 {
@@ -155,7 +155,7 @@ namespace Quotations_Board_Backend.Controllers
                     errors.Add($"Row {rowToBeginAt} Cell D: 'Executed Size' is not a valid decimal number.");
                 }
 
-                var yieldDate = worksheet.Cell(rowToBeginAt, 1).Value.ToString();
+                var yieldDate = worksheet.Cell(rowToBeginAt, 3).Value.ToString();
 
                 if (string.IsNullOrWhiteSpace(yieldDate))
                 {
