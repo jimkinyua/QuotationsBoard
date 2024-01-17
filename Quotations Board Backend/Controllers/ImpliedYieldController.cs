@@ -216,7 +216,7 @@ namespace Quotations_Board_Backend.Controllers
         // Calculate Implied Yield for each Bond
         [HttpGet]
         [Route("CalculateImpliedYield")]
-        public IActionResult CalculateImpliedYield()
+        public ActionResult<IEnumerable<ComputedImpliedYield>> CalculateImpliedYield()
         {
             try
             {
@@ -232,6 +232,16 @@ namespace Quotations_Board_Backend.Controllers
                     var LastWeeksTBill = tBillsNotMature.Where(t => t.MaturityDate.Date == LastWeek.Date).ToList();
                     var lastWeekButOneTBill = tBillsNotMature.Where(t => t.MaturityDate.Date == LastWeek.AddDays(-7).Date).ToList();
                     decimal AllowedMarginOfError = 0.05m;
+                    var oneYearTBillForLastWeek = LastWeeksTBill.Where(t => t.Tenor == 1).FirstOrDefault();
+                    var oneYearTBillForLastWeekButOne = lastWeekButOneTBill.Where(t => t.Tenor == 1).FirstOrDefault();
+                    if (oneYearTBillForLastWeekButOne == null)
+                    {
+                        return BadRequest("No 1 Year TBill for Last Week But One");
+                    }
+                    if (oneYearTBillForLastWeek == null)
+                    {
+                        return BadRequest("No 1 Year TBill for Last Week");
+                    }
 
                     foreach (var bond in bondsNotMatured)
                     {
@@ -246,10 +256,10 @@ namespace Quotations_Board_Backend.Controllers
                         }
                         var QuotedAndPrevious = averageWeightedQuotedYield - previousImpliedYield.Yield;
                         var TradedAndPrevious = averageWeightedTradedYield - previousImpliedYield.Yield;
-                        var VarianceinTBills = LastWeeksTBill[0].Yield - lastWeekButOneTBill[0].Yield;
+                        var VarianceinTBills = oneYearTBillForLastWeek.Yield - oneYearTBillForLastWeekButOne.Yield;
 
-                        bool isQuotedWithinMargin = Math.Abs(QuotedAndPrevious - VarianceinTBills) <= AllowedMarginOfError;
-                        bool isTradedWithinMargin = Math.Abs(TradedAndPrevious - VarianceinTBills) <= AllowedMarginOfError;
+                        bool isQuotedWithinMargin = IsWithinMargin(QuotedAndPrevious, VarianceinTBills, AllowedMarginOfError);
+                        bool isTradedWithinMargin = IsWithinMargin(TradedAndPrevious, VarianceinTBills, AllowedMarginOfError);
 
                         decimal impliedYield;
 
@@ -260,13 +270,26 @@ namespace Quotations_Board_Backend.Controllers
                         }
                         else if (isQuotedWithinMargin)
                         {
-                            impliedYield = 0;
+                            impliedYield = averageWeightedQuotedYield;
                         }
-
-
+                        else if (isTradedWithinMargin)
+                        {
+                            impliedYield = averageWeightedTradedYield;
+                        }
+                        else
+                        {
+                            // None meets Condition so we stick with the previous Implied Yield
+                            impliedYield = previousImpliedYield.Yield;
+                        }
+                        computedImpliedYields.Add(new ComputedImpliedYield
+                        {
+                            BondId = bond.Id,
+                            Yield = impliedYield,
+                            YieldDate = DateInQuestion
+                        });
                     }
 
-                    return Ok();
+                    return Ok(computedImpliedYields);
                 }
             }
             catch (Exception Ex)
@@ -275,6 +298,16 @@ namespace Quotations_Board_Backend.Controllers
                 return StatusCode(500, UtilityService.HandleException(Ex));
 
             }
+        }
+
+        private bool IsWithinMargin(decimal value, decimal variance, decimal margin)
+        {
+            return Math.Abs(value - variance) <= margin;
+        }
+
+        private decimal DetermineClosestYield(decimal quoted, decimal traded, decimal variance)
+        {
+            return Math.Abs(quoted - variance) < Math.Abs(traded - variance) ? quoted : traded;
         }
 
         // fetehces all Quotations for a Bond (Private)
