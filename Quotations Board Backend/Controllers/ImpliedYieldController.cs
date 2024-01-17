@@ -1,6 +1,7 @@
 ﻿using ClosedXML.Excel;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace Quotations_Board_Backend.Controllers
 {
@@ -211,6 +212,122 @@ namespace Quotations_Board_Backend.Controllers
             return impliedYields;
 
         }
+
+        // Calculate Implied Yield for each Bond
+        [HttpGet]
+        [Route("CalculateImpliedYield")]
+        public IActionResult CalculateImpliedYield()
+        {
+            try
+            {
+                using (var db = new QuotationsBoardContext())
+                {
+                    var DateInQuestion = DateTime.Now.Date;
+                    var LastWeek = DateInQuestion.AddDays(-7);
+                    List<ComputedImpliedYield> computedImpliedYields = new List<ComputedImpliedYield>();
+                    var bonds = db.Bonds.ToList();
+                    var TBills = db.TBills.ToList();
+                    var bondsNotMatured = bonds.Where(b => b.MaturityDate.Date > DateTime.Now.Date).ToList();
+                    var tBillsNotMature = TBills.Where(t => t.MaturityDate.Date > DateTime.Now.Date).ToList();
+                    var LastWeeksTBill = tBillsNotMature.Where(t => t.MaturityDate.Date == LastWeek.Date).ToList();
+                    var lastWeekButOneTBill = tBillsNotMature.Where(t => t.MaturityDate.Date == LastWeek.AddDays(-7).Date).ToList();
+                    decimal AllowedMarginOfError = 0.05m;
+
+                    foreach (var bond in bondsNotMatured)
+                    {
+                        var bondTradeLines = GetBondTradeLinesForBond(bond.Id, DateInQuestion);
+                        var quotations = GetQuotationsForBond(bond.Id, DateInQuestion);
+                        var averageWeightedTradedYield = CalculateAverageWeightedTradedYield(bondTradeLines);
+                        var averageWeightedQuotedYield = CalculateAverageWeightedQuotedYield(quotations);
+                        var previousImpliedYield = db.ImpliedYields.Where(i => i.BondId == bond.Id && i.YieldDate.Date == LastWeek.Date).FirstOrDefault();
+                        if (previousImpliedYield == null)
+                        {
+                            continue;
+                        }
+                        var QuotedAndPrevious = averageWeightedQuotedYield - previousImpliedYield.Yield;
+                        var TradedAndPrevious = averageWeightedTradedYield - previousImpliedYield.Yield;
+                        var VarianceinTBills = LastWeeksTBill[0].Yield - lastWeekButOneTBill[0].Yield;
+
+                        bool isQuotedWithinMargin = Math.Abs(QuotedAndPrevious - VarianceinTBills) <= AllowedMarginOfError;
+                        bool isTradedWithinMargin = Math.Abs(TradedAndPrevious - VarianceinTBills) <= AllowedMarginOfError;
+
+                        decimal impliedYield;
+
+                        if (isQuotedWithinMargin && isTradedWithinMargin)
+                        {
+                            // If both are within margin, the tradedMargin takes precedence
+                            impliedYield = averageWeightedTradedYield;
+                        }
+                        else if (isQuotedWithinMargin)
+                        {
+                            impliedYield = 0;
+                        }
+
+
+                    }
+
+                    return Ok();
+                }
+            }
+            catch (Exception Ex)
+            {
+                UtilityService.LogException(Ex);
+                return StatusCode(500, UtilityService.HandleException(Ex));
+
+            }
+        }
+
+        // fetehces all Quotations for a Bond (Private)
+        private List<Quotation> GetQuotationsForBond(string bondId, DateTime filterDate)
+        {
+            using (var db = new QuotationsBoardContext())
+            {
+                var quotations = db.Quotations.Where(q => q.BondId == bondId && q.CreatedAt.Date == filterDate.Date).ToList();
+                return quotations;
+            }
+        }
+
+        private List<BondTradeLine> GetBondTradeLinesForBond(string bondId, DateTime filterDate)
+        {
+            using (var db = new QuotationsBoardContext())
+            {
+                var bondTradeLines = db.BondTradeLines
+                .Include(b => b.BondTrade)
+                .Where(b => b.BondId == bondId && b.BondTrade.TradeDate == filterDate.Date).ToList();
+                return bondTradeLines;
+            }
+        }
+
+        // Calculates the Average Weighted Traded Yield for a Bond
+        private decimal CalculateAverageWeightedTradedYield(List<BondTradeLine> bondTradeLines)
+        {
+            decimal averageWeightedTradedYield = 0;
+            decimal totalWeightedBuyYield = bondTradeLines.Where(x => x.Side == "BUY").Sum(x => x.Yield * x.ExecutedSize);
+            decimal totalWeightedSellYield = bondTradeLines.Where(x => x.Side == "SELL").Sum(x => x.Yield * x.ExecutedSize);
+            decimal totalBuyVolume = bondTradeLines.Where(x => x.Side == "BUY").Sum(x => x.ExecutedSize);
+            decimal totalSellVolume = bondTradeLines.Where(x => x.Side == "SELL").Sum(x => x.ExecutedSize);
+            decimal averageBuyYield = totalWeightedBuyYield / totalBuyVolume;
+            decimal averageSellYield = totalWeightedSellYield / totalSellVolume;
+            decimal totalExecutedSize = bondTradeLines.Sum(x => x.ExecutedSize);
+            averageWeightedTradedYield = (averageBuyYield + averageSellYield) / 2;
+            return averageWeightedTradedYield;
+        }
+
+        // calculate the Average Weighted Quoted Yield for a Bond
+        private decimal CalculateAverageWeightedQuotedYield(List<Quotation> quotations)
+        {
+            decimal averageWeightedQuotedYield = 0;
+            decimal totalWeightedBuyYield = quotations.Sum(x => x.BuyingYield * x.BuyVolume);
+            decimal totalWeightedSellYield = quotations.Sum(x => x.SellingYield * x.SellVolume);
+            decimal totalBuyVolume = quotations.Sum(x => x.BuyVolume);
+            decimal totalSellVolume = quotations.Sum(x => x.SellVolume);
+            decimal averageBuyYield = totalWeightedBuyYield / totalBuyVolume;
+            decimal averageSellYield = totalWeightedSellYield / totalSellVolume;
+            averageWeightedQuotedYield = (averageBuyYield + averageSellYield) / 2;
+            return averageWeightedQuotedYield;
+        }
+
+
 
 
     }
