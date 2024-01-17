@@ -73,12 +73,6 @@ namespace Quotations_Board_Backend.Controllers
                 var UploadFile = uploadImpliedYield.ExcelFile;
                 using (var db = new QuotationsBoardContext())
                 {
-                    // Ensure that no Implied Yield exists for this date
-                    var impliedYieldExists = db.ImpliedYields.Any(i => i.YieldDate.Date == uploadImpliedYield.TargetDate.Date);
-                    if (impliedYieldExists)
-                    {
-                        return BadRequest("Implied Yield already exists for this date");
-                    }
 
                     using (var stream = new MemoryStream())
                     {
@@ -225,6 +219,13 @@ namespace Quotations_Board_Backend.Controllers
                     if (bondExists == null)
                     {
                         throw new Exception($"Security ID '{excelIssueNo}' does not exist in the system.");
+                    }
+
+                    // ensure no implied with same tenor within same week exists more than once
+                    var impliedYieldExists = dbContext.ImpliedYields.Any(i => i.BondId == bondExists.Id && i.YieldDate.Date == DateTime.Parse(yieldDate).Date);
+                    if (impliedYieldExists)
+                    {
+                        throw new Exception($"Implied Yield for the Bond '{excelIssueNo}' on '{yieldDate}' already exists in the system.");
                     }
 
                     // Assuming data is already validated and can be directly parsed
