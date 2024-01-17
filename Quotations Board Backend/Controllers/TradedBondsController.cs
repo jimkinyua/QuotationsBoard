@@ -596,37 +596,9 @@ namespace Quotations_Board_Backend.Controllers
             {
                 if (string.IsNullOrWhiteSpace(excelSecurityId))
                     throw new ArgumentException("Excel Security ID is null or whitespace.");
-
-                // Remove any prefix ending in "."
-                int dotIndex = excelSecurityId.LastIndexOf('.');
-                if (dotIndex == -1)
-                    throw new FormatException("Excel Security ID does not contain a dot separator.");
-
-                string transformedId = excelSecurityId.Substring(dotIndex + 1);
-
-                // Split the ID into segments and validate the structure
-                var segments = transformedId.Split('/');
-                if (segments.Length != 3)
-                    throw new FormatException("Transformed Security ID does not contain the correct number of segments.");
-
-                // Validate the prefix segment (e.g., IFB1 or FXD1)
-                if (!segments[0].StartsWith("IFB") && !segments[0].StartsWith("FXD"))
-                    throw new FormatException("The prefix segment does not start with a recognized identifier.");
-
-                // Validate the year segment
-                if (segments[1].Length != 4 || !int.TryParse(segments[1], out int year))
-                    throw new FormatException("The year segment is not a valid 4-digit year.");
-
-                // Validate and format the rate/number segment
-                if (!decimal.TryParse(segments[2], out decimal rate))
-                    throw new FormatException("The rate/number segment is not a valid decimal number.");
-
-                string rateSegment = rate % 1 == 0 ? rate.ToString("0") : rate.ToString("0.0");
-
-                // Reconstruct the transformed ID with properly formatted rate
-                transformedId = $"{segments[0]}/{segments[1]}/{rateSegment}";
-
-                return transformedId;
+                int indexOfPeriod = excelSecurityId.IndexOf('.');
+                string formattedString = excelSecurityId.Substring(indexOfPeriod + 1);
+                return formattedString;
             }
             catch (Exception ex)
             {
@@ -718,7 +690,7 @@ namespace Quotations_Board_Backend.Controllers
                 }
 
                 string excelSecurityId = worksheet.Cell(rowToBeginAt, 3).Value.ToString();
-                // string transformedSecurityId = TransformSecurityId(excelSecurityId);
+                string transformedSecurityId = TransformSecurityId(excelSecurityId);
 
                 if (string.IsNullOrEmpty(excelSecurityId))
                 {
@@ -730,7 +702,7 @@ namespace Quotations_Board_Backend.Controllers
                 {
                     dbContext.Database.EnsureCreated();
                     // Check if transformedSecurityId exists in the database
-                    var bondExists = dbContext.Bonds.Any(b => b.IssueNumber == excelSecurityId);
+                    var bondExists = dbContext.Bonds.Any(b => b.IssueNumber == transformedSecurityId);
                     if (!bondExists)
                     {
                         errors.Add($"Row {rowToBeginAt}: Security ID '{excelSecurityId}' does not exist in the system.");
