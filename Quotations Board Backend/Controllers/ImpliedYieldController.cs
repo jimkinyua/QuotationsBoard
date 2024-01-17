@@ -328,23 +328,23 @@ namespace Quotations_Board_Backend.Controllers
                         {
                             // If both are within margin, the tradedMargin takes precedence
                             impliedYield = averageWeightedTradedYield;
-                            reasonForSelection = $"Both Quoted and Traded are within margin of error. Traded Yield is selceted because it takes precedence over Quoted Yield: {averageWeightedQuotedYield}, Traded Yield: {averageWeightedTradedYield}, Previous Implied Yield: {previousImpliedYield.Yield}, Variance in TBills: {VarianceinTBills}, Allowed Margin of Error: {AllowedMarginOfError}";
+                            reasonForSelection = $"Both Quoted and Traded are within margin of error. Traded Yield is selceted because it takes precedence over Quoted Yield: {averageWeightedQuotedYield}, Traded Yield: {averageWeightedTradedYield}, Previous Implied Yield: {previousImpliedYield.Yield}";
                         }
                         else if (isQuotedWithinMargin)
                         {
                             impliedYield = averageWeightedQuotedYield;
-                            reasonForSelection = $"Selected quoted yield ({averageWeightedQuotedYield}%) is within margin of error ({AllowedMarginOfError}%) of previous implied yield ({previousImpliedYield.Yield}%)";
+                            reasonForSelection = $"Selected quoted yield ({averageWeightedQuotedYield}%). Average Traded yield is  {averageWeightedTradedYield}%, Previous Implied Yield is {previousImpliedYield.Yield}%)";
                         }
                         else if (isTradedWithinMargin)
                         {
                             impliedYield = averageWeightedTradedYield;
-                            reasonForSelection = $"Selected traded yield ({averageWeightedTradedYield}%) is within margin of error ({AllowedMarginOfError}%) of previous implied yield ({previousImpliedYield.Yield}%)";
+                            reasonForSelection = $"Selected Traded yield ({averageWeightedTradedYield}%). AveraQuoted yiled is  {averageWeightedQuotedYield}%, Previous Implied Yield is {previousImpliedYield.Yield}%)";
                         }
                         else
                         {
                             // None meets Condition so we stick with the previous Implied Yield
                             impliedYield = previousImpliedYield.Yield;
-                            reasonForSelection = $"None of the Quoted and Traded are within margin of error. Quoted Yield: {averageWeightedQuotedYield}, Traded Yield: {averageWeightedTradedYield}, Previous Implied Yield: {previousImpliedYield.Yield}, Variance in TBills: {VarianceinTBills}, Allowed Margin of Error: {AllowedMarginOfError}";
+                            reasonForSelection = $"Previous Implied Yield is selected: {previousImpliedYield.Yield} None of the Quoted and Traded are within margin of error. Quoted Yield is {averageWeightedQuotedYield}%, Traded Yield is {averageWeightedTradedYield}%";
 
                         }
                         computedImpliedYields.Add(new ComputedImpliedYield
