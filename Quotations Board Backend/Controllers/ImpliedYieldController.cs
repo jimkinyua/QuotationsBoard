@@ -257,13 +257,31 @@ namespace Quotations_Board_Backend.Controllers
                 {
                     var DateInQuestion = DateTime.Now.Date;
                     var LastWeek = DateInQuestion.AddDays(-7);
+
+                    DateTime startOfLastWeek = LastWeek.AddDays(-(int)LastWeek.DayOfWeek + (int)DayOfWeek.Monday);
+                    DateTime endOfLastWeek = LastWeek.AddDays(+(int)LastWeek.DayOfWeek + (int)DayOfWeek.Sunday);
+
                     List<ComputedImpliedYield> computedImpliedYields = new List<ComputedImpliedYield>();
                     var bonds = db.Bonds.ToList();
                     var TBills = db.TBills.ToList();
                     var bondsNotMatured = bonds.Where(b => b.MaturityDate.Date > DateTime.Now.Date).ToList();
                     var tBillsNotMature = TBills.Where(t => t.MaturityDate.Date > DateTime.Now.Date).ToList();
-                    var LastWeeksTBill = tBillsNotMature.Where(t => t.IssueDate.Date == LastWeek.Date).ToList();
-                    var lastWeekButOneTBill = tBillsNotMature.Where(t => t.IssueDate.Date == LastWeek.AddDays(-7).Date).ToList();
+
+                    var LastWeeksTBill = tBillsNotMature
+                        .Where(t => t.IssueDate.Date >= startOfLastWeek.Date
+                                    && t.IssueDate.Date <= endOfLastWeek.Date
+                                    && t.Tenor >= 364)
+                        .ToList();
+
+                    DateTime startOfLastWeekButOne = LastWeek.AddDays(-7).AddDays(-(int)LastWeek.DayOfWeek + (int)DayOfWeek.Monday);
+                    DateTime endOfLastWeekButOne = LastWeek.AddDays(-7).AddDays(+(int)LastWeek.DayOfWeek + (int)DayOfWeek.Sunday);
+
+                    var lastWeekButOneTBill = tBillsNotMature
+                        .Where(t => t.IssueDate.Date >= startOfLastWeekButOne.Date
+                                    && t.IssueDate.Date <= endOfLastWeekButOne.Date
+                                    && t.Tenor >= 364)
+                        .ToList();
+
                     decimal AllowedMarginOfError = 0.05m;
                     var oneYearTBillForLastWeek = LastWeeksTBill.Where(t => t.Tenor >= 364).FirstOrDefault();
                     var oneYearTBillForLastWeekButOne = lastWeekButOneTBill.Where(t => t.Tenor >= 364).FirstOrDefault();
