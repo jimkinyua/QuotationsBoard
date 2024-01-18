@@ -594,7 +594,7 @@ namespace Quotations_Board_Backend.Controllers
         public ActionResult<IEnumerable<YieldCurveDTO>> GetYieldCurve(string? For = "default")
         {
             var m = DateTime.Now;
-            var parsedDate = DateTime.Now.AddDays(-1);
+            var parsedDate = DateTime.Now;
 
             using (var _db = new QuotationsBoardContext())
             {
@@ -652,8 +652,9 @@ namespace Quotations_Board_Backend.Controllers
                     var lowerBound = benchmark.Value.Item1;
                     var upperBound = benchmark.Value.Item2;
 
-                    // Get the bond that is closest to the upper bound of the range
+                    // // Get the bond that is closest to the upper bound of the range
                     var closestBond = GetClosestBond(fXdBonds, lowerBound, upperBound);
+
 
                     if (closestBond != null)
                     {
@@ -705,12 +706,32 @@ namespace Quotations_Board_Backend.Controllers
 
         private Bond? GetClosestBond(IEnumerable<Bond> bonds, double lowerBound, double upperBound)
         {
-            return bonds
-                .Where(b => b.MaturityDate.Year >= lowerBound && b.MaturityDate.Year <= upperBound)
-                .OrderBy(b => CalculateMaturityScore(b, upperBound))
-                .ThenByDescending(b => b.OutstandingValue) // Sort by outstanding amount if maturity scores are equal
-                .FirstOrDefault();
+            List<Bond> bondsWithinRange = new List<Bond>();
+
+            foreach (var bond in bonds)
+            {
+                var YearsToMaturity = bond.MaturityDate.Year - DateTime.Now.Year;
+
+                // within the range?
+                if (YearsToMaturity >= lowerBound && YearsToMaturity <= upperBound)
+                {
+                    bondsWithinRange.Add(bond);
+                }
+            }
+
+            if (bondsWithinRange.Any())
+            {
+                // Sort the bonds by maturity score
+                bondsWithinRange = bondsWithinRange.OrderBy(b => CalculateMaturityScore(b, upperBound)).ToList();
+
+                // Return the bond with the lowest maturity score
+                return bondsWithinRange.First();
+            }
+
+            return null;
+
         }
+
 
 
 
