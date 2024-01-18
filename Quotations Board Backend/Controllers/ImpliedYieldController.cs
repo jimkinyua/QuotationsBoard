@@ -256,6 +256,7 @@ namespace Quotations_Board_Backend.Controllers
                 using (var db = new QuotationsBoardContext())
                 {
                     var DateInQuestion = DateTime.Now.Date;
+                    DateInQuestion.AddDays(-1);
                     var LastWeek = DateInQuestion.AddDays(-7);
 
                     DateTime startOfLastWeek = LastWeek.AddDays(-(int)LastWeek.DayOfWeek + (int)DayOfWeek.Monday);
@@ -322,28 +323,33 @@ namespace Quotations_Board_Backend.Controllers
                         bool isTradedWithinMargin = IsWithinMargin(TradedAndPrevious, VarianceinTBills, AllowedMarginOfError);
 
                         decimal impliedYield;
+                        int selectedYield;
                         var reasonForSelection = string.Empty;
 
                         if (isQuotedWithinMargin && isTradedWithinMargin)
                         {
                             // If both are within margin, the tradedMargin takes precedence
                             impliedYield = averageWeightedTradedYield;
+                            selectedYield = SelectedYield.TradedYield;
                             reasonForSelection = $"Both Quoted and Traded are within margin of error. Traded Yield is selceted because it takes precedence over Quoted Yield: {averageWeightedQuotedYield}, Traded Yield: {averageWeightedTradedYield}, Previous Implied Yield: {previousImpliedYield.Yield}";
                         }
                         else if (isQuotedWithinMargin)
                         {
                             impliedYield = averageWeightedQuotedYield;
+                            selectedYield = SelectedYield.QuotedYield;
                             reasonForSelection = $"Selected quoted yield ({averageWeightedQuotedYield}%). Average Traded yield is  {averageWeightedTradedYield}%, Previous Implied Yield is {previousImpliedYield.Yield}%)";
                         }
                         else if (isTradedWithinMargin)
                         {
                             impliedYield = averageWeightedTradedYield;
+                            selectedYield = SelectedYield.TradedYield;
                             reasonForSelection = $"Selected Traded yield ({averageWeightedTradedYield}%). AveraQuoted yiled is  {averageWeightedQuotedYield}%, Previous Implied Yield is {previousImpliedYield.Yield}%)";
                         }
                         else
                         {
                             // None meets Condition so we stick with the previous Implied Yield
                             impliedYield = previousImpliedYield.Yield;
+                            selectedYield = SelectedYield.PreviousYield;
                             reasonForSelection = $"Previous Implied Yield is selected: {previousImpliedYield.Yield} None of the Quoted and Traded are within margin of error. Quoted Yield is {averageWeightedQuotedYield}%, Traded Yield is {averageWeightedTradedYield}%";
 
                         }
@@ -352,7 +358,8 @@ namespace Quotations_Board_Backend.Controllers
                             BondId = bond.IssueNumber,
                             Yield = impliedYield,
                             YieldDate = DateInQuestion,
-                            ReasonForSelection = reasonForSelection
+                            ReasonForSelection = reasonForSelection,
+                            SelectedYield = selectedYield
                         });
                     }
 

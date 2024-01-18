@@ -4,4 +4,5 @@ public class ComputedImpliedYield
     public DateTime YieldDate { get; set; }
     public decimal Yield { get; set; }
     public string ReasonForSelection { get; set; } = null!;
+    public decimal SelectedYield { get; set; }
 }
