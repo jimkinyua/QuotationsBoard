@@ -600,7 +600,7 @@ namespace Quotations_Board_Backend.Controllers
             {
                 if (For == "default" || For == null || string.IsNullOrWhiteSpace(For))
                 {
-                    parsedDate = DateTime.Now;
+                    // parsedDate = DateTime.Now;
                 }
                 else
                 {
@@ -614,7 +614,7 @@ namespace Quotations_Board_Backend.Controllers
                     parsedDate = targetTradeDate.Date;
                 }
 
-                var LastWeek = DateTime.Now.AddDays(-7);
+                var LastWeek = parsedDate.AddDays(-7);
                 DateTime startOfLastWeek = LastWeek.AddDays(-(int)LastWeek.DayOfWeek + (int)DayOfWeek.Monday);
                 DateTime endOfLastWeek = LastWeek.AddDays(+(int)LastWeek.DayOfWeek + (int)DayOfWeek.Sunday);
                 // Fetch all Bonds  under FXD Category that are not matured
@@ -622,8 +622,8 @@ namespace Quotations_Board_Backend.Controllers
 
                 var currentOneYearTBill = _db.TBills
                 .Where(t => t.Tenor >= 364
-                && t.IssueDate.Date > startOfLastWeek.Date
-                && t.IssueDate.Date < endOfLastWeek.Date
+                && t.IssueDate.Date >= startOfLastWeek.Date
+                && t.IssueDate.Date <= endOfLastWeek.Date
                 )
                 .OrderByDescending(t => t.IssueDate)
                 .FirstOrDefault();
@@ -670,6 +670,13 @@ namespace Quotations_Board_Backend.Controllers
                     }
 
                 }
+                // tadd the 1 year TBill to the yield curve
+                yieldCurves.Add(new YieldCurve
+                {
+                    BenchMarkTenor = 1,
+                    Yield = currentOneYearTBill.Yield
+                });
+
                 return Ok(yieldCurves);
 
             }
