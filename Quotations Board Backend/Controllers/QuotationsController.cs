@@ -320,35 +320,35 @@ namespace Quotations_Board_Backend.Controllers
                         // Calculate the Average Weighted Yield of the previous day's quotes
                         decimal totalWeightedYield = 0;
                         decimal totalVolume = 0;
-                        foreach (var q in mostRecentDayQuotations)
-                        {
-                            if (q.BuyVolume < 50000000 || q.SellVolume < 50000000)
-                            {
-                                continue;
-                            }
-                            totalWeightedYield += (q.BuyingYield * q.BuyVolume) + (q.SellingYield * q.SellVolume);
-                            totalVolume += q.BuyVolume + q.SellVolume;
-                        }
-                        decimal averageRecentWeightedYield = totalWeightedYield / totalVolume;
-                        if (averageRecentWeightedYield <= 0)
-                        {
-                            quotationRows.Add(quote);
-                            continue;
-                        }
-                        decimal currentTotalWeightedYield = (buyYield * buyVolume) + (sellYield * sellVolume);
-                        decimal currentQuotationVolume = buyVolume + sellVolume;
-                        decimal currentAverageWeightedYield = currentTotalWeightedYield / currentQuotationVolume;
-                        var change = currentAverageWeightedYield - averageRecentWeightedYield;
-                        var percentgeChange = (change / averageRecentWeightedYield) * 100;
-                        // if greater than 1% reject the quotation
-                        if (percentgeChange > 1)
-                        {
-                            throw new Exception($"Quotation at row {row} rejected. The current average weighted yield ({currentAverageWeightedYield:0.##}%) significantly differs from the most recent trading day's average weighted yield ({averageRecentWeightedYield:0.##}%) recorded on {mostRecentTradingDay:yyyy-MM-dd}. The percentage change of {percentgeChange:0.##}% exceeds the allowable limit of 1%.");
-                        }
-                        else
-                        {
-                            quotationRows.Add(quote);
-                        }
+                        // foreach (var q in mostRecentDayQuotations)
+                        // {
+                        //     if (q.BuyVolume < 50000000 || q.SellVolume < 50000000)
+                        //     {
+                        //         continue;
+                        //     }
+                        //     totalWeightedYield += (q.BuyingYield * q.BuyVolume) + (q.SellingYield * q.SellVolume);
+                        //     totalVolume += q.BuyVolume + q.SellVolume;
+                        // }
+                        // decimal averageRecentWeightedYield = totalWeightedYield / totalVolume;
+                        // if (averageRecentWeightedYield <= 0)
+                        // {
+                        //     quotationRows.Add(quote);
+                        //     continue;
+                        // }
+                        // decimal currentTotalWeightedYield = (buyYield * buyVolume) + (sellYield * sellVolume);
+                        // decimal currentQuotationVolume = buyVolume + sellVolume;
+                        // decimal currentAverageWeightedYield = currentTotalWeightedYield / currentQuotationVolume;
+                        // var change = currentAverageWeightedYield - averageRecentWeightedYield;
+                        // var percentgeChange = (change / averageRecentWeightedYield) * 100;
+                        // // if greater than 1% reject the quotation
+                        // if (percentgeChange > 1)
+                        // {
+                        //     throw new Exception($"Quotation at row {row} rejected. The current average weighted yield ({currentAverageWeightedYield:0.##}%) significantly differs from the most recent trading day's average weighted yield ({averageRecentWeightedYield:0.##}%) recorded on {mostRecentTradingDay:yyyy-MM-dd}. The percentage change of {percentgeChange:0.##}% exceeds the allowable limit of 1%.");
+                        // }
+                        // else
+                        // {
+                        quotationRows.Add(quote);
+                        // }
                     }
                 }
             }
