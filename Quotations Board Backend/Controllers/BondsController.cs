@@ -27,7 +27,9 @@ namespace Quotations_Board_Backend.Controllers
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Bond>>> GetBonds()
         {
-            return await _context.Bonds.ToListAsync();
+            // skip matured bonds
+            var bonds = await _context.Bonds.Where(b => b.MaturityDate.Date >= DateTime.Now.Date).ToListAsync();
+            return bonds;
         }
 
         // GET: api/Bonds/5
@@ -104,6 +106,7 @@ namespace Quotations_Board_Backend.Controllers
             }
         }
 
+
         // DELETE: api/Bonds/5
         [HttpDelete("DeleteBond/{id}")]
         public async Task<ActionResult<Bond>> DeleteBond(string id)
@@ -146,6 +149,14 @@ namespace Quotations_Board_Backend.Controllers
                 bondIds.Add(bondId);
             }
             return bondIds;
+        }
+
+        // Matured Bonds
+        [HttpGet("MaturedBonds")]
+        public async Task<ActionResult<IEnumerable<Bond>>> GetMaturedBonds()
+        {
+            var bonds = await _context.Bonds.Where(b => b.MaturityDate.Date < DateTime.Now.Date).ToListAsync();
+            return bonds;
         }
 
         // get the bond summary (trade aveges, quote averages, etc) given a bond id and date

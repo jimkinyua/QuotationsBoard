@@ -1,4 +1,5 @@
-﻿using ClosedXML.Excel;
+﻿using System.Globalization;
+using ClosedXML.Excel;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -522,5 +523,70 @@ namespace Quotations_Board_Backend.Controllers
             }
         }
 
+        // returns all Implied Yields given a date dafault value is default(DateTime)
+        [HttpGet]
+        [Route("GetImpliedYields")]
+        public ActionResult<IEnumerable<ImpliedYieldDTO>> GetImpliedYields(string? For = "default")
+        {
+            var parsedDate = DateTime.Now;
+            var impliedYieldDTOs = new List<ImpliedYieldDTO>();
+
+            try
+            {
+                using (var db = new QuotationsBoardContext())
+                {
+                    if (For == "default" || For == null || string.IsNullOrWhiteSpace(For))
+                    {
+                        parsedDate = DateTime.Now;
+                    }
+                    else
+                    {
+
+                        string[] formats = { "dd/MM/yyyy", "yyyy-MM-dd", "MM/dd/yyyy", "dd-MM-yyyy", "dd/MM/yyyy HH:mm:ss", "yyyy-MM-dd HH:mm:ss", "MM/dd/yyyy HH:mm:ss", "dd-MM-yyyy HH:mm:ss" };
+                        DateTime targetTradeDate;
+                        bool success = DateTime.TryParseExact(For, formats, CultureInfo.InvariantCulture, DateTimeStyles.None, out targetTradeDate);
+                        if (!success)
+                        {
+                            return BadRequest("The date format is invalid");
+                        }
+                        parsedDate = targetTradeDate.Date;
+                    }
+
+                    var impliedYields = db.ImpliedYields.ToList();
+                    var bonds = db.Bonds.ToList();
+                    var tBills = db.TBills.ToList();
+                    var tBillsNotMatured = tBills.Where(t => t.MaturityDate.Date > DateTime.Now.Date).ToList();
+                    var bondsNotMatured = bonds.Where(b => b.MaturityDate.Date > DateTime.Now.Date).ToList();
+
+                    foreach (var bond in bondsNotMatured)
+                    {
+                        var bondImpliedYield = impliedYields.Where(i => i.BondId == bond.Id && i.YieldDate.Date == parsedDate.Date).FirstOrDefault();
+                        if (bondImpliedYield == null)
+                        {
+                            continue;
+                        }
+                        var diff = bond.MaturityDate.Date - DateTime.Now.Date;
+                        var yearsToMaturity = diff.TotalDays / 365.25;
+                        var impliedYieldDTO = new ImpliedYieldDTO
+                        {
+                            BondName = bond.IssueNumber,
+                            YearsToMaturity = yearsToMaturity,
+                            Yield = bondImpliedYield.Yield,
+                            YieldDate = bondImpliedYield.YieldDate,
+                        };
+                        impliedYieldDTOs.Add(impliedYieldDTO);
+                    }
+                    return Ok(impliedYieldDTOs);
+                }
+
+            }
+            catch (Exception Ex)
+            {
+                UtilityService.LogException(Ex);
+                return StatusCode(500, UtilityService.HandleException(Ex));
+
+            }
+
+        }
     }
 }
