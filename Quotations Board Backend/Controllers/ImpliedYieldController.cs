@@ -256,7 +256,7 @@ namespace Quotations_Board_Backend.Controllers
             {
                 using (var db = new QuotationsBoardContext())
                 {
-                    var DateInQuestion_ = DateTime.Now.Date;
+                    var DateInQuestion = DateTime.Now.Date;
                     // var DateInQuestion = DateInQuestion_.AddDays(-1);
                     var LastWeek = DateInQuestion.AddDays(-7);
 
