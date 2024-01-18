@@ -541,7 +541,6 @@ namespace Quotations_Board_Backend.Controllers
                     }
                     else
                     {
-
                         string[] formats = { "dd/MM/yyyy", "yyyy-MM-dd", "MM/dd/yyyy", "dd-MM-yyyy", "dd/MM/yyyy HH:mm:ss", "yyyy-MM-dd HH:mm:ss", "MM/dd/yyyy HH:mm:ss", "dd-MM-yyyy HH:mm:ss" };
                         DateTime targetTradeDate;
                         bool success = DateTime.TryParseExact(For, formats, CultureInfo.InvariantCulture, DateTimeStyles.None, out targetTradeDate);
@@ -588,5 +587,147 @@ namespace Quotations_Board_Backend.Controllers
             }
 
         }
+
+        // Yield Curve
+        [HttpGet]
+        [Route("GetYieldCurve")]
+        public ActionResult<IEnumerable<YieldCurveDTO>> GetYieldCurve(string? For = "default")
+        {
+            var m = DateTime.Now;
+            var parsedDate = DateTime.Now.AddDays(-1);
+
+            using (var _db = new QuotationsBoardContext())
+            {
+                if (For == "default" || For == null || string.IsNullOrWhiteSpace(For))
+                {
+                    parsedDate = DateTime.Now;
+                }
+                else
+                {
+                    string[] formats = { "dd/MM/yyyy", "yyyy-MM-dd", "MM/dd/yyyy", "dd-MM-yyyy", "dd/MM/yyyy HH:mm:ss", "yyyy-MM-dd HH:mm:ss", "MM/dd/yyyy HH:mm:ss", "dd-MM-yyyy HH:mm:ss" };
+                    DateTime targetTradeDate;
+                    bool success = DateTime.TryParseExact(For, formats, CultureInfo.InvariantCulture, DateTimeStyles.None, out targetTradeDate);
+                    if (!success)
+                    {
+                        return BadRequest("The date format is invalid");
+                    }
+                    parsedDate = targetTradeDate.Date;
+                }
+
+                var LastWeek = DateTime.Now.AddDays(-7);
+                DateTime startOfLastWeek = LastWeek.AddDays(-(int)LastWeek.DayOfWeek + (int)DayOfWeek.Monday);
+                DateTime endOfLastWeek = LastWeek.AddDays(+(int)LastWeek.DayOfWeek + (int)DayOfWeek.Sunday);
+                // Fetch all Bonds  under FXD Category that are not matured
+                var fXdBonds = _db.Bonds.Where(b => b.BondCategory == "FXD" && b.MaturityDate.Date > DateTime.Now.Date).ToList();
+
+                var currentOneYearTBill = _db.TBills
+                .Where(t => t.Tenor >= 364
+                && t.IssueDate.Date > startOfLastWeek.Date
+                && t.IssueDate.Date < endOfLastWeek.Date
+                )
+                .OrderByDescending(t => t.IssueDate)
+                .FirstOrDefault();
+
+                if (currentOneYearTBill == null)
+                {
+                    return BadRequest("It Seems there is no 1 Year TBill for the last week");
+                }
+
+                Dictionary<int, (double, double)> benchmarkRanges = new Dictionary<int, (double, double)> {
+                { 2, (2, 3.9) }, // 2 year bucket
+                { 5, (4, 7.9) }, // 5 year bucket
+                { 10, (8, 12.9) }, // 10 year bucket
+                { 15, (13, 17.9) }, // 15 year bucket
+                { 20, (18, 222.9) }, // 20 year bucket
+                { 25, (23, 27.9) }, // 25 year bucket
+                };
+
+                // for each benchmark range, fetch the bond that is closest to the benchmark range
+                List<YieldCurve> yieldCurves = new List<YieldCurve>();
+
+                foreach (var benchmark in benchmarkRanges)
+                {
+                    // Define the benchmark range
+                    var lowerBound = benchmark.Value.Item1;
+                    var upperBound = benchmark.Value.Item2;
+
+                    // Get the bond that is closest to the upper bound of the range
+                    var closestBond = GetClosestBond(fXdBonds, lowerBound, upperBound);
+
+                    if (closestBond != null)
+                    {
+                        // get the implied yield for the bond based on the date in question
+                        var impliedYield = _db.ImpliedYields.Where(i => i.BondId == closestBond.Id && i.YieldDate.Date == parsedDate.Date).FirstOrDefault();
+                        if (impliedYield == null)
+                        {
+                            continue;
+                        }
+                        yieldCurves.Add(new YieldCurve
+                        {
+                            BenchMarkTenor = benchmark.Key,
+                            Yield = impliedYield.Yield,
+                        });
+                    }
+
+                }
+                return Ok(yieldCurves);
+
+            }
+
+        }
+
+        private double CalculateMaturityScore(Bond bond, double upperBound)
+        {
+            // Extract the year and month from the bond's maturity date
+            int maturityYear = bond.MaturityDate.Year;
+            int maturityMonth = bond.MaturityDate.Month;
+
+            // Calculate the year including the month as a fraction
+            double maturityFractionalYear = maturityYear + (maturityMonth / 12.0);
+
+            // Calculate the difference between the maturity fractional year and the upper bound
+            double maturityDifference = maturityFractionalYear - upperBound;
+
+            // Return the absolute value of the maturity difference
+            double maturityScore = Math.Abs(maturityDifference);
+
+            return maturityScore;
+        }
+
+
+        private Bond? GetClosestBond(IEnumerable<Bond> bonds, double lowerBound, double upperBound)
+        {
+            return bonds
+                .Where(b => b.MaturityDate.Year >= lowerBound && b.MaturityDate.Year <= upperBound)
+                .OrderBy(b => CalculateMaturityScore(b, upperBound))
+                .ThenByDescending(b => b.OutstandingValue) // Sort by outstanding amount if maturity scores are equal
+                .FirstOrDefault();
+        }
+
+
+
+        private int SelectBenchmarkForBondBasedOnRTM(double RemainingTimeToMaturityForBond, Dictionary<int, (double, double)> benchmarkRanges)
+        {
+            int closestBenchmark = -1;
+            double minDifference = double.MaxValue;
+
+            foreach (var benchmark in benchmarkRanges)
+            {
+                if (RemainingTimeToMaturityForBond >= benchmark.Value.Item1 && RemainingTimeToMaturityForBond <= benchmark.Value.Item2)
+                {
+                    double benchmarkTenor = benchmark.Key;
+                    double difference = Math.Abs(benchmarkTenor - RemainingTimeToMaturityForBond);
+
+                    if (difference < minDifference)
+                    {
+                        minDifference = difference;
+                        closestBenchmark = benchmark.Key;
+                    }
+                }
+            }
+
+            return closestBenchmark;
+        }
+
     }
 }
