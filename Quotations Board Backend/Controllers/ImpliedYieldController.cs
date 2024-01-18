@@ -359,7 +359,10 @@ namespace Quotations_Board_Backend.Controllers
                             Yield = impliedYield,
                             YieldDate = DateInQuestion,
                             ReasonForSelection = reasonForSelection,
-                            SelectedYield = selectedYield
+                            SelectedYield = selectedYield,
+                            TradedYield = averageWeightedTradedYield,
+                            QuotedYield = averageWeightedQuotedYield,
+                            PreviousYield = previousImpliedYield.Yield
                         });
                     }
 
@@ -444,10 +447,80 @@ namespace Quotations_Board_Backend.Controllers
             return averageWeightedQuotedYield;
         }
 
+        // Confrim Implied Yield
+        [HttpPost]
+        [Route("ConfirmImpliedYield")]
+        public IActionResult ConfirmImpliedYield([FromBody] ConfirmImpliedYieldDTO confirmImpliedYieldDTO)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
 
+            try
+            {
+                using (var db = new QuotationsBoardContext())
+                {
+                    var bonds = db.Bonds.ToList();
+                    var impliedYields = db.ImpliedYields.ToList();
+                    var bondsNotMatured = bonds.Where(b => b.MaturityDate.Date > DateTime.Now.Date).ToList();
 
+                    // Enusure that no Imlpied Yiled for today  exists in th eImpliedYield Table
+                    var existingImpliedYield = impliedYields.Where(i => i.YieldDate.Date == DateTime.Now.Date).ToList();
+                    if (existingImpliedYield.Any())
+                    {
+                        return BadRequest("Implied Yield for today already exists");
+                    }
 
+                    foreach (var impliedYield in confirmImpliedYieldDTO.ImpliedYields)
+                    {
+                        var bondDetails = bondsNotMatured.Where(b => b.IssueNumber == impliedYield.BondId).FirstOrDefault();
+                        if (bondDetails == null)
+                        {
+                            return BadRequest($"Bond with Id {impliedYield.BondId} does not exist or has matured");
+                        }
+                        decimal YieldToSave = 0;
+                        var selectedImpliedYield = impliedYield.SelectedYield;
+                        if (selectedImpliedYield == SelectedYield.PreviousYield)
+                        {
+                            YieldToSave = impliedYield.PreviousYield;
+                        }
+                        else if (selectedImpliedYield == SelectedYield.QuotedYield)
+                        {
+                            YieldToSave = impliedYield.QuotedYield;
+                        }
+                        else if (selectedImpliedYield == SelectedYield.TradedYield)
+                        {
+                            YieldToSave = impliedYield.TradedYield;
+                        }
+                        else
+                        {
+                            return BadRequest("Invalid Selected Yield");
+                        }
 
+                        var impliedYieldToSave = new ImpliedYield
+                        {
+                            BondId = bondDetails.Id,
+                            Yield = YieldToSave,
+                            YieldDate = impliedYield.YieldDate
+                        };
+
+                        db.ImpliedYields.Add(impliedYieldToSave);
+                    }
+
+                    db.SaveChanges();
+
+                    return Ok();
+
+                }
+            }
+            catch (Exception Ex)
+            {
+                UtilityService.LogException(Ex);
+                return StatusCode(500, UtilityService.HandleException(Ex));
+
+            }
+        }
 
     }
 }
