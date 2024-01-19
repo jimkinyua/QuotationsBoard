@@ -636,32 +636,30 @@ namespace Quotations_Board_Backend.Controllers
 
                 Dictionary<int, (double, double)> benchmarkRanges = new Dictionary<int, (double, double)> {
                 { 2, (2, 3.9) }, // 2 year bucket
+                {3, (3.0,3.4)},// 3Year Bucket
+                {4, (3.5, 3.9)}, // 4 year bucket
                 { 5, (4, 7.9) }, // 5 year bucket
+                { 6, (8, 8.4) }, // 6 year bucket
+                { 7, (8.5, 8.9) }, // 7 year bucket
+                { 8, (9, 9.4) }, // 8 year bucket
+                { 9, (9.5, 9.9) }, // 9 year bucket
                 { 10, (8, 12.9) }, // 10 year bucket
+                { 11, (13, 13.4) }, // 11 year bucket
+                { 12, (13.5, 13.9) }, // 12 year bucket
+                { 13, (14, 14.4) }, // 13 year bucket
+                { 14, (14.5, 14.9) }, // 14 year bucket
                 { 15, (13, 17.9) }, // 15 year bucket
+                { 16, (18, 18.4) }, // 16 year bucket
+                { 17, (18.5, 18.9) }, // 17 year bucket
+                { 18, (19, 19.4) }, // 18 year bucket
+                { 19, (19.5, 19.9) }, // 19 year bucket
                 { 20, (18, 222.9) }, // 20 year bucket
+                { 21, (23, 23.4) }, // 21 year bucket
+                { 22, (23.5, 23.9) }, // 22 year bucket
+                { 23, (24, 24.4) }, // 23 year bucket
+                { 24, (24.5, 24.9) }, // 24 year bucket
                 { 25, (23, 27.9) }, // 25 year bucket
                 };
-
-                // Adding new benchmarks for years 3 to 25
-                benchmarkRanges.Add(3, (3.0, 3.4));  // 3 year bucket
-                benchmarkRanges.Add(4, (3.5, 3.9));  // 4 year bucket
-                benchmarkRanges.Add(6, (8.0, 8.4));  // 6 year bucket
-                benchmarkRanges.Add(7, (8.5, 8.9));  // 7 year bucket
-                benchmarkRanges.Add(8, (9.0, 9.4));  // 8 year bucket
-                benchmarkRanges.Add(9, (9.5, 9.9));  // 9 year bucket
-                benchmarkRanges.Add(11, (13.0, 13.4)); // 11 year bucket
-                benchmarkRanges.Add(12, (13.5, 13.9)); // 12 year bucket
-                benchmarkRanges.Add(13, (14.0, 14.4)); // 13 year bucket
-                benchmarkRanges.Add(14, (14.5, 14.9)); // 14 year bucket
-                benchmarkRanges.Add(16, (18.0, 18.4)); // 16 year bucket
-                benchmarkRanges.Add(17, (18.5, 18.9)); // 17 year bucket
-                benchmarkRanges.Add(18, (19.0, 19.4)); // 18 year bucket
-                benchmarkRanges.Add(19, (19.5, 19.9)); // 19 year bucket
-                benchmarkRanges.Add(21, (23.0, 23.4)); // 21 year bucket
-                benchmarkRanges.Add(22, (23.5, 23.9)); // 22 year bucket
-                benchmarkRanges.Add(23, (24.0, 24.4)); // 23 year bucket
-                benchmarkRanges.Add(24, (24.5, 24.9)); // 24 year bucket
 
                 List<int> benchMarkTenorsForYiedCurve = new List<int> { 2, 5, 10, 15, 20, 25 };
 
@@ -700,7 +698,8 @@ namespace Quotations_Board_Backend.Controllers
                 yieldCurves.Add(new YieldCurve
                 {
                     BenchMarkTenor = 1,
-                    Yield = currentOneYearTBill.Yield
+                    Yield = currentOneYearTBill.Yield,
+                    CanBeUsedForYieldCurve = true
                 });
 
                 return Ok(yieldCurves);
@@ -734,7 +733,8 @@ namespace Quotations_Board_Backend.Controllers
 
             foreach (var bond in bonds)
             {
-                var YearsToMaturity = bond.MaturityDate.Year - DateTime.Now.Year;
+                var m = bond.MaturityDate.Date.Subtract(DateTime.Now.Date).TotalDays / 365.25;
+                var YearsToMaturity = Math.Round(m, 2, MidpointRounding.AwayFromZero);
 
                 // within the range?
                 if (YearsToMaturity >= lowerBound && YearsToMaturity <= upperBound)
