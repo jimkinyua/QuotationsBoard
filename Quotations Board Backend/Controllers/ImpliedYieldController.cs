@@ -643,6 +643,28 @@ namespace Quotations_Board_Backend.Controllers
                 { 25, (23, 27.9) }, // 25 year bucket
                 };
 
+                // Adding new benchmarks for years 3 to 25
+                benchmarkRanges.Add(3, (3.0, 3.4));  // 3 year bucket
+                benchmarkRanges.Add(4, (3.5, 3.9));  // 4 year bucket
+                benchmarkRanges.Add(6, (8.0, 8.4));  // 6 year bucket
+                benchmarkRanges.Add(7, (8.5, 8.9));  // 7 year bucket
+                benchmarkRanges.Add(8, (9.0, 9.4));  // 8 year bucket
+                benchmarkRanges.Add(9, (9.5, 9.9));  // 9 year bucket
+                benchmarkRanges.Add(11, (13.0, 13.4)); // 11 year bucket
+                benchmarkRanges.Add(12, (13.5, 13.9)); // 12 year bucket
+                benchmarkRanges.Add(13, (14.0, 14.4)); // 13 year bucket
+                benchmarkRanges.Add(14, (14.5, 14.9)); // 14 year bucket
+                benchmarkRanges.Add(16, (18.0, 18.4)); // 16 year bucket
+                benchmarkRanges.Add(17, (18.5, 18.9)); // 17 year bucket
+                benchmarkRanges.Add(18, (19.0, 19.4)); // 18 year bucket
+                benchmarkRanges.Add(19, (19.5, 19.9)); // 19 year bucket
+                benchmarkRanges.Add(21, (23.0, 23.4)); // 21 year bucket
+                benchmarkRanges.Add(22, (23.5, 23.9)); // 22 year bucket
+                benchmarkRanges.Add(23, (24.0, 24.4)); // 23 year bucket
+                benchmarkRanges.Add(24, (24.5, 24.9)); // 24 year bucket
+
+                List<int> benchMarkTenorsForYiedCurve = new List<int> { 2, 5, 10, 15, 20, 25 };
+
                 // for each benchmark range, fetch the bond that is closest to the benchmark range
                 List<YieldCurve> yieldCurves = new List<YieldCurve>();
 
@@ -658,6 +680,7 @@ namespace Quotations_Board_Backend.Controllers
 
                     if (closestBond != null)
                     {
+                        bool canBeUsedForYieldCurve = benchMarkTenorsForYiedCurve.Contains(benchmark.Key);
                         // get the implied yield for the bond based on the date in question
                         var impliedYield = _db.ImpliedYields.Where(i => i.BondId == closestBond.Id && i.YieldDate.Date == parsedDate.Date).FirstOrDefault();
                         if (impliedYield == null)
@@ -668,6 +691,7 @@ namespace Quotations_Board_Backend.Controllers
                         {
                             BenchMarkTenor = benchmark.Key,
                             Yield = impliedYield.Yield,
+                            CanBeUsedForYieldCurve = canBeUsedForYieldCurve
                         });
                     }
 
