@@ -329,6 +329,11 @@ namespace Quotations_Board_Backend.Controllers
                             totalWeightedYield += (q.BuyingYield * q.BuyVolume) + (q.SellingYield * q.SellVolume);
                             totalVolume += q.BuyVolume + q.SellVolume;
                         }
+                        if (totalVolume <= 0)
+                        {
+                            quotationRows.Add(quote);
+                            continue;
+                        }
                         decimal averageRecentWeightedYield = totalWeightedYield / totalVolume;
                         if (averageRecentWeightedYield <= 0)
                         {
