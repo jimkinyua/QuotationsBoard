@@ -359,7 +359,7 @@ namespace Quotations_Board_Backend.Controllers
         }
 
         // Disable an Institution
-        [HttpPost("DisableInstitution/{institutionId}")]
+        [HttpGet("DisableInstitution/{institutionId}")]
         public async Task<ActionResult> DisableInstitution(string institutionId)
         {
             LoginTokenDTO TokenContents = UtilityService.GetUserIdFromCurrentRequest(Request);
@@ -409,6 +409,49 @@ namespace Quotations_Board_Backend.Controllers
 
         }
 
+        // Enable an Institution
+        [HttpGet("EnableInstitution/{institutionId}")]
+        public async Task<ActionResult> EnableInstitution(string institutionId)
+        {
+            LoginTokenDTO TokenContents = UtilityService.GetUserIdFromCurrentRequest(Request);
+            if (TokenContents == null)
+            {
+                return Unauthorized();
+            }
 
+            using (var context = new QuotationsBoardContext())
+            {
+                Institution? institution = await context.Institutions
+                    .Include(i => i.PortalUsers)
+                    .FirstOrDefaultAsync(i => i.Id == institutionId);
+                if (institution == null)
+                {
+                    return NotFound();
+                }
+
+                institution.Status = InstitutionStatus.Active;
+                institution.DeactivatedAt = DateTime.Now;
+                await context.SaveChangesAsync();
+
+                // Enable all users in the institution
+                foreach (var user in institution.PortalUsers)
+                {
+                    user.LockoutEnabled = false;
+                    user.LockoutEnd = null;
+                    await _userManager.UpdateAsync(user);
+                }
+
+                // Send email to user notifying them that their account has been disabled
+                string emailBody = $"<p>Dear {institution.OrganizationName},</p>" +
+                    "<p>Your account has been enabled on the Quotations Board Portal. " +
+                    " Follow the link below to login to your account.</p>" +
+                    $"<a href='{_configuration["FrontEndUrl"]}'>Login</a>";
+
+                await UtilityService.SendEmailAsync(institution.OrganizationEmail, "Quotations Board Portal Account Enabled", emailBody);
+
+            }
+            return Ok();
+
+        }
     }
 }
