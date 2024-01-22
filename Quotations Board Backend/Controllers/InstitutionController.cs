@@ -153,9 +153,32 @@ namespace Quotations_Board_Backend.Controllers
             {
                 using (var context = new QuotationsBoardContext())
                 {
+                    List<InstitutionApplicationDTO> institutionApplicationsDTO = new List<InstitutionApplicationDTO>();
                     var institutionApplications = await context.InstitutionApplications.Where(x => x.ApplicationStatus == InstitutionApplicationStatus.Approved).ToListAsync();
-                    var mapper = new MapperConfiguration(cfg => cfg.CreateMap<InstitutionApplication, InstitutionApplicationDTO>()).CreateMapper();
-                    var institutionApplicationsDTO = mapper.Map<List<InstitutionApplicationDTO>>(institutionApplications);
+                    foreach (var institutionApplication in institutionApplications)
+                    {
+                        var institution = await context.Institutions.FirstOrDefaultAsync(x => x.OrganizationEmail == institutionApplication.InstitutionEmail);
+                        if (institution == null)
+                        {
+                            continue;
+                        }
+                        var isActive = institution.Status == InstitutionStatus.Active ? true : false;
+                        institutionApplicationsDTO.Add(new InstitutionApplicationDTO
+                        {
+                            Id = institutionApplication.Id,
+                            AdministratorEmail = institutionApplication.AdministratorEmail,
+                            AdministratorName = institutionApplication.AdministratorName,
+                            AdministratorPhoneNumber = institutionApplication.AdministratorPhoneNumber,
+                            ApplicationDate = institutionApplication.ApplicationDate,
+                            ApplicationStatus = institutionApplication.ApplicationStatus,
+                            InstitutionAddress = institutionApplication.InstitutionAddress,
+                            InstitutionEmail = institutionApplication.InstitutionEmail,
+                            InstitutionName = institutionApplication.InstitutionName,
+                            InstitutionType = institutionApplication.InstitutionType,
+                            InstitutionId = institution.Id,
+                            IsActivate = isActive
+                        });
+                    }
                     return Ok(institutionApplicationsDTO);
                 }
             }

@@ -357,5 +357,58 @@ namespace Quotations_Board_Backend.Controllers
                 return Ok();
             }
         }
+
+        // Disable an Institution
+        [HttpPost("DisableInstitution/{institutionId}")]
+        public async Task<ActionResult> DisableInstitution(string institutionId)
+        {
+            LoginTokenDTO TokenContents = UtilityService.GetUserIdFromCurrentRequest(Request);
+            if (TokenContents == null)
+            {
+                return Unauthorized();
+            }
+
+            using (var context = new QuotationsBoardContext())
+            {
+                Institution? institution = await context.Institutions
+                    .Include(i => i.PortalUsers)
+                    .FirstOrDefaultAsync(i => i.Id == institutionId);
+                if (institution == null)
+                {
+                    return NotFound();
+                }
+
+                // fetch the user who has the SuperAdmin role within the institution
+                var superAdmin = await _userManager.GetUsersInRoleAsync(CustomRoles.SuperAdmin);
+                var superAdminInstitution = superAdmin.FirstOrDefault(u => u.InstitutionId == institution.Id);
+                if (superAdminInstitution == null)
+                {
+                    return BadRequest("There must be at least one super admin");
+                }
+
+                institution.Status = InstitutionStatus.Inactive;
+                institution.DeactivatedAt = DateTime.Now;
+                await context.SaveChangesAsync();
+
+                // Disable all users in the institution
+                foreach (var user in institution.PortalUsers)
+                {
+                    user.LockoutEnabled = true;
+                    user.LockoutEnd = DateTime.Now.AddYears(100);
+                    await _userManager.UpdateAsync(user);
+                }
+
+                // Send email to user notifying them that their account has been disabled
+                string emailBody = $"<p>Dear {institution.OrganizationName},</p>" +
+                    "<p>Your account has been disabled on the Quotations Board Portal. ";
+
+                await UtilityService.SendEmailAsync(superAdminInstitution.Email, "Quotations Board Portal Account Disabled", emailBody);
+
+            }
+            return Ok();
+
+        }
+
+
     }
 }
