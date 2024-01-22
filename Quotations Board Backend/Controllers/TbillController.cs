@@ -133,7 +133,41 @@ namespace Quotations_Board_Backend.Controllers
                     var tbills = await context.TBills
                     .OrderByDescending(x => x.IssueDate)
                     .ToListAsync();
+                    Dictionary<decimal, CurrentTbill> currentTbills = new Dictionary<decimal, CurrentTbill>();
+                    // foreach tbill tenor pick the one for the most recent
+                    // Most recent is the Last week depending on the day of the week
+                    var Today = DateTime.Now;
+                    var startOfLastWeek = Today.AddDays(-(int)Today.DayOfWeek - 6);
+                    var endOfLastWeek = startOfLastWeek.AddDays(6);
+
+                    // most recent tbills are within startOfLastWeek and endOfLastWeek
+                    var mostRecentTbills = tbills.Where(x => x.IssueDate.Date >= startOfLastWeek.Date && x.IssueDate.Date <= endOfLastWeek.Date).ToList();
+                    if (mostRecentTbills.Count > 0)
+                    {
+                        foreach (var tbill in mostRecentTbills)
+                        {
+                            if (!currentTbills.ContainsKey(tbill.Tenor))
+                            {
+                                currentTbills.Add(tbill.Tenor, new CurrentTbill
+                                {
+                                    Id = tbill.Id,
+                                    IssueDate = tbill.IssueDate,
+                                    MaturityDate = tbill.MaturityDate,
+                                    Tenor = tbill.Tenor,
+                                    Yield = tbill.Yield,
+                                    CreatedOn = tbill.CreatedOn
+                                });
+                            }
+                        }
+                    }
+
                     var tbillDTOs = new List<TBillDTO>();
+
+                    tbillDTOs.Add(new TBillDTO
+                    {
+                        CurrentTbills = currentTbills.Values.ToList()
+                    });
+
                     foreach (var tbill in tbills)
                     {
                         var MostRecentTBillBeforeThis = await context.TBills

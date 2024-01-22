@@ -1,5 +1,6 @@
 public class TBillDTO
 {
+    public List<CurrentTbill> CurrentTbills { get; set; } = null!;
     public string Id { get; set; } = null!;
     // public string IssueNumber { get; set; } = null!;
     public DateTime IssueDate { get; set; }
