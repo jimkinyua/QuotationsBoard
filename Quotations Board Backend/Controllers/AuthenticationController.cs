@@ -95,7 +95,7 @@ namespace Quotations_Board_Backend.Controllers
                         loginTokenDTO.IsSuperAdmin = true;
                         loginTokenDTO.Role = CustomRoles.SuperAdmin;
                         loginTokenDTO.InstitutionId = "0";
-                        loginTokenDTO.InstitutionName = "Agile Business Solutions";
+                        loginTokenDTO.InstitutionName = institution.OrganizationName;
                         loginTokenDTO.Name = user.FirstName + " " + user.LastName;
                         loginTokenDTO.Email = user.Email;
                     }

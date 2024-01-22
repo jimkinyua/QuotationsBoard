@@ -1,6 +1,7 @@
 ﻿using System.Globalization;
 using ClosedXML.Excel;
 using DocumentFormat.OpenXml.Bibliography;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -418,6 +419,7 @@ namespace Quotations_Board_Backend.Controllers
         // gets average statistics for all bonds (both traded and quoted) for a specific date
         [HttpGet]
         [Route("GetAverageStatistics/{For}")]
+        // [Authorize]
         public async Task<ActionResult<List<BondAverageStatistic>>> GetAverageStatistics(string? For = "default")
         {
 
@@ -448,9 +450,9 @@ namespace Quotations_Board_Backend.Controllers
                 using (var db = new QuotationsBoardContext())
                 {
                     db.Database.EnsureCreated();
-                    var allBonds = await db.Bonds.ToListAsync();
+                    var allNotMaturedBonds = await db.Bonds.Where(b => b.MaturityDate.Date > parsedDate.Date).ToListAsync();
 
-                    foreach (var bond in allBonds)
+                    foreach (var bond in allNotMaturedBonds)
                     {
                         var diffrenceBetweenSelectedDateAndMaturityDate = bond.MaturityDate.Date - DateTime.Now.Date;
                         var m = diffrenceBetweenSelectedDateAndMaturityDate.TotalDays / 365.25;

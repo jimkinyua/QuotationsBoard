@@ -337,6 +337,11 @@ namespace Quotations_Board_Backend.Controllers
                         }
                         decimal currentTotalWeightedYield = (buyYield * buyVolume) + (sellYield * sellVolume);
                         decimal currentQuotationVolume = buyVolume + sellVolume;
+                        if (currentQuotationVolume <= 0)
+                        {
+                            quotationRows.Add(quote);
+                            continue;
+                        }
                         decimal currentAverageWeightedYield = currentTotalWeightedYield / currentQuotationVolume;
                         var change = currentAverageWeightedYield - averageRecentWeightedYield;
                         var percentgeChange = (change / averageRecentWeightedYield) * 100;
