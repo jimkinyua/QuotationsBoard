@@ -33,4 +33,5 @@ public class QuotationsBoardContext : IdentityDbContext<PortalUser>
     public DbSet<BondTradeLine> BondTradeLines { get; set; } = null!;
     public DbSet<ImpliedYield> ImpliedYields { get; set; } = null!;
     public DbSet<TBill> TBills { get; set; } = null!;
+    public DbSet<QuotationEdit> QuotationEdits { get; set; } = null!;
 }

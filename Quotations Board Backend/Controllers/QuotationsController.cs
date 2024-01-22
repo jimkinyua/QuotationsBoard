@@ -2,6 +2,7 @@
 using ClosedXML.Excel;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -14,6 +15,13 @@ namespace Quotations_Board_Backend.Controllers
 
     public class QuotationsController : ControllerBase
     {
+        private readonly UserManager<PortalUser> _userManager;
+
+        public QuotationsController(UserManager<PortalUser> userManager)
+        {
+            _userManager = userManager;
+        }
+
         // Create a new quotation
         [HttpPost("CreateQuotation")]
         [ProducesResponseType(StatusCodes.Status201Created)]
@@ -463,16 +471,35 @@ namespace Quotations_Board_Backend.Controllers
                     LoginTokenDTO TokenContents = UtilityService.GetUserIdFromCurrentRequest(Request);
                     var userId = UtilityService.GetUserIdFromToken(Request);
                     var existingQuotation = await context.Quotations.FirstOrDefaultAsync(q => q.Id == editQuotation.Id);
+                    var userDetails = await context.Users.FirstOrDefaultAsync(u => u.Id == userId);
 
-                    // what time ?
-                    if (DateTime.Now.Hour >= 9)
+                    if (userDetails == null)
                     {
-                        return BadRequest("Quotations past 9 am are not accepted");
+                        return BadRequest("Invalid user");
                     }
+
 
                     if (existingQuotation == null)
                     {
                         return BadRequest("Quotation does not exist");
+                    }
+                    var bond = await context.Bonds.FirstOrDefaultAsync(b => b.Id == existingQuotation.BondId);
+                    if (bond == null)
+                    {
+                        return BadRequest("Invalid bond");
+                    }
+
+                    Institution? institution = await context.Institutions.FirstOrDefaultAsync(i => i.Id == existingQuotation.InstitutionId);
+                    if (institution == null)
+                    {
+                        return BadRequest("Invalid institution");
+                    }
+
+                    // Ensure no quotation edit has been made for this quotation that has not been approved or rejected
+                    var existingQuotationEdit = await context.QuotationEdits.FirstOrDefaultAsync(q => q.QuotationId == existingQuotation.Id && q.Status == QuotationEditStatus.Pending);
+                    if (existingQuotationEdit != null)
+                    {
+                        return BadRequest("A quotation edit has already been made for this quotation that has not been approved or rejected");
                     }
 
                     // Essure selling Yield is not greater than 100
@@ -501,69 +528,45 @@ namespace Quotations_Board_Backend.Controllers
                         return BadRequest("The difference between selling yield and buying yield cannot be greater than 1%. The current difference is " + difference + "%");
                     }
 
-                    Quotation quotation = new Quotation
+                    // Save in QuotationEdit
+                    QuotationEdit quotationEdit = new QuotationEdit
                     {
-                        Id = editQuotation.Id,
-                        BondId = editQuotation.BondId,
-                        BuyingYield = editQuotation.BuyYield,
-                        SellingYield = editQuotation.SellYield,
-                        BuyVolume = editQuotation.BuyVolume,
-                        SellVolume = editQuotation.SellVolume,
-                        UserId = userId,
-                        InstitutionId = TokenContents.InstitutionId
+                        BondId = existingQuotation.BondId,
+                        BuyingYield = existingQuotation.BuyingYield,
+                        BuyVolume = existingQuotation.BuyVolume,
+                        SellingYield = existingQuotation.SellingYield,
+                        SellVolume = existingQuotation.SellVolume,
+                        CreatedAt = existingQuotation.CreatedAt,
+                        InstitutionId = existingQuotation.InstitutionId,
+                        UserId = existingQuotation.UserId,
+                        QuotationId = existingQuotation.Id,
+                        Status = QuotationEditStatus.Pending,
+                        Comment = editQuotation.Comment
                     };
 
-                    var mostRecentTradingDay = await context.Quotations
-                    .Where(q => q.BondId == existingQuotation.BondId && q.CreatedAt < existingQuotation.CreatedAt.Date)
-                    .OrderByDescending(q => q.CreatedAt)
-                    .Select(q => q.CreatedAt.Date)
-                    .FirstOrDefaultAsync();
-                    if (mostRecentTradingDay == default(DateTime))
-                    {
-                        // Save the quotation
-                        context.Quotations.Update(quotation);
-                        await context.SaveChangesAsync();
-                        return StatusCode(200);
-                    }
-                    else
-                    {
-                        var mostRecentDayQuotations = await context.Quotations
-                            .Where(q => q.BondId == existingQuotation.BondId && q.CreatedAt.Date == mostRecentTradingDay.Date)
-                            .ToListAsync();
+                    await context.QuotationEdits.AddAsync(quotationEdit);
+                    await context.SaveChangesAsync();
 
-                        // Calculate the Average Weighted Yield of the previous day's quotes
-                        decimal totalWeightedYield = 0;
-                        decimal totalVolume = 0;
-                        foreach (var q in mostRecentDayQuotations)
-                        {
-                            if (q.BuyVolume < 50000000 || q.SellVolume < 50000000)
-                            {
-                                continue;
-                            }
+                    // find users via roles
+                    var superAdmins = await _userManager.GetUsersInRoleAsync(CustomRoles.SuperAdmin);
+                    foreach (var superAdmin in superAdmins)
+                    {
+                        // send email to super admin about the quotation edit  that has been made and notify them to approve or reject
+                        var emailBody = $"A quotation edit has been made by {userDetails.FirstName} {userDetails.LastName} of {institution.OrganizationName} on {DateTime.Today} for bond {bond.IssueNumber} with the following details: <br/>" +
+                            $"Buying Yield: {existingQuotation.BuyingYield} <br/>" +
+                            $"Selling Yield: {existingQuotation.SellingYield} <br/>" +
+                            $"Buy Volume: {existingQuotation.BuyVolume} <br/>" +
+                            $"Sell Volume: {existingQuotation.SellVolume} <br/>" +
+                            $"Please approve or reject the quotation  <br/>";
 
-                            totalWeightedYield += (q.BuyingYield * q.BuyVolume) + (q.SellingYield * q.SellVolume);
-                            totalVolume += q.BuyVolume + q.SellVolume;
-                        }
-                        decimal averageRecentWeightedYield = totalWeightedYield / totalVolume;
-                        decimal currentTotalWeightedYield = (quotation.BuyingYield * quotation.BuyVolume) + (quotation.SellingYield * quotation.SellVolume);
-                        decimal currentQuotationVolume = quotation.BuyVolume + quotation.SellVolume;
-                        decimal currentAverageWeightedYield = currentTotalWeightedYield / currentQuotationVolume;
-                        var change = currentAverageWeightedYield - averageRecentWeightedYield;
-                        var percentgeChange = (change / averageRecentWeightedYield) * 100;
-                        // if greater than 1% reject the quotation
-                        if (percentgeChange > 1)
-                        {
-                            string errorMessage = $"Quotation rejected. The current average weighted yield ({currentAverageWeightedYield:0.##}%) significantly differs from the most recent trading day's average weighted yield ({averageRecentWeightedYield:0.##}%) recorded on {mostRecentTradingDay:yyyy-MM-dd}. The percentage change of {percentgeChange:0.##}% exceeds the allowable limit of 1%.";
-                            return BadRequest(errorMessage);
-                        }
-                        else
-                        {
-                            // Save the quotation
-                            context.Quotations.Update(quotation);
-                            await context.SaveChangesAsync();
-                            return StatusCode(200);
-                        }
+                        var emailSubject = "Quotation Edit";
+                        await UtilityService.SendEmailAsync(
+                            superAdmin.Email,
+                            emailSubject,
+                            emailBody
+                        );
                     }
+                    return StatusCode(200, quotationEdit);
                 }
 
             }
@@ -573,6 +576,149 @@ namespace Quotations_Board_Backend.Controllers
                 return StatusCode(500, UtilityService.HandleException(Ex));
             }
         }
+
+        // Approve a quotation edit
+        [HttpPut("ApproveQuotationEdit")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        public async Task<ActionResult> ApproveQuotationEdit(ApproveQuotationEdit approveQuotationEdit)
+        {
+            try
+            {
+                // validate Model
+                if (!ModelState.IsValid)
+                {
+                    return BadRequest(ModelState);
+                }
+                using (var context = new QuotationsBoardContext())
+                {
+                    LoginTokenDTO TokenContents = UtilityService.GetUserIdFromCurrentRequest(Request);
+                    var userId = UtilityService.GetUserIdFromToken(Request);
+                    var existingQuotationEdit = await context.QuotationEdits.FirstOrDefaultAsync(q => q.Id == approveQuotationEdit.Id);
+                    var userDetails = await context.Users.FirstOrDefaultAsync(u => u.Id == userId);
+
+                    if (userDetails == null)
+                    {
+                        return BadRequest("Invalid user");
+                    }
+
+                    if (existingQuotationEdit == null)
+                    {
+                        return BadRequest("Quotation edit does not exist");
+                    }
+
+                    var bond = await context.Bonds.FirstOrDefaultAsync(b => b.Id == existingQuotationEdit.BondId);
+                    if (bond == null)
+                    {
+                        return BadRequest("Invalid bond");
+                    }
+
+                    Institution? institution = await context.Institutions.FirstOrDefaultAsync(i => i.Id == existingQuotationEdit.InstitutionId);
+                    if (institution == null)
+                    {
+                        return BadRequest("Invalid institution");
+                    }
+
+                    // Ensure no quotation edit has been made for this quotation that has not been approved or rejected
+                    Quotation? QuotationToUpdate = await context.Quotations.FirstOrDefaultAsync(q => q.Id == existingQuotationEdit.QuotationId);
+                    if (QuotationToUpdate == null)
+                    {
+                        return BadRequest("Quotation does not exist");
+                    }
+
+                    QuotationToUpdate.BondId = existingQuotationEdit.BondId;
+                    QuotationToUpdate.BuyingYield = existingQuotationEdit.BuyingYield;
+                    QuotationToUpdate.BuyVolume = existingQuotationEdit.BuyVolume;
+                    QuotationToUpdate.SellingYield = existingQuotationEdit.SellingYield;
+                    QuotationToUpdate.SellVolume = existingQuotationEdit.SellVolume;
+                    QuotationToUpdate.CreatedAt = existingQuotationEdit.CreatedAt;
+                    QuotationToUpdate.InstitutionId = existingQuotationEdit.InstitutionId;
+                    QuotationToUpdate.UserId = existingQuotationEdit.UserId;
+                    QuotationToUpdate.UpdatedAt = DateTime.Now;
+
+                    await context.SaveChangesAsync();
+
+                    return StatusCode(200);
+
+                }
+
+            }
+            catch (Exception Ex)
+            {
+                UtilityService.LogException(Ex);
+                return StatusCode(500, UtilityService.HandleException(Ex));
+            }
+
+        }
+
+        // Reject a quotation edit
+        [HttpPut("RejectQuotationEdit")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        public async Task<ActionResult> RejectQuotationEdit(RejectQuotationEdit rejectQuotationEdit)
+        {
+            try
+            {
+                // validate Model
+                if (!ModelState.IsValid)
+                {
+                    return BadRequest(ModelState);
+                }
+                using (var context = new QuotationsBoardContext())
+                {
+                    LoginTokenDTO TokenContents = UtilityService.GetUserIdFromCurrentRequest(Request);
+                    var userId = UtilityService.GetUserIdFromToken(Request);
+                    var existingQuotationEdit = await context.QuotationEdits.FirstOrDefaultAsync(q => q.Id == rejectQuotationEdit.Id);
+
+
+                    if (existingQuotationEdit == null)
+                    {
+                        return BadRequest("Quotation edit does not exist");
+                    }
+
+                    var userDetails = await context.Users.FirstOrDefaultAsync(u => u.Id == existingQuotationEdit.UserId);
+
+                    if (userDetails == null)
+                    {
+                        return BadRequest("Invalid user");
+                    }
+
+                    // notify the user that the quotation edit has been rejected
+                    var emailBody = $"Your quotation edit has been rejected  for bond {existingQuotationEdit.BondId} with the following details: <br/>" +
+                        $"Buying Yield: {existingQuotationEdit.BuyingYield} <br/>" +
+                        $"Selling Yield: {existingQuotationEdit.SellingYield} <br/>" +
+                        $"Buy Volume: {existingQuotationEdit.BuyVolume} <br/>" +
+                        $"Sell Volume: {existingQuotationEdit.SellVolume} <br/>" +
+                        $"Because of the following reason: <br/>" +
+                        $"Comment: {rejectQuotationEdit.RejectionReason} <br/>" +
+                        $"Please make the necessary changes and re-submit the quotation edit  <br/>";
+
+
+                    // Update the quotation edit
+                    existingQuotationEdit.Status = QuotationEditStatus.Rejected;
+                    existingQuotationEdit.RejectionReason = rejectQuotationEdit.RejectionReason;
+                    await context.SaveChangesAsync();
+
+                    var emailSubject = "Quotation Edit Rejected";
+                    await UtilityService.SendEmailAsync(
+                        userDetails.Email,
+                        emailSubject,
+                        emailBody
+                    );
+
+                    return StatusCode(200);
+
+                }
+
+            }
+            catch (Exception Ex)
+            {
+                UtilityService.LogException(Ex);
+                return StatusCode(500, UtilityService.HandleException(Ex));
+            }
+        }
+
+
 
         // Fetch all quotations filled by Institution
         [HttpGet("GetQuotationsFilledByInstitution/{bondId}/{From}/{To}")]
