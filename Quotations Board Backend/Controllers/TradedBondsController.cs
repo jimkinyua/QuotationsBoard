@@ -462,7 +462,8 @@ namespace Quotations_Board_Backend.Controllers
                         {
                             BondId = bond.Id,
                             BondName = bond.IssueNumber,
-                            YearsToMaturity = yearsToMaturity
+                            YearsToMaturity = yearsToMaturity,
+                            IssueNo = bond.IssueNumber
                         };
 
                         // get all trades for the day selected
