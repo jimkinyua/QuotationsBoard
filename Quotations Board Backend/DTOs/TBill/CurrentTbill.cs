@@ -1,4 +1,4 @@
-public class CurrentTbill : TBillDTO
+public class CurrentTbill : HistoricalTbill
 {
 
 }

@@ -133,7 +133,7 @@ namespace Quotations_Board_Backend.Controllers
                     var tbills = await context.TBills
                     .OrderByDescending(x => x.IssueDate)
                     .ToListAsync();
-                    Dictionary<decimal, CurrentTbill> currentTbills = new Dictionary<decimal, CurrentTbill>();
+                    Dictionary<string, CurrentTbill> currentTbills = new Dictionary<string, CurrentTbill>();
                     // foreach tbill tenor pick the one for the most recent
                     // Most recent is the Last week depending on the day of the week
                     var Today = DateTime.Now;
@@ -146,16 +146,25 @@ namespace Quotations_Board_Backend.Controllers
                     {
                         foreach (var tbill in mostRecentTbills)
                         {
-                            if (!currentTbills.ContainsKey(tbill.Tenor))
+                            if (!currentTbills.ContainsKey(tbill.Id))
                             {
-                                currentTbills.Add(tbill.Tenor, new CurrentTbill
+                                var MostRecentTBillBeforeThis = await context.TBills
+                                .Where(x => x.Tenor == tbill.Tenor && x.IssueDate < tbill.IssueDate)
+                                .OrderByDescending(x => x.IssueDate)
+                                .FirstOrDefaultAsync();
+                                var ThenYield = MostRecentTBillBeforeThis != null ? MostRecentTBillBeforeThis.Yield : 0;
+                                var Variance = tbill.Yield - ThenYield;
+
+                                currentTbills.Add(tbill.Id, new CurrentTbill
                                 {
                                     Id = tbill.Id,
                                     IssueDate = tbill.IssueDate,
                                     MaturityDate = tbill.MaturityDate,
                                     Tenor = tbill.Tenor,
                                     Yield = tbill.Yield,
-                                    CreatedOn = tbill.CreatedOn
+                                    CreatedOn = tbill.CreatedOn,
+                                    Variance = Variance,
+                                    LastAuction = ThenYield
                                 });
                             }
                         }
@@ -170,6 +179,12 @@ namespace Quotations_Board_Backend.Controllers
 
                     foreach (var tbill in tbills)
                     {
+                        // if it has been added to currentTbills, skip it
+                        if (currentTbills.ContainsKey(tbill.Id))
+                        {
+                            continue;
+                        }
+
                         var MostRecentTBillBeforeThis = await context.TBills
                         .Where(x => x.Tenor == tbill.Tenor && x.IssueDate < tbill.IssueDate)
                         .OrderByDescending(x => x.IssueDate)
@@ -177,7 +192,7 @@ namespace Quotations_Board_Backend.Controllers
                         var ThenYield = MostRecentTBillBeforeThis != null ? MostRecentTBillBeforeThis.Yield : 0;
                         var Variance = tbill.Yield - ThenYield;
 
-                        TBillDTO billDTO = new TBillDTO
+                        HistoricalTbill billDTO = new HistoricalTbill
                         {
                             Id = tbill.Id,
                             IssueDate = tbill.IssueDate,
@@ -188,7 +203,10 @@ namespace Quotations_Board_Backend.Controllers
                             Variance = Variance,
                             LastAuction = ThenYield
                         };
-                        tbillDTOs.Add(billDTO);
+                        tbillDTOs.Add(new TBillDTO
+                        {
+                            HistoricalTbills = new List<HistoricalTbill> { billDTO }
+                        });
                     }
                     return StatusCode(200, tbillDTOs);
                 }
