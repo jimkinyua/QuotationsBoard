@@ -137,7 +137,7 @@ namespace Quotations_Board_Backend.Controllers
                     // foreach tbill tenor pick the one for the most recent
                     // Most recent is the Last week depending on the day of the week
                     var Today = DateTime.Now;
-                    var startOfLastWeek = Today.AddDays(-(int)Today.DayOfWeek - 6);
+                    var startOfLastWeek = Today.AddDays(-(int)Today.DayOfWeek - 7);
                     var endOfLastWeek = startOfLastWeek.AddDays(6);
 
                     // most recent tbills are within startOfLastWeek and endOfLastWeek
@@ -170,9 +170,17 @@ namespace Quotations_Board_Backend.Controllers
                         }
                     }
 
-                    var tbillDTOs = new TBillDTO();
+                    var tbillDTOs = new TBillDTO(
+                    );
+                    List<CurrentTbill> curr = new List<CurrentTbill>();
+                    List<HistoricalTbill> hist = new List<HistoricalTbill>();
+                    foreach (var item in currentTbills)
+                    {
+                        curr.Add(item.Value);
+                    }
 
-                    tbillDTOs.CurrentTbills = currentTbills.Values.ToList();
+                    tbillDTOs.CurrentTbills = curr;
+
 
                     foreach (var tbill in tbills)
                     {
@@ -200,8 +208,9 @@ namespace Quotations_Board_Backend.Controllers
                             Variance = Variance,
                             LastAuction = ThenYield
                         };
-                        tbillDTOs.HistoricalTbills.Add(billDTO);
+                        hist.Add(billDTO);
                     }
+                    tbillDTOs.HistoricalTbills = hist;
                     return StatusCode(200, tbillDTOs);
                 }
             }
