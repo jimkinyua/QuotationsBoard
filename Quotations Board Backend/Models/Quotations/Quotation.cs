@@ -20,7 +20,6 @@ public class Quotation
     public DateTime UpdatedAt { get; set; }
     [ForeignKey("User")]
     public string UserId { get; set; } = null!;
-    public virtual PortalUser User { get; set; } = null!;
     public virtual ICollection<QuotationEdit> QuotationEdits { get; set; } = null!;
 
 }
