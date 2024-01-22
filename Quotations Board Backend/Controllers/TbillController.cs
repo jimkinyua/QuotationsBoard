@@ -124,7 +124,7 @@ namespace Quotations_Board_Backend.Controllers
         [HttpGet("GetAllTbills")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public async Task<ActionResult<List<TBillDTO>>> GetAllTbills()
+        public async Task<ActionResult<TBillDTO>> GetAllTbills()
         {
             try
             {
@@ -170,12 +170,9 @@ namespace Quotations_Board_Backend.Controllers
                         }
                     }
 
-                    var tbillDTOs = new List<TBillDTO>();
+                    var tbillDTOs = new TBillDTO();
 
-                    tbillDTOs.Add(new TBillDTO
-                    {
-                        CurrentTbills = currentTbills.Values.ToList()
-                    });
+                    tbillDTOs.CurrentTbills = currentTbills.Values.ToList();
 
                     foreach (var tbill in tbills)
                     {
@@ -203,10 +200,7 @@ namespace Quotations_Board_Backend.Controllers
                             Variance = Variance,
                             LastAuction = ThenYield
                         };
-                        tbillDTOs.Add(new TBillDTO
-                        {
-                            HistoricalTbills = new List<HistoricalTbill> { billDTO }
-                        });
+                        tbillDTOs.HistoricalTbills.Add(billDTO);
                     }
                     return StatusCode(200, tbillDTOs);
                 }
