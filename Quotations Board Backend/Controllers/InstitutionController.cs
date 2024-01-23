@@ -176,7 +176,7 @@ namespace Quotations_Board_Backend.Controllers
                             InstitutionName = institutionApplication.InstitutionName,
                             InstitutionType = institutionApplication.InstitutionType,
                             InstitutionId = institution.Id,
-                            IsActivate = isActive
+                            IsActive = isActive
                         });
                     }
                     return Ok(institutionApplicationsDTO);

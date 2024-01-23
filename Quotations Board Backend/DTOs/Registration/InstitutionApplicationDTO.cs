@@ -13,6 +13,6 @@ public class InstitutionApplicationDTO
     public string InstitutionType { get; set; } = null!;
     public string InstitutionEmail { get; set; } = null!;
     public string InstitutionId { get; set; } = null!;
-    public Boolean IsActivate { get; set; }
+    public Boolean IsActive { get; set; }
 
 }
