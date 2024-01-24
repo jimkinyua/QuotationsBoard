@@ -48,6 +48,13 @@ namespace Quotations_Board_Backend.Controllers
                     {
                         return BadRequest("Invalid login attempt.");
                     }
+
+                    // is account disabled ?
+                    if (await _userManager.IsLockedOutAsync(user))
+                    {
+                        return BadRequest("User account disabled.");
+                    }
+
                     Institution? institution = await context.Institutions.FirstOrDefaultAsync(x => x.Id == user.InstitutionId);
                     if (institution == null)
                     {

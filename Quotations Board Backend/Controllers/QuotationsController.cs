@@ -356,12 +356,12 @@ namespace Quotations_Board_Backend.Controllers
                             continue;
                         }
                         decimal currentAverageWeightedYield = currentTotalWeightedYield / currentQuotationVolume;
-                        var change = currentAverageWeightedYield - averageRecentWeightedYield;
-                        var percentgeChange = (change / averageRecentWeightedYield) * 100;
+                        var change = Math.Abs(currentAverageWeightedYield - averageRecentWeightedYield);
+                        // var percentgeChange = (change / averageRecentWeightedYield) * 100;
                         // if greater than 1% reject the quotation
-                        if (percentgeChange > 1)
+                        if (change > 1)
                         {
-                            throw new Exception($"Quotation at row {row} rejected. The current average weighted yield ({currentAverageWeightedYield:0.##}%) significantly differs from the most recent trading day's average weighted yield ({averageRecentWeightedYield:0.##}%) recorded on {mostRecentTradingDay:yyyy-MM-dd}. The percentage change of {percentgeChange:0.##}% exceeds the allowable limit of 1%.");
+                            throw new Exception($"Quotation at row {row} rejected. The current average weighted yield ({currentAverageWeightedYield:0.##}%) significantly differs from the most recent trading day's average weighted yield ({averageRecentWeightedYield:0.##}%) recorded on {mostRecentTradingDay:yyyy-MM-dd}. The percentage change of {change:0.##}% exceeds the allowable limit of 1%.");
                         }
                         else
                         {
