@@ -381,10 +381,10 @@ namespace Quotations_Board_Backend.Controllers
                 // fetch the user who has the SuperAdmin role within the institution
                 var superAdmin = await _userManager.GetUsersInRoleAsync(CustomRoles.SuperAdmin);
                 var superAdminInstitution = superAdmin.FirstOrDefault(u => u.InstitutionId == institution.Id);
-                if (superAdminInstitution == null)
-                {
-                    return BadRequest("There must be at least one super admin");
-                }
+                // if (superAdminInstitution == null)
+                // {
+                //     return BadRequest("There must be at least one super admin");
+                // }
 
                 institution.Status = InstitutionStatus.Inactive;
                 institution.DeactivatedAt = DateTime.Now;
