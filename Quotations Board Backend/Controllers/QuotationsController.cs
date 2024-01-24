@@ -108,32 +108,12 @@ namespace Quotations_Board_Backend.Controllers
                     }
                     else
                     {
-                        var mostRecentDayQuotations = await context.Quotations
-                            .Where(q => q.BondId == quotation.BondId && q.CreatedAt.Date == mostRecentTradingDay.Date)
-                            .ToListAsync();
-
-                        // Calculate the Average Weighted Yield of the previous day's quotes
-                        decimal totalWeightedYield = 0;
-                        decimal totalVolume = 0;
-                        foreach (var q in mostRecentDayQuotations)
-                        {
-                            if (q.BuyVolume < 50000000 || q.SellVolume < 50000000)
-                            {
-                                continue;
-                            }
-                            totalWeightedYield += (q.BuyingYield * q.BuyVolume) + (q.SellingYield * q.SellVolume);
-                            totalVolume += q.BuyVolume + q.SellVolume;
-                        }
-                        if (totalVolume <= 0)
-                        {
-                            // Save the quotation
-                            await context.Quotations.AddAsync(quotation);
-                            await context.SaveChangesAsync();
-                            return StatusCode(201, quotation);
-                        }
-
-                        decimal averageRecentWeightedYield = totalWeightedYield / totalVolume;
-                        if (averageRecentWeightedYield <= 0)
+                        var LastImpliedYield = context.Quotations
+                                                    .Where(q => q.BondId == quotation.BondId && q.CreatedAt.Date == mostRecentTradingDay.Date)
+                                                    .OrderByDescending(q => q.CreatedAt)
+                                                    .Select(q => q.BuyingYield)
+                                                    .FirstOrDefault();
+                        if (LastImpliedYield == default(decimal))
                         {
                             // Save the quotation
                             await context.Quotations.AddAsync(quotation);
@@ -143,21 +123,12 @@ namespace Quotations_Board_Backend.Controllers
 
                         decimal currentTotalWeightedYield = (quotation.BuyingYield * quotation.BuyVolume) + (quotation.SellingYield * quotation.SellVolume);
                         decimal currentQuotationVolume = quotation.BuyVolume + quotation.SellVolume;
-                        if (currentQuotationVolume <= 0)
-                        {
-                            // Save the quotation
-                            await context.Quotations.AddAsync(quotation);
-                            await context.SaveChangesAsync();
-                            return StatusCode(201, quotation);
-                        }
                         decimal currentAverageWeightedYield = currentTotalWeightedYield / currentQuotationVolume;
-                        var change = Math.Abs(currentAverageWeightedYield - averageRecentWeightedYield);
-                        // var percentgeChange = (change / averageRecentWeightedYield) * 100;
-                        // if greater than 1% reject the quotation
+                        var change = Math.Abs(currentAverageWeightedYield - LastImpliedYield);
+
                         if (change > 1)
                         {
-                            string errorMessage = $"Quotation rejected. The current average weighted yield ({currentAverageWeightedYield:0.##}%) significantly differs from the most recent trading day's average weighted yield ({averageRecentWeightedYield:0.##}%) recorded on {mostRecentTradingDay:yyyy-MM-dd}. The percentage change of {change:0.##}% exceeds the allowable limit of 1%.";
-                            return BadRequest(errorMessage);
+                            return BadRequest("Quotation rejected. The current average weighted yield significantly differs from the last implied yield recorded on " + mostRecentTradingDay + ". The percentage change of " + change + "% exceeds the allowable limit of 1%");
                         }
                         else
                         {
@@ -348,51 +319,31 @@ namespace Quotations_Board_Backend.Controllers
                     }
                     else
                     {
-                        var mostRecentDayQuotations = dbContext.Quotations
+                        var LastImpliedYield = dbContext.Quotations
                             .Where(q => q.BondId == bond.Id && q.CreatedAt.Date == mostRecentTradingDay.Date)
-                            .ToList();
-                        // Calculate the Average Weighted Yield of the previous day's quotes
-                        decimal totalWeightedYield = 0;
-                        decimal totalVolume = 0;
-                        foreach (var q in mostRecentDayQuotations)
-                        {
-                            if (q.BuyVolume < 50000000 || q.SellVolume < 50000000)
-                            {
-                                continue;
-                            }
-                            totalWeightedYield += (q.BuyingYield * q.BuyVolume) + (q.SellingYield * q.SellVolume);
-                            totalVolume += q.BuyVolume + q.SellVolume;
-                        }
-                        if (totalVolume <= 0)
-                        {
-                            quotationRows.Add(quote);
-                            continue;
-                        }
-                        decimal averageRecentWeightedYield = totalWeightedYield / totalVolume;
-                        if (averageRecentWeightedYield <= 0)
+                            .OrderByDescending(q => q.CreatedAt)
+                            .Select(q => q.BuyingYield)
+                            .FirstOrDefault();
+                        if (LastImpliedYield == default(decimal))
                         {
                             quotationRows.Add(quote);
                             continue;
                         }
                         decimal currentTotalWeightedYield = (buyYield * buyVolume) + (sellYield * sellVolume);
                         decimal currentQuotationVolume = buyVolume + sellVolume;
-                        if (currentQuotationVolume <= 0)
-                        {
-                            quotationRows.Add(quote);
-                            continue;
-                        }
                         decimal currentAverageWeightedYield = currentTotalWeightedYield / currentQuotationVolume;
-                        var change = Math.Abs(currentAverageWeightedYield - averageRecentWeightedYield);
+                        var change = Math.Abs(currentAverageWeightedYield - LastImpliedYield);
                         // var percentgeChange = (change / averageRecentWeightedYield) * 100;
                         // if greater than 1% reject the quotation
                         if (change > 1)
                         {
-                            throw new Exception($"Quotation at row {row} rejected. The current average weighted yield ({currentAverageWeightedYield:0.##}%) significantly differs from the most recent trading day's average weighted yield ({averageRecentWeightedYield:0.##}%) recorded on {mostRecentTradingDay:yyyy-MM-dd}. The percentage change of {change:0.##}% exceeds the allowable limit of 1%.");
+                            throw new Exception($"Quotation at row {row} rejected. The current average weighted yield ({currentAverageWeightedYield:0.##}%) significantly differs from the last implied yield ({LastImpliedYield:0.##}%) recorded on {mostRecentTradingDay:yyyy-MM-dd}. The percentage change of {change:0.##}% exceeds the allowable limit of 1%.");
                         }
                         else
                         {
                             quotationRows.Add(quote);
                         }
+
                     }
                 }
             }
