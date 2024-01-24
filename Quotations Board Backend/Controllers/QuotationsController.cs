@@ -580,6 +580,15 @@ namespace Quotations_Board_Backend.Controllers
                             $"Selling Yield: {existingQuotation.SellingYield} <br/>" +
                             $"Buy Volume: {existingQuotation.BuyVolume} <br/>" +
                             $"Sell Volume: {existingQuotation.SellVolume} <br/>" +
+
+                            // new proposed quotation
+                            $"The new proposed quotation is as follows: <br/>" +
+                            $"Buying Yield: {editQuotation.BuyYield} <br/>" +
+                            $"Selling Yield: {editQuotation.SellYield} <br/>" +
+                            $"Buy Volume: {editQuotation.BuyVolume} <br/>" +
+                            $"Sell Volume: {editQuotation.SellVolume} <br/>" +
+                            $"Comment: {editQuotation.Comment} <br/>" +
+
                             $"Please approve or reject the quotation  <br/>";
 
                         var emailSubject = "Quotation Edit";
