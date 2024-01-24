@@ -10,7 +10,7 @@ namespace Quotations_Board_Backend.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    [Authorize(Roles = CustomRoles.InstitutionAdmin, AuthenticationSchemes = "Bearer")]
+    [Authorize(Roles = $"{CustomRoles.InstitutionAdmin}, {CustomRoles.SuperAdmin}", AuthenticationSchemes = "Bearer")]
     public class InstitutionManagementController : ControllerBase
     {
         private readonly IMapper _mapper;
@@ -359,7 +359,7 @@ namespace Quotations_Board_Backend.Controllers
         }
 
         // Disable an Institution
-        [HttpGet("DisableInstitution/{institutionId}")]
+        [HttpPost("DisableInstitution/{institutionId}")]
         public async Task<ActionResult> DisableInstitution(string institutionId)
         {
             LoginTokenDTO TokenContents = UtilityService.GetUserIdFromCurrentRequest(Request);
@@ -410,7 +410,7 @@ namespace Quotations_Board_Backend.Controllers
         }
 
         // Enable an Institution
-        [HttpGet("EnableInstitution/{institutionId}")]
+        [HttpPost("EnableInstitution/{institutionId}")]
         public async Task<ActionResult> EnableInstitution(string institutionId)
         {
             LoginTokenDTO TokenContents = UtilityService.GetUserIdFromCurrentRequest(Request);
