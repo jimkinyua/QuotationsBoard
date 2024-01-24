@@ -362,53 +362,77 @@ namespace Quotations_Board_Backend.Controllers
         [HttpPost("DisableInstitution/{institutionId}")]
         public async Task<ActionResult> DisableInstitution(string institutionId)
         {
-            LoginTokenDTO TokenContents = UtilityService.GetUserIdFromCurrentRequest(Request);
-            if (TokenContents == null)
+            try
             {
-                return Unauthorized();
-            }
+                LoginTokenDTO TokenContents = UtilityService.GetUserIdFromCurrentRequest(Request);
+                if (TokenContents == null)
+                {
+                    return Unauthorized();
+                }
 
-            using (var context = new QuotationsBoardContext())
-            {
-                Institution? institution = await context.Institutions
-                    .Include(i => i.PortalUsers)
-                    .FirstOrDefaultAsync(i => i.Id == institutionId);
+                Institution? institution;
+                using (var context = new QuotationsBoardContext())
+                {
+                    institution = await context.Institutions
+                                              .Include(i => i.PortalUsers)
+                                              .FirstOrDefaultAsync(i => i.Id == institutionId);
+                }
                 if (institution == null)
                 {
                     return NotFound();
                 }
 
-                // fetch the user who has the SuperAdmin role within the institution
                 var superAdmin = await _userManager.GetUsersInRoleAsync(CustomRoles.SuperAdmin);
                 var superAdminInstitution = superAdmin.FirstOrDefault(u => u.InstitutionId == institution.Id);
-                // if (superAdminInstitution == null)
-                // {
-                //     return BadRequest("There must be at least one super admin");
-                // }
 
                 institution.Status = InstitutionStatus.Inactive;
                 institution.DeactivatedAt = DateTime.Now;
 
-                // Disable all users in the institution
                 foreach (var user in institution.PortalUsers)
                 {
-                    user.LockoutEnabled = true;
-                    user.LockoutEnd = DateTime.Now.AddYears(100);
-                    context.Entry(user).State = EntityState.Modified;
+                    await DisableUser(user);
                 }
 
-                await context.SaveChangesAsync();
+                using (var context = new QuotationsBoardContext())
+                {
+                    context.Institutions.Update(institution);
+                    await context.SaveChangesAsync();
+                }
 
-                // Send email to user notifying them that their account has been disabled
+                var institutionAdmin = await _userManager.GetUsersInRoleAsync(CustomRoles.InstitutionAdmin);
+                var institutionAdminInstitution = institutionAdmin.FirstOrDefault(u => u.InstitutionId == institution.Id);
+                if (institutionAdminInstitution == null)
+                {
+                    return BadRequest("Institution Admin not found");
+                }
+
+                // Send email notification
                 string emailBody = $"<p>Dear {institution.OrganizationName},</p>" +
-                    "<p>Your account has been disabled on the Quotations Board Portal. ";
+                                   "<p>Your account has been disabled on the Quotations Board Portal.</p>";
+                await UtilityService.SendEmailAsync(institutionAdminInstitution.Email, "Quotations Board Portal Account Disabled", emailBody);
 
-                await UtilityService.SendEmailAsync(superAdminInstitution.Email, "Quotations Board Portal Account Disabled", emailBody);
-
+                return Ok();
             }
-            return Ok();
+            catch (Exception Ex)
+            {
 
+                UtilityService.HandleException(Ex);
+                return StatusCode(StatusCodes.Status500InternalServerError, Ex.Message);
+            }
         }
+
+        private async Task DisableUser(PortalUser user)
+        {
+            user.LockoutEnabled = true;
+            user.LockoutEnd = DateTime.Now.AddYears(100);
+
+            using (var context = new QuotationsBoardContext())
+            {
+                context.Entry(user).State = EntityState.Modified;
+                await context.SaveChangesAsync();
+            }
+        }
+
 
         // Enable an Institution
         [HttpPost("EnableInstitution/{institutionId}")]
@@ -420,39 +444,68 @@ namespace Quotations_Board_Backend.Controllers
                 return Unauthorized();
             }
 
+            Institution? institution;
             using (var context = new QuotationsBoardContext())
             {
-                Institution? institution = await context.Institutions
-                    .Include(i => i.PortalUsers)
-                    .FirstOrDefaultAsync(i => i.Id == institutionId);
-                if (institution == null)
-                {
-                    return NotFound();
-                }
-
-                institution.Status = InstitutionStatus.Active;
-                institution.DeactivatedAt = DateTime.Now;
-                await context.SaveChangesAsync();
-
-                // Enable all users in the institution
-                foreach (var user in institution.PortalUsers)
-                {
-                    user.LockoutEnabled = false;
-                    user.LockoutEnd = null;
-                    await _userManager.UpdateAsync(user);
-                }
-
-                // Send email to user notifying them that their account has been disabled
-                string emailBody = $"<p>Dear {institution.OrganizationName},</p>" +
-                    "<p>Your account has been enabled on the Quotations Board Portal. " +
-                    " Follow the link below to login to your account.</p>" +
-                    $"<a href='{_configuration["FrontEndUrl"]}'>Login</a>";
-
-                await UtilityService.SendEmailAsync(institution.OrganizationEmail, "Quotations Board Portal Account Enabled", emailBody);
-
+                institution = await context.Institutions
+                                          .FirstOrDefaultAsync(i => i.Id == institutionId);
             }
-            return Ok();
 
+            if (institution == null)
+            {
+                return NotFound();
+            }
+
+            institution.Status = InstitutionStatus.Active;
+            // institution.DeactivatedAt = DateTime.Now;
+            // 
+            using (var context = new QuotationsBoardContext())
+            {
+                context.Institutions.Update(institution);
+                await context.SaveChangesAsync();
+            }
+
+            await EnableAllUsersInInstitution(institutionId);
+            // get user with InstitutionAdmin role and send them an email
+            var institutionAdmin = await _userManager.GetUsersInRoleAsync(CustomRoles.InstitutionAdmin);
+            var institutionAdminInstitution = institutionAdmin.FirstOrDefault(u => u.InstitutionId == institution.Id);
+            if (institutionAdminInstitution == null)
+            {
+                return BadRequest("Institution Admin not found");
+            }
+
+            // Send email notification
+            string emailBody = $"<p>Dear {institutionAdminInstitution.LastName},</p>" +
+                               "<p>Your account has been enabled on the Quotations Board Portal. " +
+                               "Follow the link below to login to your account.</p>" +
+                               $"<a href='{_configuration["FrontEndUrl"]}'>Login</a>";
+            await UtilityService.SendEmailAsync(institutionAdminInstitution.Email, "Quotations Board Portal Account Enabled", emailBody);
+
+            return Ok();
         }
+
+        private async Task EnableAllUsersInInstitution(string institutionId)
+        {
+            var users = await GetUsersInInstitutionAsync(institutionId); // Assuming such a method exists or can be implemented.
+            foreach (var user in users)
+            {
+                user.LockoutEnabled = false;
+                user.LockoutEnd = null;
+                using (var context = new QuotationsBoardContext())
+                {
+                    context.Entry(user).State = EntityState.Modified;
+                    await context.SaveChangesAsync();
+                }
+            }
+        }
+
+        private async Task<List<PortalUser>> GetUsersInInstitutionAsync(string institutionId)
+        {
+            using (var context = new QuotationsBoardContext())
+            {
+                return await context.Users.Where(u => u.InstitutionId == institutionId).ToListAsync();
+            }
+        }
+
     }
 }
