@@ -668,7 +668,7 @@ namespace Quotations_Board_Backend.Controllers
 
                     var quotationEditDTO = new QuotationEditDTO
                     {
-                        BondId = quotationEdit.BondId,
+                        BondId = bond.Isin,
                         BuyYield = quotationEdit.BuyingYield,
                         BuyVolume = quotationEdit.BuyVolume,
                         SellYield = quotationEdit.SellingYield,

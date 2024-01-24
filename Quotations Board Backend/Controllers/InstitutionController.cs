@@ -162,6 +162,16 @@ namespace Quotations_Board_Backend.Controllers
                         {
                             continue;
                         }
+                        var _type = "";
+                        var InstTypes = await context.InstitutionTypes.FirstOrDefaultAsync(x => x.Id == institution.InstitutionType);
+                        if (InstTypes != null)
+                        {
+                            _type = InstTypes.Name;
+                        }
+                        else
+                        {
+                            _type = "N/A";
+                        }
                         var isActive = institution.Status == InstitutionStatus.Active ? true : false;
                         institutionApplicationsDTO.Add(new InstitutionApplicationDTO
                         {
@@ -174,7 +184,7 @@ namespace Quotations_Board_Backend.Controllers
                             InstitutionAddress = institutionApplication.InstitutionAddress,
                             InstitutionEmail = institutionApplication.InstitutionEmail,
                             InstitutionName = institutionApplication.InstitutionName,
-                            InstitutionType = institutionApplication.InstitutionType,
+                            InstitutionType = _type,
                             InstitutionId = institution.Id,
                             IsActive = isActive
                         });
