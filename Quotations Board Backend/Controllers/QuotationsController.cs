@@ -793,6 +793,12 @@ namespace Quotations_Board_Backend.Controllers
                         return BadRequest("Quotation edit does not exist");
                     }
 
+                    var bond = await context.Bonds.FirstOrDefaultAsync(b => b.Id == existingQuotationEdit.BondId);
+                    if (bond == null)
+                    {
+                        return BadRequest("Invalid bond");
+                    }
+
                     var userDetails = await context.Users.FirstOrDefaultAsync(u => u.Id == existingQuotationEdit.UserId);
 
                     if (userDetails == null)
@@ -801,7 +807,7 @@ namespace Quotations_Board_Backend.Controllers
                     }
 
                     // notify the user that the quotation edit has been rejected
-                    var emailBody = $"Your quotation edit has been rejected  for bond {existingQuotationEdit.BondId} with the following details: <br/>" +
+                    var emailBody = $"Your quotation edit has been rejected  for bond {bond.IssueNumber} with the following details: <br/>" +
                         $"Buying Yield: {existingQuotationEdit.BuyingYield} <br/>" +
                         $"Selling Yield: {existingQuotationEdit.SellingYield} <br/>" +
                         $"Buy Volume: {existingQuotationEdit.BuyVolume} <br/>" +
