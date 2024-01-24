@@ -121,16 +121,39 @@ namespace Quotations_Board_Backend.Controllers
                             totalWeightedYield += (q.BuyingYield * q.BuyVolume) + (q.SellingYield * q.SellVolume);
                             totalVolume += q.BuyVolume + q.SellVolume;
                         }
+                        if (totalVolume <= 0)
+                        {
+                            // Save the quotation
+                            await context.Quotations.AddAsync(quotation);
+                            await context.SaveChangesAsync();
+                            return StatusCode(201, quotation);
+                        }
+
                         decimal averageRecentWeightedYield = totalWeightedYield / totalVolume;
+                        if (averageRecentWeightedYield <= 0)
+                        {
+                            // Save the quotation
+                            await context.Quotations.AddAsync(quotation);
+                            await context.SaveChangesAsync();
+                            return StatusCode(201, quotation);
+                        }
+
                         decimal currentTotalWeightedYield = (quotation.BuyingYield * quotation.BuyVolume) + (quotation.SellingYield * quotation.SellVolume);
                         decimal currentQuotationVolume = quotation.BuyVolume + quotation.SellVolume;
-                        decimal currentAverageWeightedYield = currentTotalWeightedYield / currentQuotationVolume;
-                        var change = currentAverageWeightedYield - averageRecentWeightedYield;
-                        var percentgeChange = (change / averageRecentWeightedYield) * 100;
-                        // if greater than 1% reject the quotation
-                        if (percentgeChange > 1)
+                        if (currentQuotationVolume <= 0)
                         {
-                            string errorMessage = $"Quotation rejected. The current average weighted yield ({currentAverageWeightedYield:0.##}%) significantly differs from the most recent trading day's average weighted yield ({averageRecentWeightedYield:0.##}%) recorded on {mostRecentTradingDay:yyyy-MM-dd}. The percentage change of {percentgeChange:0.##}% exceeds the allowable limit of 1%.";
+                            // Save the quotation
+                            await context.Quotations.AddAsync(quotation);
+                            await context.SaveChangesAsync();
+                            return StatusCode(201, quotation);
+                        }
+                        decimal currentAverageWeightedYield = currentTotalWeightedYield / currentQuotationVolume;
+                        var change = Math.Abs(currentAverageWeightedYield - averageRecentWeightedYield);
+                        // var percentgeChange = (change / averageRecentWeightedYield) * 100;
+                        // if greater than 1% reject the quotation
+                        if (change > 1)
+                        {
+                            string errorMessage = $"Quotation rejected. The current average weighted yield ({currentAverageWeightedYield:0.##}%) significantly differs from the most recent trading day's average weighted yield ({averageRecentWeightedYield:0.##}%) recorded on {mostRecentTradingDay:yyyy-MM-dd}. The percentage change of {change:0.##}% exceeds the allowable limit of 1%.";
                             return BadRequest(errorMessage);
                         }
                         else
