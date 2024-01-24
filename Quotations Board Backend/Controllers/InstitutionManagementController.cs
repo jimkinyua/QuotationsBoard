@@ -388,15 +388,16 @@ namespace Quotations_Board_Backend.Controllers
 
                 institution.Status = InstitutionStatus.Inactive;
                 institution.DeactivatedAt = DateTime.Now;
-                await context.SaveChangesAsync();
 
                 // Disable all users in the institution
                 foreach (var user in institution.PortalUsers)
                 {
                     user.LockoutEnabled = true;
                     user.LockoutEnd = DateTime.Now.AddYears(100);
-                    await _userManager.UpdateAsync(user);
+                    context.Entry(user).State = EntityState.Modified;
                 }
+
+                await context.SaveChangesAsync();
 
                 // Send email to user notifying them that their account has been disabled
                 string emailBody = $"<p>Dear {institution.OrganizationName},</p>" +
