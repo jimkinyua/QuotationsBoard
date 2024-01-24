@@ -318,8 +318,8 @@ namespace Quotations_Board_Backend.Controllers
 
                         if (previousImpliedYield == null)
                         {
-                            continue;
-                            // return BadRequest($"No Previous Implied Yield for Bond {bond.IssueNumber}");
+                            // continue;
+                            return BadRequest($"No Previous Implied Yield for Bond {bond.IssueNumber}");
                         }
                         var QuotedAndPrevious = averageWeightedQuotedYield - previousImpliedYield.Yield;
                         var TradedAndPrevious = averageWeightedTradedYield - previousImpliedYield.Yield;
