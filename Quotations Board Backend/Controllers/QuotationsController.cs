@@ -51,10 +51,10 @@ namespace Quotations_Board_Backend.Controllers
                         SellVolume = newQuotation.SellVolume
                     };
                     // Quotes Past 9 am will not be accepted
-                    if (quotation.CreatedAt.Hour >= 9)
-                    {
-                        return BadRequest("Quotations past 9 am are not accepted");
-                    }
+                    // if (quotation.CreatedAt.Hour >= 9)
+                    // {
+                    //     return BadRequest("Quotations past 9 am are not accepted");
+                    // }
                     // Ensure selling yield is not greater than buying yield
                     if (quotation.SellingYield > quotation.BuyingYield)
                     {
@@ -578,7 +578,7 @@ namespace Quotations_Board_Backend.Controllers
         }
 
         // Approve a quotation edit
-        [HttpPut("ApproveQuotationEdit")]
+        [HttpPost("ApproveQuotationEdit")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<ActionResult> ApproveQuotationEdit(ApproveQuotationEdit approveQuotationEdit)
@@ -652,7 +652,7 @@ namespace Quotations_Board_Backend.Controllers
         }
 
         // Reject a quotation edit
-        [HttpPut("RejectQuotationEdit")]
+        [HttpPost("RejectQuotationEdit")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<ActionResult> RejectQuotationEdit(RejectQuotationEdit rejectQuotationEdit)
