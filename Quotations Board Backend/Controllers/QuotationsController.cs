@@ -16,10 +16,13 @@ namespace Quotations_Board_Backend.Controllers
     public class QuotationsController : ControllerBase
     {
         private readonly UserManager<PortalUser> _userManager;
+        private readonly IConfiguration _configuration;
 
-        public QuotationsController(UserManager<PortalUser> userManager)
+
+        public QuotationsController(UserManager<PortalUser> userManager, IConfiguration configuration)
         {
             _userManager = userManager;
+            _configuration = configuration;
         }
 
         // Create a new quotation
@@ -570,6 +573,8 @@ namespace Quotations_Board_Backend.Controllers
                     await context.QuotationEdits.AddAsync(quotationEdit);
                     await context.SaveChangesAsync();
 
+                    var callbackUrl = $"{_configuration["FrontEndUrl"]}/review-quote/{quotationEdit.Id}";
+
                     // find users via roles
                     var superAdmins = await _userManager.GetUsersInRoleAsync(CustomRoles.SuperAdmin);
                     foreach (var superAdmin in superAdmins)
@@ -589,7 +594,8 @@ namespace Quotations_Board_Backend.Controllers
                             $"Sell Volume: {editQuotation.SellVolume} <br/>" +
                             $"Comment: {editQuotation.Comment} <br/>" +
 
-                            $"Please approve or reject the quotation  <br/>";
+                            $"Please approve or reject the quotation  <br/>" +
+                            $"Click <a href='{callbackUrl}'>here</a> to approve or reject the quotation edit <br/>";
 
                         var emailSubject = "Quotation Edit";
                         await UtilityService.SendEmailAsync(
@@ -608,6 +614,84 @@ namespace Quotations_Board_Backend.Controllers
                 UtilityService.LogException(Ex);
                 return StatusCode(500, UtilityService.HandleException(Ex));
             }
+        }
+
+        // Fetch details of a quotation edit given the quotation edit id
+        [HttpGet("GetQuotationEditDetails/{QuotationEditId}")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        public async Task<ActionResult<QuotationEdit>> GetQuotationEditDetails(string QuotationEditId)
+        {
+            try
+            {
+                // validate Model
+                if (!ModelState.IsValid)
+                {
+                    return BadRequest(ModelState);
+                }
+                using (var context = new QuotationsBoardContext())
+                {
+                    var quotationEdit = await context.QuotationEdits.FirstOrDefaultAsync(q => q.Id == QuotationEditId);
+                    if (quotationEdit == null)
+                    {
+                        return BadRequest("Quotation edit does not exist");
+                    }
+                    // is it approved or rejected?
+                    if (quotationEdit.Status == QuotationEditStatus.Approved || quotationEdit.Status == QuotationEditStatus.Rejected)
+                    {
+                        return BadRequest("Quotation edit has already been approved or rejected");
+                    }
+
+                    var bond = await context.Bonds.FirstOrDefaultAsync(b => b.Id == quotationEdit.BondId);
+                    if (bond == null)
+                    {
+                        return BadRequest("Invalid bond");
+                    }
+
+                    Institution? institution = await context.Institutions.FirstOrDefaultAsync(i => i.Id == quotationEdit.InstitutionId);
+                    if (institution == null)
+                    {
+                        return BadRequest("Invalid institution");
+                    }
+
+                    var user = await context.Users.FirstOrDefaultAsync(u => u.Id == quotationEdit.UserId);
+                    if (user == null)
+                    {
+                        return BadRequest("Invalid user");
+                    }
+
+                    var quotation = await context.Quotations.FirstOrDefaultAsync(q => q.Id == quotationEdit.QuotationId);
+                    if (quotation == null)
+                    {
+                        return BadRequest("Invalid quotation");
+                    }
+
+                    var quotationEditDTO = new QuotationEditDTO
+                    {
+                        BondId = quotationEdit.BondId,
+                        BuyYield = quotationEdit.BuyingYield,
+                        BuyVolume = quotationEdit.BuyVolume,
+                        SellYield = quotationEdit.SellingYield,
+                        SellVolume = quotationEdit.SellVolume,
+                        CreatedAt = quotationEdit.CreatedAt,
+                        OrganizationName = institution.OrganizationName,
+                        EditSubmittedBy = user.FirstName + " " + user.LastName,
+                        QuotationId = quotationEdit.QuotationId,
+                        Status = quotationEdit.Status,
+                        Comment = quotationEdit.Comment ?? "",
+                        Id = quotationEdit.Id,
+                    };
+
+                    return StatusCode(200, quotationEditDTO);
+                }
+
+            }
+            catch (Exception Ex)
+            {
+                UtilityService.LogException(Ex);
+                return StatusCode(500, UtilityService.HandleException(Ex));
+            }
+
         }
 
         // Approve a quotation edit
