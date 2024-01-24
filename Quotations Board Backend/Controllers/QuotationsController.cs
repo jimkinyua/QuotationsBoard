@@ -561,7 +561,8 @@ namespace Quotations_Board_Backend.Controllers
 
                         var emailSubject = "Quotation Edit";
                         await UtilityService.SendEmailAsync(
-                            superAdmin.Email,
+                            //superAdmin.Email,
+                            "jim.omenda@agilebiz.co.ke",
                             emailSubject,
                             emailBody
                         );
