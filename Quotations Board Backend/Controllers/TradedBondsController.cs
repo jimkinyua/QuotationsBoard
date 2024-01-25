@@ -450,9 +450,20 @@ namespace Quotations_Board_Backend.Controllers
                 using (var db = new QuotationsBoardContext())
                 {
                     db.Database.EnsureCreated();
-                    var allNotMaturedBonds = await db.Bonds.Where(b => b.MaturityDate.Date > parsedDate.Date).ToListAsync();
+                    var tradedBondIds = await db.BondTrades
+                                    .Where(t => t.TradeDate.Date == parsedDate.Date)
+                                    .SelectMany(t => t.BondTradeLines)
+                                    .Select(btl => btl.BondId)
+                                    .Distinct()
+                                    .ToListAsync();
 
-                    foreach (var bond in allNotMaturedBonds)
+                    var allNotMaturedTradedBonds = await db.Bonds
+                              .Where(b => b.MaturityDate.Date > parsedDate.Date && tradedBondIds.Contains(b.Id))
+                              .ToListAsync();
+
+                    // var allNotMaturedBonds = await db.Bonds.Where(b => b.MaturityDate.Date > parsedDate.Date).ToListAsync();
+
+                    foreach (var bond in allNotMaturedTradedBonds)
                     {
                         var diffrenceBetweenSelectedDateAndMaturityDate = bond.MaturityDate.Date - parsedDate.Date;
                         var m = diffrenceBetweenSelectedDateAndMaturityDate.TotalDays / 365.25;
@@ -570,6 +581,24 @@ namespace Quotations_Board_Backend.Controllers
                 {
                     db.Database.EnsureCreated();
                     var allNotMaturedBonds = await db.Bonds.Where(b => b.MaturityDate.Date > parsedDate.Date).ToListAsync();
+                    DateTime LastWeekRelativeToSelectedDate = parsedDate.AddDays(-7);
+                    DateTime startOfLastWeek = LastWeekRelativeToSelectedDate.AddDays(-(int)LastWeekRelativeToSelectedDate.DayOfWeek + (int)DayOfWeek.Monday);
+                    DateTime endOfLastWeek = LastWeekRelativeToSelectedDate.AddDays(+(int)LastWeekRelativeToSelectedDate.DayOfWeek + (int)DayOfWeek.Sunday);
+                    var LastWeeksTBill = db.TBills
+                                           .Where(t => t.IssueDate.Date >= startOfLastWeek.Date
+                                                       && t.IssueDate.Date <= endOfLastWeek.Date
+                                                       && t.Tenor >= 364)
+                                                       .FirstOrDefault();
+                    if (LastWeeksTBill == null)
+                    {
+                        return BadRequest("There are no T-Bills for the weeek beginning " + startOfLastWeek.Date.ToString("dd/MM/yyyy") + " and ending " + endOfLastWeek.Date.ToString("dd/MM/yyyy"));
+                    }
+                    bondStatisticsDict[LastWeeksTBill.Id] = new BondAverageStatistic
+                    {
+                        BondId = LastWeeksTBill.Id,
+                        BondName = LastWeeksTBill.Tenor.ToString() + " Days T-Bill",
+                        YearsToMaturity = LastWeeksTBill.MaturityDate.Date.Subtract(parsedDate.Date).TotalDays / 365.25,
+                    };
 
                     foreach (var bond in allNotMaturedBonds)
                     {

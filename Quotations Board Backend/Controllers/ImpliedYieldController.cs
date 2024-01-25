@@ -699,7 +699,11 @@ namespace Quotations_Board_Backend.Controllers
                         {
                             BenchMarkTenor = benchmark.Key,
                             Yield = impliedYield.Yield,
-                            CanBeUsedForYieldCurve = canBeUsedForYieldCurve
+                            CanBeUsedForYieldCurve = canBeUsedForYieldCurve,
+                            BondUsed = closestBond.IssueNumber,
+                            IssueDate = closestBond.IssueDate,
+                            MaturityDate = closestBond.MaturityDate,
+                            Coupon = closestBond.CouponRate
                         });
                     }
 
@@ -709,7 +713,10 @@ namespace Quotations_Board_Backend.Controllers
                 {
                     BenchMarkTenor = 1,
                     Yield = currentOneYearTBill.Yield,
-                    CanBeUsedForYieldCurve = true
+                    CanBeUsedForYieldCurve = true,
+                    BondUsed = "1 Year TBill",
+                    IssueDate = currentOneYearTBill.IssueDate,
+                    MaturityDate = currentOneYearTBill.MaturityDate,
                 });
 
                 return Ok(yieldCurves);
