@@ -81,7 +81,7 @@ namespace Quotations_Board_Backend.Controllers
                                         DirtyPrice = _trade.DirtyPrice,
                                         Yield = _trade.Yield,
                                         TradeDate = existingGorvermentBondTradeStage.TargetDate,
-                                        TransactionID = _trade.TransactionID
+                                        TransactionID = _trade.TradeReportID
                                     };
                                     db.GorvermentBondTradeLinesStage.Add(gorvermentBondTradeLineStage);
 
@@ -786,6 +786,7 @@ namespace Quotations_Board_Backend.Controllers
 
         private string TransformSecurityId(string excelSecurityId)
         {
+            return excelSecurityId;
             try
             {
                 if (string.IsNullOrWhiteSpace(excelSecurityId))
@@ -860,7 +861,7 @@ namespace Quotations_Board_Backend.Controllers
                     TradeDate = DateTime.Parse(worksheet.Cell(row, 13).Value.ToString()),
                     DirtyPrice = decimal.Parse(worksheet.Cell(row, 8).Value.ToString()),
                     Yield = decimal.Parse(worksheet.Cell(row, 9).Value.ToString()),
-                    TransactionID = worksheet.Cell(row, 11).Value.ToString(),
+                    TradeReportID = worksheet.Cell(row, 11).Value.ToString(),
                 };
                 UploadedTrades.Add(UploadedTrade);
             }
@@ -902,7 +903,7 @@ namespace Quotations_Board_Backend.Controllers
                 {
                     dbContext.Database.EnsureCreated();
                     // Check if transformedSecurityId exists in the database
-                    var bondExists = dbContext.Bonds.Any(b => b.IssueNumber == transformedSecurityId);
+                    var bondExists = dbContext.Bonds.Any(b => b.IssueNumber == transformedSecurityId.Trim());
                     if (!bondExists)
                     {
                         errors.Add($"Row {rowToBeginAt}: Security ID '{excelSecurityId}' does not exist in the system.");
