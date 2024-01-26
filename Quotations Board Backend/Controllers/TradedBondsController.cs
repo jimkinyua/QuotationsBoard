@@ -871,7 +871,7 @@ namespace Quotations_Board_Backend.Controllers
                 var UploadedTrade = new UploadedTrade
                 {
                     Side = side, // This will only be "BUY" due to the check above
-                    SecurityId = worksheet.Cell(row, 3).Value.ToString(),
+                    SecurityId = worksheet.Cell(row, 3).Value.ToString().Trim(),
                     ExecutedSize = decimal.Parse(worksheet.Cell(row, 4).Value.ToString()),
                     ExecutedPrice = decimal.Parse(worksheet.Cell(row, 5).Value.ToString()),
                     ExecutionID = worksheet.Cell(row, 6).Value.ToString(),
