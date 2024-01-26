@@ -15,5 +15,6 @@ public class BondAverageStatistic
     public double YearsToMaturity { get; set; }
     public string BondCategory { get; set; } = null!;
     public string BondType { get; set; } = null!;
+    public decimal PreviousImpliedYield { get; set; }
 
 }

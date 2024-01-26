@@ -324,7 +324,8 @@ namespace Quotations_Board_Backend.Controllers
                                 TransactionTime = trade.TransactionTime,
                                 DirtyPrice = trade.DirtyPrice,
                                 Yield = trade.Yield,
-                                TradeDate = trade.TransactionTime
+                                TradeDate = trade.TransactionTime,
+                                TradeReportID = trade.TransactionID ?? ""
                             });
                         }
                     }
@@ -608,7 +609,9 @@ namespace Quotations_Board_Backend.Controllers
                                 BondName = _tB.Tenor.ToString() + " Days T-Bill",
                                 YearsToMaturity = _tB.MaturityDate.Date.Subtract(parsedDate.Date).TotalDays / 365.25,
                                 BondCategory = "T-Bill",
-                                BondType = "T-Bill"
+                                BondType = "T-Bill",
+                                AverageWeightedTradeYield = _tB.Yield,
+                                AverageWeightedQuotedYield = _tB.Yield,
                             };
                         }
 
@@ -626,7 +629,10 @@ namespace Quotations_Board_Backend.Controllers
                                 BondName = _tB.Tenor.ToString() + " Days T-Bill",
                                 YearsToMaturity = _tB.MaturityDate.Date.Subtract(parsedDate.Date).TotalDays / 365.25,
                                 BondCategory = "T-Bill",
-                                BondType = "T-Bill"
+                                BondType = "T-Bill",
+                                AverageWeightedTradeYield = _tB.Yield,
+                                AverageWeightedQuotedYield = _tB.Yield,
+
                             };
                         }
 
@@ -644,7 +650,10 @@ namespace Quotations_Board_Backend.Controllers
                                 BondName = _tB.Tenor.ToString() + " Days T-Bill",
                                 YearsToMaturity = _tB.MaturityDate.Date.Subtract(parsedDate.Date).TotalDays / 365.25,
                                 BondCategory = "T-Bill",
-                                BondType = "T-Bill"
+                                BondType = "T-Bill",
+                                AverageWeightedTradeYield = _tB.Yield,
+                                AverageWeightedQuotedYield = _tB.Yield,
+
                             };
                         }
 
@@ -654,6 +663,13 @@ namespace Quotations_Board_Backend.Controllers
                     foreach (var bond in allNotMaturedBonds)
                     {
                         var diffrenceBetweenSelectedDateAndMaturityDate = bond.MaturityDate.Date - parsedDate.Date;
+
+                        var previousImpliedYield = db.ImpliedYields
+                        .Where(i => i.BondId == bond.Id
+                            && i.YieldDate.Date < parsedDate.Date)
+                        .OrderByDescending(i => i.YieldDate)
+                        .FirstOrDefault();
+
                         var m = diffrenceBetweenSelectedDateAndMaturityDate.TotalDays / 365.25;
                         var yearsToMaturity = Math.Round(m, 2, MidpointRounding.AwayFromZero);
 
@@ -663,7 +679,8 @@ namespace Quotations_Board_Backend.Controllers
                             BondName = bond.IssueNumber,
                             YearsToMaturity = yearsToMaturity,
                             BondCategory = bond.BondCategory,
-                            BondType = bond.BondType
+                            BondType = bond.BondType,
+                            PreviousImpliedYield = previousImpliedYield != null ? previousImpliedYield.Yield : 0
                         };
 
 
