@@ -18,5 +18,6 @@ public class GorvermentBondTradeLineStage
     public decimal DirtyPrice { get; set; }
     public decimal Yield { get; set; }
     public DateTime TradeDate { get; set; }
+    public string? TransactionID { get; set; }
 
 }

@@ -17,6 +17,7 @@ public class BondTradeLine
     public DateTime TransactionTime { get; set; }
     public decimal DirtyPrice { get; set; }
     public decimal Yield { get; set; }
+    public string? TransactionID { get; set; }
     public virtual BondTrade BondTrade { get; set; } = null!;
 
 }

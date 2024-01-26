@@ -9,4 +9,5 @@ public class UploadedTrade
     public string SecurityId { get; set; } = null!;
     public string Side { get; set; } = null!;
     public string BondId { get; set; } = null!;
+    public string TransactionID { get; set; } = null!;
 }

@@ -80,7 +80,8 @@ namespace Quotations_Board_Backend.Controllers
                                         TransactionTime = _trade.TradeDate,
                                         DirtyPrice = _trade.DirtyPrice,
                                         Yield = _trade.Yield,
-                                        TradeDate = existingGorvermentBondTradeStage.TargetDate
+                                        TradeDate = existingGorvermentBondTradeStage.TargetDate,
+                                        TransactionID = _trade.TransactionID
                                     };
                                     db.GorvermentBondTradeLinesStage.Add(gorvermentBondTradeLineStage);
 
@@ -177,7 +178,8 @@ namespace Quotations_Board_Backend.Controllers
                                 TransactionTime = trade.TransactionTime,
                                 DirtyPrice = trade.DirtyPrice,
                                 Yield = trade.Yield,
-                                BondId = bond.Id
+                                BondId = bond.Id,
+                                TransactionID = trade.TransactionID
                             };
                             db.BondTradeLines.Add(bondTradeLine);
                         }
@@ -843,10 +845,14 @@ namespace Quotations_Board_Backend.Controllers
 
                 if (isEmptyRow) continue; // Skip this row if it's empty
 
+                // Check if the Side is "SELL", skip if true
+                string side = worksheet.Cell(row, 2).Value.ToString();
+                if (side.Equals("SELL", StringComparison.OrdinalIgnoreCase)) continue;
+
                 // Assuming data is already validated and can be directly parsed
                 var UploadedTrade = new UploadedTrade
                 {
-                    Side = worksheet.Cell(row, 2).Value.ToString(),
+                    Side = side, // This will only be "BUY" due to the check above
                     SecurityId = worksheet.Cell(row, 3).Value.ToString(),
                     ExecutedSize = decimal.Parse(worksheet.Cell(row, 4).Value.ToString()),
                     ExecutedPrice = decimal.Parse(worksheet.Cell(row, 5).Value.ToString()),
@@ -854,12 +860,14 @@ namespace Quotations_Board_Backend.Controllers
                     TradeDate = DateTime.Parse(worksheet.Cell(row, 13).Value.ToString()),
                     DirtyPrice = decimal.Parse(worksheet.Cell(row, 8).Value.ToString()),
                     Yield = decimal.Parse(worksheet.Cell(row, 9).Value.ToString()),
+                    TransactionID = worksheet.Cell(row, 11).Value.ToString(),
                 };
                 UploadedTrades.Add(UploadedTrade);
             }
 
             return UploadedTrades;
         }
+
 
         private List<string> ValidateExcelData(IXLWorksheet worksheet)
         {
