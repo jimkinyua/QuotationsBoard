@@ -598,6 +598,7 @@ namespace Quotations_Board_Backend.Controllers
                         BondId = LastWeeksTBill.Id,
                         BondName = LastWeeksTBill.Tenor.ToString() + " Days T-Bill",
                         YearsToMaturity = LastWeeksTBill.MaturityDate.Date.Subtract(parsedDate.Date).TotalDays / 365.25,
+                        BondCategory = "T-Bill"
                     };
 
                     foreach (var bond in allNotMaturedBonds)
@@ -610,7 +611,8 @@ namespace Quotations_Board_Backend.Controllers
                         {
                             BondId = bond.Id,
                             BondName = bond.IssueNumber,
-                            YearsToMaturity = yearsToMaturity
+                            YearsToMaturity = yearsToMaturity,
+                            BondCategory = bond.BondCategory,
                         };
 
 
