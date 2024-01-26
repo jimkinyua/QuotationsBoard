@@ -582,8 +582,9 @@ namespace Quotations_Board_Backend.Controllers
                     db.Database.EnsureCreated();
                     var allNotMaturedBonds = await db.Bonds.Where(b => b.MaturityDate.Date > parsedDate.Date).ToListAsync();
                     DateTime LastWeekRelativeToSelectedDate = parsedDate.AddDays(-7);
-                    DateTime startOfLastWeek = LastWeekRelativeToSelectedDate.AddDays(-(int)LastWeekRelativeToSelectedDate.DayOfWeek + (int)DayOfWeek.Monday);
-                    DateTime endOfLastWeek = LastWeekRelativeToSelectedDate.AddDays(+(int)LastWeekRelativeToSelectedDate.DayOfWeek + (int)DayOfWeek.Sunday);
+                    DateTime startOfLastWeek = LastWeekRelativeToSelectedDate.AddDays(-(int)LastWeekRelativeToSelectedDate.DayOfWeek); // Sunday
+                    DateTime endOfLastWeek = LastWeekRelativeToSelectedDate.AddDays(6 - (int)LastWeekRelativeToSelectedDate.DayOfWeek); // Saturday
+
                     var LastWeeksTBill = db.TBills
                                            .Where(t => t.IssueDate.Date >= startOfLastWeek.Date
                                                        && t.IssueDate.Date <= endOfLastWeek.Date
