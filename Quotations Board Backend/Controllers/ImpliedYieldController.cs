@@ -315,18 +315,22 @@ namespace Quotations_Board_Backend.Controllers
                         //         && i.YieldDate.Date >= startOfLastWeekButOne.Date
                         //         && i.YieldDate.Date <= endOfLastWeekButOne.Date)
                         // .OrderByDescending(i => i.YieldDate).FirstOrDefault();
-
+                        decimal _preImpYield = 0;
                         if (previousImpliedYield == null)
                         {
-                            // continue;
+                            continue;
                             // return BadRequest($"No Previous Implied Yield for Bond {bond.IssueNumber}");
                         }
-                        var QuotedAndPrevious = averageWeightedQuotedYield - previousImpliedYield.Yield;
-                        var TradedAndPrevious = averageWeightedTradedYield - previousImpliedYield.Yield;
+                        else
+                        {
+                            _preImpYield = previousImpliedYield.Yield;
+                        }
+                        var QuotedAndPrevious = averageWeightedQuotedYield - _preImpYield; //previousImpliedYield.Yield;
+                        var TradedAndPrevious = averageWeightedTradedYield - _preImpYield; //previousImpliedYield.Yield;
                         var VarianceinTBills = oneYearTBillForLastWeek.Yield - oneYearTBillForLastWeekButOne.Yield;
 
-                        bool isQuotedWithinMargin = IsWithinMargin(averageWeightedQuotedYield, previousImpliedYield.Yield, AllowedMarginOfError);
-                        bool isTradedWithinMargin = IsWithinMargin(averageWeightedTradedYield, previousImpliedYield.Yield, AllowedMarginOfError);
+                        bool isQuotedWithinMargin = IsWithinMargin(averageWeightedQuotedYield, _preImpYield, AllowedMarginOfError);
+                        bool isTradedWithinMargin = IsWithinMargin(averageWeightedTradedYield, _preImpYield, AllowedMarginOfError);
 
                         decimal impliedYield;
                         int selectedYield;
@@ -343,13 +347,13 @@ namespace Quotations_Board_Backend.Controllers
                         {
                             impliedYield = averageWeightedQuotedYield;
                             selectedYield = SelectedYield.QuotedYield;
-                            reasonForSelection = $"Selected quoted yield ({averageWeightedQuotedYield}%). Average Traded yield is  {averageWeightedTradedYield}%, Previous Implied Yield is {previousImpliedYield.Yield}%)";
+                            reasonForSelection = $"Selected quoted yield ({averageWeightedQuotedYield}%). Average Traded yield is  {averageWeightedTradedYield}%, Previous Implied Yield is {_preImpYield}%)";
                         }
                         else if (isTradedWithinMargin)
                         {
                             impliedYield = averageWeightedTradedYield;
                             selectedYield = SelectedYield.TradedYield;
-                            reasonForSelection = $"Selected Traded yield ({averageWeightedTradedYield}%). AveraQuoted yield is  {averageWeightedQuotedYield}%, Previous Implied Yield is {previousImpliedYield.Yield}%)";
+                            reasonForSelection = $"Selected Traded yield ({averageWeightedTradedYield}%). AveraQuoted yield is  {averageWeightedQuotedYield}%, Previous Implied Yield is {_preImpYield}%)";
                         }
                         else
                         {
@@ -368,7 +372,7 @@ namespace Quotations_Board_Backend.Controllers
                             SelectedYield = selectedYield,
                             TradedYield = averageWeightedTradedYield,
                             QuotedYield = averageWeightedQuotedYield,
-                            PreviousYield = previousImpliedYield.Yield
+                            PreviousYield = _preImpYield //previousImpliedYield.Yield
                         });
                     }
 
