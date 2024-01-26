@@ -587,19 +587,66 @@ namespace Quotations_Board_Backend.Controllers
                     var LastWeeksTBill = db.TBills
                                            .Where(t => t.IssueDate.Date >= startOfLastWeek.Date
                                                        && t.IssueDate.Date <= endOfLastWeek.Date
-                                                       && t.Tenor >= 364)
-                                                       .FirstOrDefault();
-                    if (LastWeeksTBill == null)
+                                                       && t.Tenor <= 364)
+                                                       .ToList();
+                    foreach (var _tB in LastWeeksTBill)
                     {
-                        return BadRequest("There are no T-Bills for the weeek beginning " + startOfLastWeek.Date.ToString("dd/MM/yyyy") + " and ending " + endOfLastWeek.Date.ToString("dd/MM/yyyy"));
+                        if (_tB.Tenor == 364) // One Year T-Bill
+                        {
+                            if (_tB == null)
+                            {
+                                continue;
+                            }
+
+                            // Add statistics for One Year T-Bill
+                            bondStatisticsDict[_tB.Id] = new BondAverageStatistic
+                            {
+                                BondId = _tB.Id,
+                                BondName = _tB.Tenor.ToString() + " Days T-Bill",
+                                YearsToMaturity = _tB.MaturityDate.Date.Subtract(parsedDate.Date).TotalDays / 365.25,
+                                BondCategory = "T-Bill",
+                                BondType = "T-Bill"
+                            };
+                        }
+
+                        if (_tB.Tenor == 182) // Six Months T-Bill
+                        {
+                            if (_tB == null)
+                            {
+                                continue;
+                            }
+
+                            // Add statistics for Six Months T-Bill
+                            bondStatisticsDict[_tB.Id] = new BondAverageStatistic
+                            {
+                                BondId = _tB.Id,
+                                BondName = _tB.Tenor.ToString() + " Days T-Bill",
+                                YearsToMaturity = _tB.MaturityDate.Date.Subtract(parsedDate.Date).TotalDays / 365.25,
+                                BondCategory = "T-Bill",
+                                BondType = "T-Bill"
+                            };
+                        }
+
+                        if (_tB.Tenor == 91) // Three Months T-Bill
+                        {
+                            if (_tB == null)
+                            {
+                                continue;
+                            }
+
+                            // Add statistics for Three Months T-Bill
+                            bondStatisticsDict[_tB.Id] = new BondAverageStatistic
+                            {
+                                BondId = _tB.Id,
+                                BondName = _tB.Tenor.ToString() + " Days T-Bill",
+                                YearsToMaturity = _tB.MaturityDate.Date.Subtract(parsedDate.Date).TotalDays / 365.25,
+                                BondCategory = "T-Bill",
+                                BondType = "T-Bill"
+                            };
+                        }
+
                     }
-                    bondStatisticsDict[LastWeeksTBill.Id] = new BondAverageStatistic
-                    {
-                        BondId = LastWeeksTBill.Id,
-                        BondName = LastWeeksTBill.Tenor.ToString() + " Days T-Bill",
-                        YearsToMaturity = LastWeeksTBill.MaturityDate.Date.Subtract(parsedDate.Date).TotalDays / 365.25,
-                        BondCategory = "T-Bill"
-                    };
+
 
                     foreach (var bond in allNotMaturedBonds)
                     {
@@ -613,6 +660,7 @@ namespace Quotations_Board_Backend.Controllers
                             BondName = bond.IssueNumber,
                             YearsToMaturity = yearsToMaturity,
                             BondCategory = bond.BondCategory,
+                            BondType = bond.BondType
                         };
 
 

@@ -14,5 +14,6 @@ public class BondAverageStatistic
     public decimal WeightedQuotedSellYield { get; set; }
     public double YearsToMaturity { get; set; }
     public string BondCategory { get; set; } = null!;
+    public string BondType { get; set; } = null!;
 
 }
