@@ -692,7 +692,7 @@ namespace Quotations_Board_Backend.Controllers
 
                     if (closestBond != null)
                     {
-                        bool canBeUsedForYieldCurve = benchMarkTenorsForYiedCurve.Contains(benchmark.Key);
+                        // bool canBeUsedForYieldCurve = benchMarkTenorsForYiedCurve.Contains(benchmark.Key);
                         // get the implied yield for the bond based on the date in question
                         var impliedYield = _db.ImpliedYields.Where(i => i.BondId == closestBond.Id && i.YieldDate.Date == parsedDate.Date).FirstOrDefault();
                         if (impliedYield == null)
@@ -703,7 +703,7 @@ namespace Quotations_Board_Backend.Controllers
                         {
                             BenchMarkTenor = benchmark.Key,
                             Yield = impliedYield.Yield,
-                            CanBeUsedForYieldCurve = canBeUsedForYieldCurve,
+                            // CanBeUsedForYieldCurve = canBeUsedForYieldCurve,
                             BondUsed = closestBond.IssueNumber,
                             IssueDate = closestBond.IssueDate,
                             MaturityDate = closestBond.MaturityDate,

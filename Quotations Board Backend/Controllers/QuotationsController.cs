@@ -42,6 +42,22 @@ namespace Quotations_Board_Backend.Controllers
                 {
                     LoginTokenDTO TokenContents = UtilityService.GetUserIdFromCurrentRequest(Request);
                     var userId = UtilityService.GetUserIdFromToken(Request);
+                    // get the bond details
+                    var bond = await context.Bonds.FirstOrDefaultAsync(b => b.Isin == newQuotation.BondId);
+                    if (bond == null)
+                    {
+                        return BadRequest("Invalid bond");
+                    }
+                    // ensure bond is not matured
+                    if (bond.MaturityDate < DateTime.Now)
+                    {
+                        return BadRequest("Bond has matured");
+                    }
+                    // ensure bond is an FXD
+                    if (bond.BondCategory != BondCategories.FXD)
+                    {
+                        return BadRequest("Only FXD bonds are allowed to be quoted");
+                    }
                     Quotation quotation = new Quotation
                     {
                         BondId = newQuotation.BondId,
@@ -417,10 +433,22 @@ namespace Quotations_Board_Backend.Controllers
                 using (var dbContext = new QuotationsBoardContext())
                 {
                     dbContext.Database.EnsureCreated();
-                    var bondExists = dbContext.Bonds.Any(b => b.IssueNumber == bondId);
-                    if (!bondExists)
+                    var bondExists = dbContext.Bonds.FirstOrDefault(b => b.IssueNumber == bondId);
+                    if (bondExists == null)
                     {
                         errors.Add($"Row {rowToBeginAt}: Bond ID '{bondId}' does not exist in the system.");
+                        continue;
+                    }
+
+                    // ensure bond is not matured
+                    if (bondExists.MaturityDate < DateTime.Now)
+                    {
+                        errors.Add($"Row {rowToBeginAt}: Bond ID '{bondId}' has matured.");
+                    }
+                    // ensure bond is an FXD
+                    if (bondExists.BondCategory != BondCategories.FXD)
+                    {
+                        errors.Add($"Row {rowToBeginAt}: Only FXD bonds are allowed to be quoted.");
                     }
                 }
             }
@@ -1687,6 +1715,175 @@ namespace Quotations_Board_Backend.Controllers
                 UtilityService.LogException(Ex);
                 return StatusCode(500, UtilityService.HandleException(Ex));
             }
+        }
+
+
+        // calulate the yield curve for all bonds using the average weighted yield for each bond
+        [HttpGet("GetYieldCurveForAllBondsUsingQuotations/{From}")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        public async Task<ActionResult<List<YieldCurveDTO>>> GetYieldCurveForAllBondsUsingQuotations(string? From = "default")
+        {
+            try
+            {
+                DateTime fromDate = DateTime.Now;
+                if (From == "default")
+                {
+                    fromDate = DateTime.Now;
+                }
+                else
+                {
+                    var parsedDate = DateTime.Parse(From);
+                    // is date valid?
+                    if (fromDate == DateTime.MinValue)
+                    {
+                        return BadRequest("Invalid date");
+                    }
+                    fromDate = parsedDate;
+                }
+
+                using (var context = new QuotationsBoardContext())
+                {
+                    var quotations = await context.Quotations.Include(x => x.Institution).Where(q => q.CreatedAt.Date == fromDate.Date).ToListAsync();
+                    var groupedQuotations = quotations.GroupBy(x => x.BondId);
+                    List<BondAndAverageQuotedYield> bondAndAverageQuotedYields = new List<BondAndAverageQuotedYield>();
+                    List<YieldCurve> yieldCurves = new List<YieldCurve>();
+
+                    foreach (var bondQuotes in groupedQuotations)
+                    {
+                        var bondDetails = await context.Bonds.FirstOrDefaultAsync(b => b.Id == bondQuotes.Key);
+                        if (bondDetails == null)
+                        {
+                            continue;
+                        }
+                        var RemainingTenor = (bondDetails.MaturityDate - fromDate.Date).TotalDays / 365;
+
+                        var quotationsForBond = bondQuotes.ToList();
+                        var totalBuyVolume = quotationsForBond.Sum(x => x.BuyVolume);
+                        var weightedBuyingYield = quotationsForBond.Sum(x => x.BuyingYield * x.BuyVolume) / totalBuyVolume;
+                        var totalSellVolume = quotationsForBond.Sum(x => x.SellVolume);
+                        var weightedSellingYield = quotationsForBond.Sum(x => x.SellingYield * x.SellVolume) / totalSellVolume;
+                        var totalQuotes = quotationsForBond.Count;
+                        var averageWeightedYield = (weightedBuyingYield + weightedSellingYield) / 2;
+                        BondAndAverageQuotedYield bondAndAverageQuotedYield = new BondAndAverageQuotedYield
+                        {
+                            BondId = bondQuotes.Key,
+                            AverageQuotedYield = averageWeightedYield,
+                            YieldDate = fromDate.Date,
+                            BondTenor = RemainingTenor,
+                        };
+                        bondAndAverageQuotedYields.Add(bondAndAverageQuotedYield);
+                    }
+
+                    Dictionary<int, (double, double)> benchmarkRanges = new Dictionary<int, (double, double)> {
+                        { 2, (2, 3.9) }, // 2 year bucket
+                        {3, (3.0,3.4)},// 3Year Bucket
+                        {4, (3.5, 3.9)}, // 4 year bucket
+                        { 5, (4, 7.9) }, // 5 year bucket
+                        { 6, (8, 8.4) }, // 6 year bucket
+                        { 7, (8.5, 8.9) }, // 7 year bucket
+                        { 8, (9, 9.4) }, // 8 year bucket
+                        { 9, (9.5, 9.9) }, // 9 year bucket
+                        { 10, (8, 12.9) }, // 10 year bucket
+                        { 11, (13, 13.4) }, // 11 year bucket
+                        { 12, (13.5, 13.9) }, // 12 year bucket
+                        { 13, (14, 14.4) }, // 13 year bucket
+                        { 14, (14.5, 14.9) }, // 14 year bucket
+                        { 15, (13, 17.9) }, // 15 year bucket
+                        { 16, (18, 18.4) }, // 16 year bucket
+                        { 17, (18.5, 18.9) }, // 17 year bucket
+                        { 18, (19, 19.4) }, // 18 year bucket
+                        { 19, (19.5, 19.9) }, // 19 year bucket
+                        { 20, (18, 222.9) }, // 20 year bucket
+                        { 21, (23, 23.4) }, // 21 year bucket
+                        { 22, (23.5, 23.9) }, // 22 year bucket
+                        { 23, (24, 24.4) }, // 23 year bucket
+                        { 24, (24.5, 24.9) }, // 24 year bucket
+                        { 25, (23, 27.9) }, // 25 year bucket
+                        };
+
+                    var notMaturedBonds = context.Bonds.Where(b => b.MaturityDate.Date > fromDate.Date).ToList();
+                    // ensure they have quoted for the date in question
+                    var bondsWithQuotations = notMaturedBonds.Where(b => quotations.Any(q => q.BondId == b.Id)).ToList();
+                    foreach (var benchmark in benchmarkRanges)
+                    {
+                        var closestBond = GetClosestBond(bondsWithQuotations, benchmark.Value.Item1, benchmark.Value.Item2);
+                        if (closestBond != null)
+                        {
+                            // enure bond is in the bondAndAverageQuotedYields list too
+                            var bondAndAverageQuotedYield = bondAndAverageQuotedYields.FirstOrDefault(b => b.BondId == closestBond.Id);
+                            if (bondAndAverageQuotedYield != null)
+                            {
+                                yieldCurves.Add(new YieldCurve
+                                {
+                                    BenchMarkTenor = benchmark.Key,
+                                    Yield = bondAndAverageQuotedYield.AverageQuotedYield,
+                                    BondUsed = closestBond.IssueNumber,
+                                    IssueDate = closestBond.IssueDate,
+                                    MaturityDate = closestBond.MaturityDate,
+                                    Coupon = closestBond.CouponRate
+                                });
+                            }
+                        }
+
+                    }
+
+                    return StatusCode(200, yieldCurves);
+                }
+            }
+            catch (Exception Ex)
+            {
+                UtilityService.LogException(Ex);
+                return StatusCode(500, UtilityService.HandleException(Ex));
+            }
+
+        }
+
+        private Bond? GetClosestBond(IEnumerable<Bond> bonds, double lowerBound, double upperBound)
+        {
+            List<Bond> bondsWithinRange = new List<Bond>();
+
+            foreach (var bond in bonds)
+            {
+                var m = bond.MaturityDate.Date.Subtract(DateTime.Now.Date).TotalDays / 365.25;
+                var YearsToMaturity = Math.Round(m, 2, MidpointRounding.AwayFromZero);
+
+                // within the range?
+                if (YearsToMaturity >= lowerBound && YearsToMaturity <= upperBound)
+                {
+                    bondsWithinRange.Add(bond);
+                }
+            }
+
+            if (bondsWithinRange.Any())
+            {
+                // Sort the bonds by maturity score
+                bondsWithinRange = bondsWithinRange.OrderBy(b => CalculateMaturityScore(b, upperBound)).ToList();
+
+                // Return the bond with the lowest maturity score
+                return bondsWithinRange.First();
+            }
+
+            return null;
+
+        }
+
+        private double CalculateMaturityScore(Bond bond, double upperBound)
+        {
+            // Extract the year and month from the bond's maturity date
+            int maturityYear = bond.MaturityDate.Year;
+            int maturityMonth = bond.MaturityDate.Month;
+
+            // Calculate the year including the month as a fraction
+            double maturityFractionalYear = maturityYear + (maturityMonth / 12.0);
+
+            // Calculate the difference between the maturity fractional year and the upper bound
+            double maturityDifference = maturityFractionalYear - upperBound;
+
+            // Return the absolute value of the maturity difference
+            double maturityScore = Math.Abs(maturityDifference);
+
+            return maturityScore;
         }
 
     }
