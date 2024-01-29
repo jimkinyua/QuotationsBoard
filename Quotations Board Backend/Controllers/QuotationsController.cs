@@ -43,7 +43,7 @@ namespace Quotations_Board_Backend.Controllers
                     LoginTokenDTO TokenContents = UtilityService.GetUserIdFromCurrentRequest(Request);
                     var userId = UtilityService.GetUserIdFromToken(Request);
                     // get the bond details
-                    var bond = await context.Bonds.FirstOrDefaultAsync(b => b.Isin == newQuotation.BondId);
+                    var bond = await context.Bonds.FirstOrDefaultAsync(b => b.Id == newQuotation.BondId);
                     if (bond == null)
                     {
                         return BadRequest("Invalid bond");
