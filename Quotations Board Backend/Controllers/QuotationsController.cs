@@ -1749,6 +1749,23 @@ namespace Quotations_Board_Backend.Controllers
                     List<BondAndAverageQuotedYield> bondAndAverageQuotedYields = new List<BondAndAverageQuotedYield>();
                     List<YieldCurve> yieldCurves = new List<YieldCurve>();
 
+                    var LastWeek = fromDate.AddDays(-7);
+                    DateTime startOfLastWeek = LastWeek.AddDays(-(int)LastWeek.DayOfWeek + (int)DayOfWeek.Monday);
+                    DateTime endOfLastWeek = LastWeek.AddDays(+(int)LastWeek.DayOfWeek + (int)DayOfWeek.Sunday);
+
+                    var currentOneYearTBill = context.TBills
+                        .Where(t => t.Tenor >= 364
+                        && t.IssueDate.Date >= startOfLastWeek.Date
+                        && t.IssueDate.Date <= endOfLastWeek.Date
+                        )
+                    .OrderByDescending(t => t.IssueDate)
+                    .FirstOrDefault();
+
+                    if (currentOneYearTBill == null)
+                    {
+                        return BadRequest("It Seems there is no 1 Year TBill for the last week");
+                    }
+
                     foreach (var bondQuotes in groupedQuotations)
                     {
                         var bondDetails = await context.Bonds.FirstOrDefaultAsync(b => b.Id == bondQuotes.Key);
@@ -1827,6 +1844,16 @@ namespace Quotations_Board_Backend.Controllers
                         }
 
                     }
+                    // tadd the 1 year TBill to the yield curve
+                    yieldCurves.Add(new YieldCurve
+                    {
+                        BenchMarkTenor = 1,
+                        Yield = currentOneYearTBill.Yield,
+                        CanBeUsedForYieldCurve = true,
+                        BondUsed = "1 Year TBill",
+                        IssueDate = currentOneYearTBill.IssueDate,
+                        MaturityDate = currentOneYearTBill.MaturityDate,
+                    });
 
                     return StatusCode(200, yieldCurves);
                 }
