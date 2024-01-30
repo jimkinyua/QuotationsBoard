@@ -469,7 +469,7 @@ namespace Quotations_Board_Backend.Controllers
                     foreach (var bond in allNotMaturedTradedBonds)
                     {
                         var diffrenceBetweenSelectedDateAndMaturityDate = bond.MaturityDate.Date - parsedDate.Date;
-                        var m = diffrenceBetweenSelectedDateAndMaturityDate.TotalDays / 365.25;
+                        var m = diffrenceBetweenSelectedDateAndMaturityDate.TotalDays / 364;
                         var yearsToMaturity = Math.Round(m, 2, MidpointRounding.AwayFromZero);
 
                         bondStatisticsDict[bond.Id] = new BondTradeAverageStatistic
@@ -607,7 +607,7 @@ namespace Quotations_Board_Backend.Controllers
                             {
                                 BondId = _tB.Id,
                                 BondName = _tB.Tenor.ToString() + " Days T-Bill",
-                                YearsToMaturity = _tB.MaturityDate.Date.Subtract(parsedDate.Date).TotalDays / 365.25,
+                                YearsToMaturity = _tB.MaturityDate.Date.Subtract(parsedDate.Date).TotalDays / 364,
                                 BondCategory = "T-Bill",
                                 BondType = "T-Bill",
                                 AverageWeightedTradeYield = _tB.Yield,
@@ -627,7 +627,7 @@ namespace Quotations_Board_Backend.Controllers
                             {
                                 BondId = _tB.Id,
                                 BondName = _tB.Tenor.ToString() + " Days T-Bill",
-                                YearsToMaturity = _tB.MaturityDate.Date.Subtract(parsedDate.Date).TotalDays / 365.25,
+                                YearsToMaturity = _tB.MaturityDate.Date.Subtract(parsedDate.Date).TotalDays / 364,
                                 BondCategory = "T-Bill",
                                 BondType = "T-Bill",
                                 AverageWeightedTradeYield = _tB.Yield,
@@ -648,7 +648,7 @@ namespace Quotations_Board_Backend.Controllers
                             {
                                 BondId = _tB.Id,
                                 BondName = _tB.Tenor.ToString() + " Days T-Bill",
-                                YearsToMaturity = _tB.MaturityDate.Date.Subtract(parsedDate.Date).TotalDays / 365.25,
+                                YearsToMaturity = _tB.MaturityDate.Date.Subtract(parsedDate.Date).TotalDays / 364,
                                 BondCategory = "T-Bill",
                                 BondType = "T-Bill",
                                 AverageWeightedTradeYield = _tB.Yield,
@@ -670,7 +670,7 @@ namespace Quotations_Board_Backend.Controllers
                         .OrderByDescending(i => i.YieldDate)
                         .FirstOrDefault();
 
-                        var m = diffrenceBetweenSelectedDateAndMaturityDate.TotalDays / 365.25;
+                        var m = diffrenceBetweenSelectedDateAndMaturityDate.TotalDays / 364;
                         var yearsToMaturity = Math.Round(m, 2, MidpointRounding.AwayFromZero);
 
                         bondStatisticsDict[bond.Id] = new BondAverageStatistic

@@ -1773,7 +1773,7 @@ namespace Quotations_Board_Backend.Controllers
                         {
                             continue;
                         }
-                        var RemainingTenor = (bondDetails.MaturityDate - fromDate.Date).TotalDays / 365;
+                        var RemainingTenor = (bondDetails.MaturityDate - fromDate.Date).TotalDays / 364;
 
                         var quotationsForBond = bondQuotes.ToList();
                         var totalBuyVolume = quotationsForBond.Sum(x => x.BuyVolume);
@@ -1872,7 +1872,7 @@ namespace Quotations_Board_Backend.Controllers
 
             foreach (var bond in bonds)
             {
-                var m = bond.MaturityDate.Date.Subtract(DateTime.Now.Date).TotalDays / 365.25;
+                var m = bond.MaturityDate.Date.Subtract(DateTime.Now.Date).TotalDays / 364;
                 var YearsToMaturity = Math.Round(m, 2, MidpointRounding.AwayFromZero);
 
                 // within the range?
