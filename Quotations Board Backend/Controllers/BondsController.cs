@@ -10,7 +10,7 @@ namespace Quotations_Board_Backend.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    // [Authorize(Roles = CustomRoles.SuperAdmin, AuthenticationSchemes = "Bearer")]
+    [Authorize(AuthenticationSchemes = "Bearer")]
     [AllowAnonymous]
     public class BondsController : ControllerBase
     {
@@ -345,6 +345,7 @@ namespace Quotations_Board_Backend.Controllers
 
         // Allows user to Add Implied Yields for a given bond and date
         [HttpPost("AddImpliedYield")]
+        [Authorize(CustomRoles.SuperAdmin, AuthenticationSchemes = "Bearer")]
         public async Task<IActionResult> AddImpliedYield(AddImpliedYieldDTO impliedYield)
         {
             // Model is valid?

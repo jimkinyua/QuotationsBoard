@@ -15,6 +15,8 @@ namespace Quotations_Board_Backend.Controllers
         // handle upload of ecel file with the traded bonds
         [HttpPost]
         [Route("UploadTradedBondsValues")]
+        [Authorize(Roles = CustomRoles.SuperAdmin, AuthenticationSchemes = "Bearer")]
+
         public async Task<ActionResult<Dictionary<string, List<UploadedTrade>>>> UploadTradedBondsValues([FromForm] UploadTradedBondValue uploadTradedBondValue)
         {
             if (!ModelState.IsValid)
@@ -113,6 +115,8 @@ namespace Quotations_Board_Backend.Controllers
         // Allows user to confirm the trdes uploaded are correct so that we can move them to the main table
         [HttpPost]
         [Route("ConfirmTradedBondsValues")]
+        [Authorize(Roles = CustomRoles.SuperAdmin, AuthenticationSchemes = "Bearer")]
+
         public async Task<IActionResult> ConfirmTradedBondsValues([FromBody] ConfirmTradedBondValue confirmTradedBondValue)
         {
             if (!ModelState.IsValid)
@@ -199,6 +203,8 @@ namespace Quotations_Board_Backend.Controllers
         // Allows user to add a a single trade to the main table without having to upload an excel file
         [HttpPost]
         [Route("AddSingleTrade")]
+        [Authorize(Roles = CustomRoles.SuperAdmin, AuthenticationSchemes = "Bearer")]
+
         public async Task<IActionResult> AddSingleTrade([FromBody] AddSingleTrade addSingleTrade)
         {
             if (!ModelState.IsValid)
@@ -270,6 +276,7 @@ namespace Quotations_Board_Backend.Controllers
         // gets a list of all uploaded and confirmed Bond Trades
         [HttpGet]
         [Route("GetConfirmedBondTrades/{For}")]
+        [Authorize(Roles = CustomRoles.SuperAdmin, AuthenticationSchemes = "Bearer")]
         public async Task<ActionResult<UploadedBondTrade>> GetConfirmedBondTrades(string? For = "default")
         {
 
@@ -344,6 +351,8 @@ namespace Quotations_Board_Backend.Controllers
 
         [HttpGet]
         [Route("GetConfirmedBondTradeDetails/{BondTradeId}")]
+        [Authorize(Roles = CustomRoles.SuperAdmin, AuthenticationSchemes = "Bearer")]
+
         public async Task<ActionResult<List<UploadedBondTradeLineDTO>>> GetConfirmedBondTradeDetails(string BondTradeId)
         {
             if (string.IsNullOrWhiteSpace(BondTradeId))
@@ -391,6 +400,8 @@ namespace Quotations_Board_Backend.Controllers
         // deletes a specific Bond Trade
         [HttpDelete]
         [Route("DeleteConfirmedBondTrade/{BondTradeId}")]
+        [Authorize(Roles = CustomRoles.SuperAdmin, AuthenticationSchemes = "Bearer")]
+
         public async Task<IActionResult> DeleteConfirmedBondTrade(string BondTradeId)
         {
             if (string.IsNullOrWhiteSpace(BondTradeId))
@@ -422,7 +433,8 @@ namespace Quotations_Board_Backend.Controllers
         // gets average statistics for all bonds (Trades only) for a specific date
         [HttpGet]
         [Route("GetAverageTradeStatistics/{For}")]
-        // [Authorize]
+        [Authorize(Roles = CustomRoles.SuperAdmin, AuthenticationSchemes = "Bearer")]
+
         public async Task<ActionResult<List<BondTradeAverageStatistic>>> GetAverageTradeStatistics(string? For = "default")
         {
 
@@ -552,7 +564,7 @@ namespace Quotations_Board_Backend.Controllers
         // gets average statistics for all bonds (both traded and quoted) for a specific date
         [HttpGet]
         [Route("GetAverageStatistics/{For}")]
-        // [Authorize]
+        [Authorize(Roles = CustomRoles.SuperAdmin, AuthenticationSchemes = "Bearer")]
         public async Task<ActionResult<List<BondAverageStatistic>>> GetAverageStatistics(string? For = "default")
         {
 

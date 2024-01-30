@@ -1,5 +1,6 @@
 ﻿using System.Globalization;
 using ClosedXML.Excel;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -13,6 +14,7 @@ namespace Quotations_Board_Backend.Controllers
         // Add Implied Yield Curve Manually
         [HttpPost]
         [Route("AddImpliedYieldManually")]
+        [Authorize(Roles = CustomRoles.SuperAdmin, AuthenticationSchemes = "Bearer")]
         public IActionResult AddImpliedYieldManually([FromBody] AddImpliedYieldDTO addImpliedYieldDTO)
         {
             if (!ModelState.IsValid)
@@ -62,6 +64,7 @@ namespace Quotations_Board_Backend.Controllers
         // Upload Implied Yield Curve
         [HttpPost]
         [Route("UploadImpliedYield")]
+        [Authorize(Roles = CustomRoles.SuperAdmin, AuthenticationSchemes = "Bearer")]
         public async Task<IActionResult> UploadImpliedYield([FromForm] UploadImpliedYield uploadImpliedYield)
         {
             if (!ModelState.IsValid)
@@ -250,6 +253,7 @@ namespace Quotations_Board_Backend.Controllers
         // Calculate Implied Yield for each Bond
         [HttpGet]
         [Route("CalculateImpliedYield")]
+        [Authorize(Roles = CustomRoles.SuperAdmin, AuthenticationSchemes = "Bearer")]
         public ActionResult<IEnumerable<ComputedImpliedYield>> CalculateImpliedYield()
         {
             try
@@ -465,6 +469,8 @@ namespace Quotations_Board_Backend.Controllers
         // Confrim Implied Yield
         [HttpPost]
         [Route("ConfirmImpliedYield")]
+        [Authorize(Roles = CustomRoles.SuperAdmin, AuthenticationSchemes = "Bearer")]
+
         public IActionResult ConfirmImpliedYield([FromBody] ConfirmImpliedYieldDTO confirmImpliedYieldDTO)
         {
             if (!ModelState.IsValid)
@@ -540,6 +546,8 @@ namespace Quotations_Board_Backend.Controllers
         // returns all Implied Yields given a date dafault value is default(DateTime)
         [HttpGet]
         [Route("GetImpliedYields")]
+        [Authorize(AuthenticationSchemes = "Bearer")]
+
         public ActionResult<IEnumerable<ImpliedYieldDTO>> GetImpliedYields(string? For = "default")
         {
             var parsedDate = DateTime.Now;
@@ -605,6 +613,7 @@ namespace Quotations_Board_Backend.Controllers
         // Yield Curve
         [HttpGet]
         [Route("GetYieldCurve")]
+        [Authorize(AuthenticationSchemes = "Bearer")]
         public ActionResult<IEnumerable<YieldCurveDTO>> GetYieldCurve(string? For = "default")
         {
             var m = DateTime.Now;

@@ -10,8 +10,7 @@ namespace Quotations_Board_Backend.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    //[Authorize(Roles = $"{CustomRoles.Dealer}, {CustomRoles.ChiefDealer}", AuthenticationSchemes = "Bearer")]
-    //[Authorize(Roles = CustomRoles.Dealer + "," + CustomRoles.ChiefDealer, AuthenticationSchemes = "Bearer")]
+    [Authorize(Roles = $"{CustomRoles.Dealer}, {CustomRoles.ChiefDealer} +{CustomRoles.SuperAdmin} ", AuthenticationSchemes = "Bearer")]
 
     public class QuotationsController : ControllerBase
     {
@@ -677,6 +676,8 @@ namespace Quotations_Board_Backend.Controllers
         [HttpPost("ApproveQuotationEdit")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [Authorize(Roles = CustomRoles.SuperAdmin, AuthenticationSchemes = "Bearer")]
+
         public async Task<ActionResult> ApproveQuotationEdit(ApproveQuotationEdit approveQuotationEdit)
         {
             try
@@ -751,6 +752,8 @@ namespace Quotations_Board_Backend.Controllers
         [HttpPost("RejectQuotationEdit")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [Authorize(Roles = CustomRoles.SuperAdmin, AuthenticationSchemes = "Bearer")]
+
         public async Task<ActionResult> RejectQuotationEdit(RejectQuotationEdit rejectQuotationEdit)
         {
             try

@@ -316,6 +316,7 @@ namespace Quotations_Board_Backend.Controllers
 
         // Enable User
         [HttpPut("EnableInstitutionUser/{userId}")]
+
         public async Task<ActionResult> EnableInstitutionUser(string userId)
         {
             LoginTokenDTO TokenContents = UtilityService.GetUserIdFromCurrentRequest(Request);
@@ -360,6 +361,8 @@ namespace Quotations_Board_Backend.Controllers
 
         // Disable an Institution
         [HttpPost("DisableInstitution/{institutionId}")]
+        [Authorize(Roles = CustomRoles.SuperAdmin, AuthenticationSchemes = "Bearer")]
+
         public async Task<ActionResult> DisableInstitution(string institutionId)
         {
             try
@@ -436,6 +439,8 @@ namespace Quotations_Board_Backend.Controllers
 
         // Enable an Institution
         [HttpPost("EnableInstitution/{institutionId}")]
+        [Authorize(Roles = CustomRoles.SuperAdmin, AuthenticationSchemes = "Bearer")]
+
         public async Task<ActionResult> EnableInstitution(string institutionId)
         {
             LoginTokenDTO TokenContents = UtilityService.GetUserIdFromCurrentRequest(Request);

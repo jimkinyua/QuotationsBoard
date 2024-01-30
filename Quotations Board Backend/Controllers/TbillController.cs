@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -12,6 +13,8 @@ namespace Quotations_Board_Backend.Controllers
         [HttpPost("AddNewTbill")]
         [ProducesResponseType(StatusCodes.Status201Created)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [Authorize(Roles = CustomRoles.SuperAdmin, AuthenticationSchemes = "Bearer")]
+
         public async Task<ActionResult> AddNewTbill([FromBody] NewTbill newTbill)
         {
             // validate Model
@@ -59,6 +62,8 @@ namespace Quotations_Board_Backend.Controllers
         [HttpPut("EditTbill/{id}")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [Authorize(Roles = CustomRoles.SuperAdmin, AuthenticationSchemes = "Bearer")]
+
         public async Task<ActionResult> EditTbill(string id, [FromBody] EditTbill editTbill)
         {
             // validate Model
@@ -97,6 +102,8 @@ namespace Quotations_Board_Backend.Controllers
         [HttpDelete("DeleteTbill/{id}")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [Authorize(Roles = CustomRoles.SuperAdmin, AuthenticationSchemes = "Bearer")]
+
         public async Task<ActionResult> DeleteTbill(string id)
         {
             try
@@ -124,6 +131,8 @@ namespace Quotations_Board_Backend.Controllers
         [HttpGet("GetAllTbills")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [Authorize(AuthenticationSchemes = "Bearer")]
+
         public async Task<ActionResult<TBillDTO>> GetAllTbills()
         {
             try
