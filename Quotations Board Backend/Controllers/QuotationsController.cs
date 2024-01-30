@@ -10,7 +10,7 @@ namespace Quotations_Board_Backend.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    [Authorize(Roles = $"{CustomRoles.Dealer}, {CustomRoles.ChiefDealer}, +{CustomRoles.SuperAdmin} ", AuthenticationSchemes = "Bearer")]
+    [Authorize(Roles = $"{CustomRoles.Dealer}, {CustomRoles.ChiefDealer}, {CustomRoles.SuperAdmin} ", AuthenticationSchemes = "Bearer")]
 
     public class QuotationsController : ControllerBase
     {
