@@ -212,7 +212,7 @@ namespace Quotations_Board_Backend.Controllers
                 }
 
                 var excelIssueNo = worksheet.Cell(row, 1).Value.ToString();
-                var yieldValue = worksheet.Cell(row, 2).Value.ToString()
+                var yieldValue = worksheet.Cell(row, 2).Value.ToString();
                 var yieldDate = worksheet.Cell(row, 3).Value.ToString();
 
                 using (var dbContext = new QuotationsBoardContext())
