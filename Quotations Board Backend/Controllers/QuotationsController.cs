@@ -1725,7 +1725,7 @@ namespace Quotations_Board_Backend.Controllers
         [HttpGet("GetYieldCurveForAllBondsUsingQuotations/{From}")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public async Task<ActionResult<List<BondAndAverageQuotedYield>>> GetYieldCurveForAllBondsUsingQuotations(string? From = "default")
+        public async Task<ActionResult<List<YieldCurve>>> GetYieldCurveForAllBondsUsingQuotations(string? From = "default")
         {
             try
             {
@@ -1795,7 +1795,75 @@ namespace Quotations_Board_Backend.Controllers
 
                     }
 
-                    return StatusCode(200, bondAndAverageQuotedYields);
+                    Dictionary<int, (double, double)> benchmarkRanges = new Dictionary<int, (double, double)> {
+                        { 2, (2, 3.9) }, // 2 year bucket
+                        {3, (3.0,3.4)},// 3Year Bucket
+                        {4, (3.5, 3.9)}, // 4 year bucket
+                        { 5, (4, 7.9) }, // 5 year bucket
+                        { 6, (8, 8.4) }, // 6 year bucket
+                        { 7, (8.5, 8.9) }, // 7 year bucket
+                        { 8, (9, 9.4) }, // 8 year bucket
+                        { 9, (9.5, 9.9) }, // 9 year bucket
+                        { 10, (8, 12.9) }, // 10 year bucket
+                        { 11, (13, 13.4) }, // 11 year bucket
+                        { 12, (13.5, 13.9) }, // 12 year bucket
+                        { 13, (14, 14.4) }, // 13 year bucket
+                        { 14, (14.5, 14.9) }, // 14 year bucket
+                        { 15, (13, 17.9) }, // 15 year bucket
+                        { 16, (18, 18.4) }, // 16 year bucket
+                        { 17, (18.5, 18.9) }, // 17 year bucket
+                        { 18, (19, 19.4) }, // 18 year bucket
+                        { 19, (19.5, 19.9) }, // 19 year bucket
+                        { 20, (18, 222.9) }, // 20 year bucket
+                        { 21, (23, 23.4) }, // 21 year bucket
+                        { 22, (23.5, 23.9) }, // 22 year bucket
+                        { 23, (24, 24.4) }, // 23 year bucket
+                        { 24, (24.5, 24.9) }, // 24 year bucket
+                        { 25, (23, 27.9) }, // 25 year bucket
+                        };
+
+                    foreach (var benchmarkRange in benchmarkRanges)
+                    {
+                        BondAndAverageQuotedYield closestBond = null;
+                        double closestDifference = double.MaxValue;
+
+                        foreach (var bondAndAverageQuotedYield in bondAndAverageQuotedYields)
+                        {
+                            var bondTenor = bondAndAverageQuotedYield.BondTenor;
+                            if (bondTenor >= benchmarkRange.Value.Item1 && bondTenor <= benchmarkRange.Value.Item2)
+                            {
+                                // Find the bond closest to the middle of the benchmark range
+                                var midPoint = (benchmarkRange.Value.Item1 + benchmarkRange.Value.Item2) / 2;
+                                var difference = Math.Abs(midPoint - bondTenor);
+                                if (difference < closestDifference)
+                                {
+                                    closestDifference = difference;
+                                    closestBond = bondAndAverageQuotedYield;
+                                }
+                            }
+                        }
+
+                        if (closestBond != null)
+                        {
+                            // Retrieve additional bond details from the database/context if needed
+                            var bondDetails = await context.Bonds.FirstOrDefaultAsync(b => b.Id == closestBond.BondId);
+                            // Create a new YieldCurve DTO and fill it with the details
+                            YieldCurve yieldCurve = new YieldCurve
+                            {
+                                BenchMarkTenor = (decimal)benchmarkRange.Key,
+                                Yield = (decimal)closestBond.AverageQuotedYield,
+                                BondUsed = bondDetails.IssueNumber,
+                                IssueDate = bondDetails.IssueDate,
+                                MaturityDate = bondDetails.MaturityDate,
+                                Coupon = bondDetails.CouponRate // Assuming there's a CouponRate field in your Bond entity
+                            };
+
+                            yieldCurves.Add(yieldCurve);
+
+                        }
+                    }
+
+                    return StatusCode(200, yieldCurves);
                 }
             }
             catch (Exception Ex)
