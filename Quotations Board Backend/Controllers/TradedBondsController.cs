@@ -723,10 +723,10 @@ namespace Quotations_Board_Backend.Controllers
                             }
                             var _quotedBuyVolume = _quote.Where(x => x.BuyingYield > 0).Sum(x => x.BuyVolume);
                             var _quotedSellVolume = _quote.Where(x => x.SellingYield > 0).Sum(x => x.SellVolume);
-                            if (_quotedBuyVolume < 50000000 || _quotedSellVolume < 50000000)
-                            {
-                                continue;
-                            }
+                            // if (_quotedBuyVolume < 50000000 || _quotedSellVolume < 50000000)
+                            // {
+                            //     continue;
+                            // }
 
                             var totalQuotesCount = _quote.Count();
                             var totalBuyVolumeForPositiveYield = _quote.Where(x => x.BuyingYield > 0).Sum(x => x.BuyVolume);
