@@ -694,9 +694,10 @@ namespace Quotations_Board_Backend.Controllers
                     // Define the benchmark range
                     var lowerBound = benchmark.Value.Item1;
                     var upperBound = benchmark.Value.Item2;
+                    var midpoint = (lowerBound + upperBound) / 2;
 
                     // // Get the bond that is closest to the upper bound of the range
-                    var closestBond = GetClosestBond(fXdBonds, lowerBound, upperBound);
+                    var closestBond = GetClosestBond(fXdBonds, midpoint);
 
 
                     if (closestBond != null)
@@ -757,7 +758,7 @@ namespace Quotations_Board_Backend.Controllers
         }
 
 
-        private Bond? GetClosestBond(IEnumerable<Bond> bonds, double lowerBound, double upperBound)
+        private Bond? GetClosestBondL(IEnumerable<Bond> bonds, double lowerBound, double upperBound)
         {
             List<Bond> bondsWithinRange = new List<Bond>();
 
@@ -785,7 +786,35 @@ namespace Quotations_Board_Backend.Controllers
             return null;
 
         }
+        private Bond? GetClosestBond(IEnumerable<Bond> bonds, double midpoint)
+        {
+            List<(Bond bond, double difference, double maturityScore)> bondComparisons = new List<(Bond, double, double)>();
+            foreach (var bond in bonds)
+            {
+                var yearsToMaturity = bond.MaturityDate.Date.Subtract(DateTime.Now.Date).TotalDays / 364;
+                yearsToMaturity = Math.Round(yearsToMaturity, 2, MidpointRounding.AwayFromZero);
 
+                var difference = Math.Abs(yearsToMaturity - midpoint); // Difference from midpoint
+                var maturityScore = CalculateMaturityScore(bond, midpoint); // Calculate maturity score
+
+                bondComparisons.Add((bond, difference, maturityScore));
+            }
+            if (bondComparisons.Any())
+            {
+                // First, order by difference to find the closest bonds to the midpoint
+                // Then, order by maturity score to break ties among those with similar differences
+                var orderedBonds = bondComparisons
+                    .OrderBy(x => x.difference)
+                    .ThenBy(x => x.maturityScore)
+                    .Select(x => x.bond)
+                    .ToList();
+
+                return orderedBonds.First(); // Return the bond with the lowest difference and maturity score
+            }
+            return null;
+
+
+        }
 
 
 
