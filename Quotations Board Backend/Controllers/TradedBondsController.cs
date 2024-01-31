@@ -520,7 +520,7 @@ namespace Quotations_Board_Backend.Controllers
                                 var _sellVolume = bond_trade_line.Where(x => x.Side == "SELL").Sum(x => x.ExecutedSize);
 
                                 // if _buyVolume is less than 50 Million skip the trade
-                                // if (_buyVolume < 50000000 || _sellVolume < 50000000)
+                                // if (_buyVolume < 50000000)
                                 // {
                                 //     continue;
                                 // }
