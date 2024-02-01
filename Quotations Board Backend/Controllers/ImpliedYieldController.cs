@@ -236,7 +236,7 @@ namespace Quotations_Board_Backend.Controllers
                     var impliedYield = new ImpliedYield
                     {
                         BondId = bondExists.Id,
-                        Yield = decimal.Parse(yieldValue) * 100,
+                        Yield = decimal.Parse(yieldValue),
                         YieldDate = DateTime.Parse(yieldDate)
                     };
 

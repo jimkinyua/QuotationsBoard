@@ -319,9 +319,9 @@ namespace Quotations_Board_Backend.Controllers
                     Quotation quote = new Quotation
                     {
                         BondId = bond.Id,
-                        BuyingYield = decimal.Parse(worksheet.Cell(row, 2).Value.ToString()) * 100,
+                        BuyingYield = decimal.Parse(worksheet.Cell(row, 2).Value.ToString()),
                         BuyVolume = int.Parse(worksheet.Cell(row, 3).Value.ToString()),
-                        SellingYield = decimal.Parse(worksheet.Cell(row, 4).Value.ToString()) * 100,
+                        SellingYield = decimal.Parse(worksheet.Cell(row, 4).Value.ToString()),
                         SellVolume = int.Parse(worksheet.Cell(row, 5).Value.ToString()),
                         UserId = UtilityService.GetUserIdFromToken(Request),
                         CreatedAt = DateTime.Now,
