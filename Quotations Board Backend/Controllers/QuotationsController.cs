@@ -1847,10 +1847,13 @@ namespace Quotations_Board_Backend.Controllers
                         {
                             // Retrieve additional bond details from the database/context if needed
                             var bondDetails = await context.Bonds.FirstOrDefaultAsync(b => b.Id == closestBond.BondId);
+                            decimal remainingDaysToMaturity = (decimal)(bondDetails.MaturityDate - fromDate.Date).TotalDays;
+                            decimal remainingYearsToMaturity = Math.Round(remainingDaysToMaturity / 364, 1, MidpointRounding.AwayFromZero);
+
                             // Create a new YieldCurve DTO and fill it with the details
                             YieldCurve yieldCurve = new YieldCurve
                             {
-                                BenchMarkTenor = (decimal)benchmarkRange.Key,
+                                BenchMarkTenor = remainingYearsToMaturity,
                                 Yield = (decimal)closestBond.AverageQuotedYield,
                                 BondUsed = bondDetails.IssueNumber,
                                 IssueDate = bondDetails.IssueDate,
@@ -1862,6 +1865,14 @@ namespace Quotations_Board_Backend.Controllers
 
                         }
                     }
+                    YieldCurve tBillYieldCurve = new YieldCurve
+                    {
+                        BenchMarkTenor = 1,
+                        Yield = (decimal)currentOneYearTBill.Yield,
+                        IssueDate = currentOneYearTBill.IssueDate,
+                        MaturityDate = currentOneYearTBill.MaturityDate,
+                    };
+                    yieldCurves.Add(tBillYieldCurve);
 
                     return StatusCode(200, yieldCurves);
                 }

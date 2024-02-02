@@ -705,13 +705,17 @@ namespace Quotations_Board_Backend.Controllers
                         // bool canBeUsedForYieldCurve = benchMarkTenorsForYiedCurve.Contains(benchmark.Key);
                         // get the implied yield for the bond based on the date in question
                         var impliedYield = _db.ImpliedYields.Where(i => i.BondId == closestBond.Id && i.YieldDate.Date == parsedDate.Date).FirstOrDefault();
+                        var _remainingTimeToMaturity = closestBond.MaturityDate.Date - parsedDate.Date;
+                        decimal remainingTimeToMaturity = (decimal)_remainingTimeToMaturity.TotalDays / 364;
+                        remainingTimeToMaturity = Math.Round(remainingTimeToMaturity, 1, MidpointRounding.AwayFromZero);
+
                         if (impliedYield == null)
                         {
                             continue;
                         }
                         yieldCurves.Add(new YieldCurve
                         {
-                            BenchMarkTenor = benchmark.Key,
+                            BenchMarkTenor = remainingTimeToMaturity,
                             Yield = impliedYield.Yield,
                             // CanBeUsedForYieldCurve = canBeUsedForYieldCurve,
                             BondUsed = closestBond.IssueNumber,
