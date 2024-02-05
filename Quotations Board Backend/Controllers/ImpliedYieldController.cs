@@ -685,6 +685,7 @@ namespace Quotations_Board_Backend.Controllers
                 };
 
                 List<int> benchMarkTenorsForYiedCurve = new List<int> { 2, 5, 10, 15, 20, 25 };
+                HashSet<string> usedBondIds = new HashSet<string>();
 
                 // for each benchmark range, fetch the bond that is closest to the benchmark range
                 List<YieldCurve> yieldCurves = new List<YieldCurve>();
@@ -697,11 +698,14 @@ namespace Quotations_Board_Backend.Controllers
                     var midpoint = (lowerBound + upperBound) / 2;
 
                     // // Get the bond that is closest to the upper bound of the range
-                    var closestBond = GetClosestBond(fXdBonds, midpoint);
+                    var closestBond = GetClosestBond(fXdBonds, midpoint, usedBondIds);
 
 
-                    if (closestBond != null)
+
+                    if (closestBond != null && !usedBondIds.Contains(closestBond.Id))
                     {
+                        usedBondIds.Add(closestBond.Id);
+
                         // bool canBeUsedForYieldCurve = benchMarkTenorsForYiedCurve.Contains(benchmark.Key);
                         // get the implied yield for the bond based on the date in question
                         var impliedYield = _db.ImpliedYields.Where(i => i.BondId == closestBond.Id && i.YieldDate.Date == parsedDate.Date).FirstOrDefault();
@@ -790,11 +794,15 @@ namespace Quotations_Board_Backend.Controllers
             return null;
 
         }
-        private Bond? GetClosestBond(IEnumerable<Bond> bonds, double midpoint)
+        private Bond? GetClosestBond(IEnumerable<Bond> bonds, double midpoint, HashSet<string> usedBondIds)
         {
             List<(Bond bond, double difference, double maturityScore)> bondComparisons = new List<(Bond, double, double)>();
             foreach (var bond in bonds)
             {
+                if (usedBondIds.Contains(bond.Id))
+                {
+                    continue; // Skip bonds that have already been used
+                }
                 var yearsToMaturity = bond.MaturityDate.Date.Subtract(DateTime.Now.Date).TotalDays / 364;
                 yearsToMaturity = Math.Round(yearsToMaturity, 2, MidpointRounding.AwayFromZero);
 
