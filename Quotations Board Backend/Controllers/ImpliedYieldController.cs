@@ -692,13 +692,10 @@ namespace Quotations_Board_Backend.Controllers
 
                 foreach (var benchmark in benchmarkRanges)
                 {
-                    // Define the benchmark range
-                    var lowerBound = benchmark.Value.Item1;
-                    var upperBound = benchmark.Value.Item2;
-                    var midpoint = (lowerBound + upperBound) / 2;
+
 
                     // // Get the bond that is closest to the upper bound of the range
-                    var closestBond = GetClosestBond(fXdBonds, midpoint, usedBondIds);
+                    var closestBond = GetClosestBond(fXdBonds, benchmark, usedBondIds, parsedDate);
 
 
 
@@ -794,16 +791,32 @@ namespace Quotations_Board_Backend.Controllers
             return null;
 
         }
-        private Bond? GetClosestBond(IEnumerable<Bond> bonds, double midpoint, HashSet<string> usedBondIds)
+        private Bond? GetClosestBond(IEnumerable<Bond> bonds, KeyValuePair<int, (double, double)> benchmark, HashSet<string> usedBondIds, DateTime dateInQuestion)
         {
+            // Define the benchmark range
+            var lowerBound = benchmark.Value.Item1;
+            var upperBound = benchmark.Value.Item2;
+            var midpoint = (lowerBound + upperBound) / 2;
+
+
             List<(Bond bond, double difference, double maturityScore)> bondComparisons = new List<(Bond, double, double)>();
             foreach (var bond in bonds)
             {
+                // is bond maturiity within the range?
+                var m = bond.MaturityDate.Date.Subtract(DateTime.Now.Date).TotalDays / 364;
+                var YearsToMaturity = Math.Round(m, 2, MidpointRounding.AwayFromZero);
+
+                // if not within the range, skip
+                if (YearsToMaturity < lowerBound || YearsToMaturity > upperBound)
+                {
+                    continue;
+                }
+
                 if (usedBondIds.Contains(bond.Id))
                 {
                     continue; // Skip bonds that have already been used
                 }
-                var yearsToMaturity = bond.MaturityDate.Date.Subtract(DateTime.Now.Date).TotalDays / 364;
+                var yearsToMaturity = bond.MaturityDate.Date.Subtract(dateInQuestion.Date).TotalDays / 364;
                 yearsToMaturity = Math.Round(yearsToMaturity, 2, MidpointRounding.AwayFromZero);
 
                 var difference = Math.Abs(yearsToMaturity - midpoint); // Difference from midpoint
