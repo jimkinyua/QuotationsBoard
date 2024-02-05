@@ -520,10 +520,10 @@ namespace Quotations_Board_Backend.Controllers
                                 var _sellVolume = bond_trade_line.Where(x => x.Side == "SELL").Sum(x => x.ExecutedSize);
 
                                 // if _buyVolume is less than 50 Million skip the trade
-                                // if (_buyVolume < 50000000)
-                                // {
-                                //     continue;
-                                // }
+                                if (_buyVolume < 50000000)
+                                {
+                                    continue;
+                                }
 
                                 var totalExecutedVolume = bond_trade_line.Sum(x => x.ExecutedSize);
                                 var totalWeightedBuyYield = bond_trade_line.Where(x => x.Side == "BUY").Sum(x => x.Yield * x.ExecutedSize);
