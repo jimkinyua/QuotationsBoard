@@ -715,7 +715,7 @@ namespace Quotations_Board_Backend.Controllers
                         }
                         yieldCurves.Add(new YieldCurve
                         {
-                            BenchMarkTenor = remainingTimeToMaturity,
+                            BenchMarkTenor = benchmark.Key,
                             Yield = impliedYield.Yield,
                             // CanBeUsedForYieldCurve = canBeUsedForYieldCurve,
                             BondUsed = closestBond.IssueNumber,

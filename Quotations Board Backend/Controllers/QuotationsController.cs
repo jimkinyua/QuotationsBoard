@@ -1853,7 +1853,7 @@ namespace Quotations_Board_Backend.Controllers
                             // Create a new YieldCurve DTO and fill it with the details
                             YieldCurve yieldCurve = new YieldCurve
                             {
-                                BenchMarkTenor = remainingYearsToMaturity,
+                                BenchMarkTenor = benchmarkRange.Key,
                                 Yield = (decimal)closestBond.AverageQuotedYield,
                                 BondUsed = bondDetails.IssueNumber,
                                 IssueDate = bondDetails.IssueDate,
