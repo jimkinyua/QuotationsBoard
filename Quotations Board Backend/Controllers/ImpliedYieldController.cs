@@ -676,7 +676,7 @@ namespace Quotations_Board_Backend.Controllers
                 { 17, (18.5, 18.9) }, // 17 year bucket
                 { 18, (19, 19.4) }, // 18 year bucket
                 { 19, (19.5, 19.9) }, // 19 year bucket
-                { 20, (18, 222.9) }, // 20 year bucket
+                { 20, (18, 22.9) }, // 20 year bucket
                 { 21, (23, 23.4) }, // 21 year bucket
                 { 22, (23.5, 23.9) }, // 22 year bucket
                 { 23, (24, 24.4) }, // 23 year bucket
