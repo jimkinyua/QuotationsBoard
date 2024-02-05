@@ -797,13 +797,15 @@ namespace Quotations_Board_Backend.Controllers
                                     continue;
                                 }
 
-                                var totalWeightedBuyYield = bond_trade_line.Where(x => x.Side == "BUY" && x.ExecutedSize >= 50000000).Sum(x => x.Yield * x.ExecutedSize);
+                                var yieldByVolume = bond_trade_line.Where(x => x.Side == "BUY" && x.ExecutedSize >= 50000000).Sum(x => x.Yield * x.ExecutedSize);
+                                var _totalBuyExecutedVolume = bond_trade_line.Where(x => x.Side == "BUY" && x.ExecutedSize >= 50000000).Sum(x => x.ExecutedSize);
+                                var averageWeightedBuyYield = _totalBuyExecutedVolume > 0 ? yieldByVolume / _totalBuyExecutedVolume : 0;
+
                                 var totalBuyExecutedVolume = bond_trade_line.Where(x => x.Side == "BUY" && x.ExecutedSize >= 50000000).Sum(x => x.ExecutedSize);
                                 var totalTradeCount = bond_trade_line.Count();
-                                var totalCombinedWeightedYield = totalWeightedBuyYield;
-                                var averageWeightedBuyYield = totalBuyExecutedVolume > 0 ? totalWeightedBuyYield / totalBuyExecutedVolume : 0;
+                                var totalCombinedWeightedYield = yieldByVolume;
 
-                                bondStatistic.AverageWeightedTradeYield = Math.Round(totalWeightedBuyYield, 4, MidpointRounding.AwayFromZero);
+                                bondStatistic.AverageWeightedTradeYield = Math.Round(averageWeightedBuyYield, 4, MidpointRounding.AwayFromZero);
                                 bondStatistic.TradedVolume = _buyVolume;
                                 bondStatistic.NumberofTrades = totalTradeCount;
                                 bondStatistic.WeightedTradeBuyYield = Math.Round(averageWeightedBuyYield, 4, MidpointRounding.AwayFromZero);
