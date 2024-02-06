@@ -624,6 +624,7 @@ namespace Quotations_Board_Backend.Controllers
                                 BondType = "T-Bill",
                                 AverageWeightedTradeYield = _tB.Yield,
                                 AverageWeightedQuotedYield = _tB.Yield,
+                                Isin = "T-Bill"
                             };
                         }
 
@@ -644,6 +645,7 @@ namespace Quotations_Board_Backend.Controllers
                                 BondType = "T-Bill",
                                 AverageWeightedTradeYield = _tB.Yield,
                                 AverageWeightedQuotedYield = _tB.Yield,
+                                Isin = "T-Bill"
 
                             };
                         }
@@ -665,6 +667,7 @@ namespace Quotations_Board_Backend.Controllers
                                 BondType = "T-Bill",
                                 AverageWeightedTradeYield = _tB.Yield,
                                 AverageWeightedQuotedYield = _tB.Yield,
+                                Isin = "T-Bill"
 
                             };
                         }
@@ -682,6 +685,29 @@ namespace Quotations_Board_Backend.Controllers
                         .OrderByDescending(i => i.YieldDate)
                         .FirstOrDefault();
 
+                        decimal currentImplied = 0;
+                        var stringImplied = "Not Yet Calculated";
+
+                        // get implied yield for the bond as at the selected date
+                        var impliedYield = db.ImpliedYields
+                            .Where(i => i.BondId == bond.Id
+                                && i.YieldDate.Date == parsedDate.Date)
+                            .FirstOrDefault();
+
+                        if (impliedYield != null)
+                        {
+                            currentImplied = impliedYield.Yield;
+                            stringImplied = currentImplied.ToString();
+                        }
+                        else
+                        {
+                            currentImplied = 0;
+
+                        }
+
+                        var ImpliedYieldString = stringImplied;
+
+
                         var m = diffrenceBetweenSelectedDateAndMaturityDate.TotalDays / 364;
                         var yearsToMaturity = Math.Round(m, 2, MidpointRounding.AwayFromZero);
 
@@ -692,7 +718,9 @@ namespace Quotations_Board_Backend.Controllers
                             YearsToMaturity = yearsToMaturity,
                             BondCategory = bond.BondCategory,
                             BondType = bond.BondType,
-                            PreviousImpliedYield = previousImpliedYield != null ? previousImpliedYield.Yield : 0
+                            PreviousImpliedYield = previousImpliedYield != null ? previousImpliedYield.Yield : 0,
+                            Isin = bond.Isin,
+                            DaysImpliedYield = ImpliedYieldString
                         };
 
 
