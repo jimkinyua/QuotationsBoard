@@ -656,33 +656,12 @@ namespace Quotations_Board_Backend.Controllers
                 {
                     return BadRequest("It Seems there is no 1 Year TBill for the last week");
                 }
+                // Find the maximum tenure among the bonds
+                var maxTenure = _db.Bonds.Max(b => (b.MaturityDate.Date - b.IssueDate.Date).TotalDays / 364);
 
-                Dictionary<int, (double, double)> benchmarkRanges = new Dictionary<int, (double, double)> {
-                {2, (2, 2.9) }, // 2 year bucket
-                {3, (3.0,3.9)},// 3Year Bucket
-                {4, (4, 4.9)}, // 4 year bucket
-                {5, (5, 5.9)}, // 5 year bucket
-                {6, (6, 6.9)}, // 6 year bucket
-                {7, (7, 7.9)}, // 7 year bucket
-                {8, (8, 8.9)}, // 8 year bucket
-                {9, (9, 9.9)}, // 9 year bucket
-                {10, (10, 10.9)}, // 10 year bucket
-                {11, (11, 11.9)}, // 11 year bucket
-                {12, (12, 12.9)}, // 12 year bucket
-                {13, (13, 13.9)}, // 13 year bucket
-                {14, (14, 14.9)}, // 14 year bucket
-                {15, (15, 15.9)}, // 15 year bucket
-                {16, (16, 16.9)}, // 16 year bucket
-                {17, (17, 17.9)}, // 17 year bucket
-                {18, (18, 18.9)}, // 18 year bucket
-                {19, (19, 19.9)}, // 19 year bucket
-                {20, (20, 20.9)}, // 20 year bucket
-                {21, (21, 21.9)}, // 21 year bucket
-                {22, (22, 22.9)}, // 22 year bucket
-                {23, (23, 23.9)}, // 23 year bucket
-                {24, (24, 24.9)}, // 24 year bucket
-                {25, (25, 25.9)}, // 25 year bucket
-                };
+                // Generate benchmark ranges dynamically
+                Dictionary<int, (double, double)> benchmarkRanges = YieldCurveHelper.GenerateBenchmarkRanges(maxTenure);
+
                 Dictionary<int, bool> benchmarksFound = new Dictionary<int, bool>();
 
                 List<int> benchMarkTenorsForYiedCurve = new List<int> { 2, 5, 10, 15, 20, 25 };

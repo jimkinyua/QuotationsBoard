@@ -64,6 +64,33 @@ public static class YieldCurveHelper
     }
 
 
+    public static Dictionary<int, (double, double)> GenerateBenchmarkRanges(double maxTenure)
+    {
+        Dictionary<int, (double, double)> benchmarkRanges = new Dictionary<int, (double, double)>();
+        int startYear = 2; // Assuming you want to start from 2 years
+
+        for (int year = startYear; year <= Math.Ceiling(maxTenure); year++)
+        {
+            double rangeStart = year;
+            double rangeEnd;
+
+            // Check if this is the last range
+            if (year == Math.Ceiling(maxTenure))
+            {
+                // For the last range, extend rangeEnd to the maximum tenure
+                rangeEnd = maxTenure;
+            }
+            else
+            {
+                // For other ranges, end at .9 of the current year
+                rangeEnd = year + 0.9;
+            }
+            benchmarkRanges.Add(year, (rangeStart, rangeEnd));
+        }
+
+        return benchmarkRanges;
+    }
+
 
 
 
