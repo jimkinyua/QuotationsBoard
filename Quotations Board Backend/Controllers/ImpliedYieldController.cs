@@ -656,8 +656,13 @@ namespace Quotations_Board_Backend.Controllers
                 {
                     return BadRequest("It Seems there is no 1 Year TBill for the last week");
                 }
-                // Find the maximum tenure among the bonds
-                var maxTenure = _db.Bonds.Max(b => (b.MaturityDate.Date - b.IssueDate.Date).TotalDays / 364);
+
+                var bondDates = _db.Bonds
+                .Select(b => new { b.MaturityDate, b.IssueDate })
+                .ToList();
+
+                var maxTenure = bondDates.Max(b => (b.MaturityDate.Date - b.IssueDate.Date).TotalDays / 364);
+
 
                 // Generate benchmark ranges dynamically
                 Dictionary<int, (double, double)> benchmarkRanges = YieldCurveHelper.GenerateBenchmarkRanges(maxTenure);
