@@ -53,15 +53,30 @@ public static class YieldCurveHelper
     }
 
 
+    /// <summary>
+    /// Performs linear interpolation to estimate the yield at a target tenor.
+    /// </summary>
+    /// <param name="previousData">The data point before the target tenor.</param>
+    /// <param name="nextData">The data point after the target tenor.</param>
+    /// <param name="targetTenor">The target tenor for which the yield is to be interpolated.</param>
+    /// <returns>The interpolated yield at the target tenor.</returns>
     private static decimal PerformLinearInterpolation(YieldCurve previousData, YieldCurve nextData, decimal targetTenor)
     {
-
+        // tenorDifference represents (x2 - x1), the difference in tenor between the next and previous data points.
         var tenorDifference = nextData.BenchMarkTenor - previousData.BenchMarkTenor;
+
+        // yieldDifference represents (y2 - y1), the difference in yield between the next and previous data points.
         decimal yieldDifference = nextData.Yield - previousData.Yield;
+
+        // tenorRatio represents ((x - x1) / (x2 - x1)), the proportion of the target tenor between the previous and next tenors.
         decimal tenorRatio = (targetTenor - previousData.BenchMarkTenor) / tenorDifference;
 
+        // Applying the linear interpolation formula: y = y1 + ((x - x1) * (y2 - y1) / (x2 - x1))
+        // where y is the interpolated yield, x is the target tenor, x1 and y1 are the tenor and yield of the previous data point,
+        // and x2 and y2 are the tenor and yield of the next data point.
         return previousData.Yield + tenorRatio * yieldDifference;
     }
+
 
 
     public static Dictionary<int, (double, double)> GenerateBenchmarkRanges(double maxTenure)
@@ -78,7 +93,7 @@ public static class YieldCurveHelper
             if (year == Math.Ceiling(maxTenure))
             {
                 // For the last range, extend rangeEnd to the maximum tenure
-                rangeEnd = maxTenure;
+                rangeEnd = maxTenure + 0.9;
             }
             else
             {
