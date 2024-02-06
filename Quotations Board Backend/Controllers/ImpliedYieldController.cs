@@ -751,7 +751,10 @@ namespace Quotations_Board_Backend.Controllers
                     BenchMarkFound = true,
                 });
 
-                return Ok(yieldCurves);
+                // interpolate the yield curve
+                var interpolatedYieldCurve = YieldCurveHelper.InterpolateMissingYields(yieldCurves);
+
+                return Ok(interpolatedYieldCurve);
 
             }
 
