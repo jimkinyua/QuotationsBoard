@@ -668,7 +668,7 @@ namespace Quotations_Board_Backend.Controllers
 
 
                 // Generate benchmark ranges dynamically
-                Dictionary<int, (double, double)> benchmarkRanges = YieldCurveHelper.GenerateBenchmarkRanges(_floorMaxTenure);
+                Dictionary<int, (double, double)> benchmarkRanges = YieldCurveHelper.GetBenchmarkRanges(parsedDate);
 
                 Dictionary<int, bool> benchmarksFound = new Dictionary<int, bool>();
 

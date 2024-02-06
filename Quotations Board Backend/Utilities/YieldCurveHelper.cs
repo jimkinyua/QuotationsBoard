@@ -107,6 +107,26 @@ public static class YieldCurveHelper
         return benchmarkRanges;
     }
 
+    public static Dictionary<int, (double, double)> GetBenchmarkRanges(DateTime DateInQuestion)
+    {
+        using (var context = new QuotationsBoardContext())
+        {
+            var _unMaturedBonds = context.Bonds.Where(b => b.MaturityDate > DateTime.Now).ToList();
+            var fXdBonds = _unMaturedBonds.Where(b => b.BondCategory == "USD").ToList();
+
+            var bondDates = fXdBonds
+                           .Select(b => new { b.MaturityDate, b.IssueDate })
+                           .ToList();
+
+            var maxTenure = bondDates.Max(b => (b.MaturityDate.Date - DateInQuestion.Date).TotalDays / 364);
+            // var _roundedMaxTenure = Math.Floor(maxTenure);
+            var _floorMaxTenure = Math.Floor(maxTenure);
+            var _ceilMaxTenure = Math.Ceiling(maxTenure);
+
+            return GenerateBenchmarkRanges(_floorMaxTenure);
+        }
+    }
+
 
 
 
