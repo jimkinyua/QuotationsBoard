@@ -802,7 +802,7 @@ namespace Quotations_Board_Backend.Controllers
             var midpoint = (lowerBound + upperBound) / 2;
 
 
-            List<(Bond bond, double difference, double maturityScore)> bondComparisons = new List<(Bond, double, double)>();
+            List<(Bond bond, double difference, decimal OutstandingValue)> bondComparisons = new List<(Bond, double, decimal)>();
             foreach (var bond in bonds)
             {
                 // is bond maturiity within the range?
@@ -823,17 +823,17 @@ namespace Quotations_Board_Backend.Controllers
                 yearsToMaturity = Math.Round(yearsToMaturity, 2, MidpointRounding.AwayFromZero);
 
                 var difference = Math.Abs(yearsToMaturity - midpoint); // Difference from midpoint
-                var maturityScore = CalculateMaturityScore(bond, midpoint); // Calculate maturity score
+                //var maturityScore = CalculateMaturityScore(bond, midpoint); // Calculate maturity score
 
-                bondComparisons.Add((bond, difference, maturityScore));
+                bondComparisons.Add((bond, difference, bond.OutstandingValue));
             }
             if (bondComparisons.Any())
             {
                 // First, order by difference to find the closest bonds to the midpoint
-                // Then, order by maturity score to break ties among those with similar differences
+                // Then, order by OutstandingValue to break ties among those with similar differences
                 var orderedBonds = bondComparisons
                     .OrderBy(x => x.difference)
-                    .ThenBy(x => x.maturityScore)
+                    .ThenBy(x => x.OutstandingValue)
                     .Select(x => x.bond)
                     .ToList();
 
