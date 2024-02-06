@@ -1092,6 +1092,115 @@ namespace Quotations_Board_Backend.Controllers
             }
         }
 
+        // Fetches all quotations filled by other institutions apart from the current institution
+        [HttpGet("GetAllQuotationsFilledByOtherInstitutions/{From}/{To}")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        public async Task<ActionResult<QuotationDTO>> GetAllQuotationsFilledByOtherInstitutions(string? From = "default", string? To = "default")
+        {
+            try
+            {
+                DateTime fromDate = DateTime.Now;
+                DateTime toDate = DateTime.Now;
+                if (From == "default")
+                {
+                    fromDate = DateTime.Now;
+                }
+                else
+                {
+                    var parsedDate = DateTime.Parse(From);
+                    // is date valid?
+                    if (fromDate == DateTime.MinValue)
+                    {
+                        return BadRequest("Invalid date");
+                    }
+                    // is date in the future?
+                    if (fromDate > DateTime.Now)
+                    {
+                        return BadRequest("Date cannot be in the future");
+                    }
+                    fromDate = parsedDate;
+                }
+
+                if (To == "default")
+                {
+                    toDate = DateTime.Now;
+                }
+                else
+                {
+                    var parsedDate = DateTime.Parse(To);
+                    // is date valid?
+                    if (toDate == DateTime.MinValue)
+                    {
+                        return BadRequest("Invalid date");
+                    }
+                    // is date in the future?
+                    if (toDate > DateTime.Now)
+                    {
+                        return BadRequest("Date cannot be in the future");
+                    }
+                    toDate = parsedDate;
+                }
+
+                using (var context = new QuotationsBoardContext())
+                {
+                    LoginTokenDTO TokenContents = UtilityService.GetUserIdFromCurrentRequest(Request);
+                    var userId = UtilityService.GetUserIdFromToken(Request);
+                    var quotations = await context.Quotations.Include(x => x.Institution)
+                        .Where(q =>
+                         q.InstitutionId != TokenContents.InstitutionId
+                         && q.CreatedAt.Date >= fromDate.Date
+                         && q.CreatedAt.Date <= toDate.Date
+                         ).ToListAsync();
+                    QuotationDTO sample = new();
+                    //List<QuotationDTO> quotationDTOs = new List<QuotationDTO>();
+                    List<Quoteinfo> quoteinfos = new List<Quoteinfo>();
+                    foreach (var quotation in quotations)
+                    {
+                        var institution = await context.Institutions.FirstOrDefaultAsync(i => i.Id == quotation.InstitutionId);
+                        var user = await context.Users.FirstOrDefaultAsync(u => u.Id == quotation.UserId);
+                        var bond = await context.Bonds.FirstOrDefaultAsync(b => b.Id == quotation.BondId);
+                        if (bond == null)
+                        {
+                            return BadRequest("Invalid Bond");
+                        }
+                        if (institution == null || user == null)
+                        {
+                            return BadRequest("Invalid institution or user");
+                        }
+
+                        var quotationDTO = new Quoteinfo
+                        {
+                            BondId = quotation.BondId,
+                            IssueNumber = bond.IssueNumber,
+                            BondIsin = bond.Isin,
+                            TotalBuyYield = quotation.BuyingYield,
+                            CreatedAt = quotation.CreatedAt,
+                            InstitutionId = institution.OrganizationName,
+                            TotalSellYield = quotation.SellingYield,
+                            UserId = user.FirstName + " " + user.LastName,
+                            TotalBuyVolume = quotation.BuyVolume,
+                            TotalSellVolume = quotation.SellVolume,
+                            Id = quotation.Id,
+                            AverageVolume = (quotation.BuyVolume + quotation.SellVolume) / 2,
+                            AverageYield = (quotation.BuyingYield + quotation.SellingYield) / 2
+                        };
+                        quoteinfos.Add(quotationDTO);
+                    }
+                    sample.Quotes = quoteinfos;
+
+                    return StatusCode(200, sample);
+                }
+
+            }
+            catch (Exception Ex)
+            {
+                UtilityService.LogException(Ex);
+                return StatusCode(500, UtilityService.HandleException(Ex));
+            }
+        }
+
+
         // Gets all quotations Totals Grouped by Bond
         [HttpGet("GetAllQuotationTotals/{From}/{To}")]
         [ProducesResponseType(StatusCodes.Status200OK)]

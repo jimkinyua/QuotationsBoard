@@ -11,7 +11,6 @@ namespace Quotations_Board_Backend.Controllers
     [Route("api/[controller]")]
     [ApiController]
     [Authorize(AuthenticationSchemes = "Bearer")]
-    [AllowAnonymous]
     public class BondsController : ControllerBase
     {
         private readonly QuotationsBoardContext _context;
@@ -25,11 +24,30 @@ namespace Quotations_Board_Backend.Controllers
 
         // GET: api/Bonds
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Bond>>> GetBonds()
+        public async Task<ActionResult<IEnumerable<BondDTO>>> GetBonds()
         {
             // skip matured bonds
             var bonds = await _context.Bonds.Where(b => b.MaturityDate.Date >= DateTime.Now.Date).ToListAsync();
-            return bonds;
+            List<BondDTO> bondDTOs = new List<BondDTO>();
+            foreach (var bond in bonds)
+            {
+                BondDTO bondDTO = new BondDTO
+                {
+                    Id = bond.Id,
+                    Isin = bond.Isin,
+                    IssueDate = bond.IssueDate,
+                    MaturityDate = bond.MaturityDate,
+                    OutstandingValue = bond.OutstandingValue,
+                    CouponType = bond.CouponType,
+                    CouponRate = bond.CouponRate,
+                    BondType = bond.BondType,
+                    IssueNumber = bond.IssueNumber,
+                    BondCategory = bond.BondCategory,
+                    YearsRemainingToMaturity = Math.Round((bond.MaturityDate - DateTime.Now).TotalDays / 365, 2, MidpointRounding.AwayFromZero)
+                };
+                bondDTOs.Add(bondDTO);
+            }
+            return Ok(bondDTOs);
         }
 
         // GET: api/Bonds/5
@@ -153,10 +171,29 @@ namespace Quotations_Board_Backend.Controllers
 
         // Matured Bonds
         [HttpGet("MaturedBonds")]
-        public async Task<ActionResult<IEnumerable<Bond>>> GetMaturedBonds()
+        public async Task<ActionResult<IEnumerable<BondDTO>>> GetMaturedBonds()
         {
             var bonds = await _context.Bonds.Where(b => b.MaturityDate.Date < DateTime.Now.Date).ToListAsync();
-            return bonds;
+            List<BondDTO> bondDTOs = new List<BondDTO>();
+            foreach (var bond in bonds)
+            {
+                BondDTO bondDTO = new BondDTO
+                {
+                    Id = bond.Id,
+                    Isin = bond.Isin,
+                    IssueDate = bond.IssueDate,
+                    MaturityDate = bond.MaturityDate,
+                    OutstandingValue = bond.OutstandingValue,
+                    CouponType = bond.CouponType,
+                    CouponRate = bond.CouponRate,
+                    BondType = bond.BondType,
+                    IssueNumber = bond.IssueNumber,
+                    BondCategory = bond.BondCategory,
+                    YearsRemainingToMaturity = Math.Round((bond.MaturityDate - DateTime.Now).TotalDays / 365, 2, MidpointRounding.AwayFromZero)
+                };
+                bondDTOs.Add(bondDTO);
+            }
+            return Ok(bondDTOs);
         }
 
         // get the bond summary (trade aveges, quote averages, etc) given a bond id and date
