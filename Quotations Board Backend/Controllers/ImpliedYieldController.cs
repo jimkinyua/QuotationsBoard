@@ -657,15 +657,18 @@ namespace Quotations_Board_Backend.Controllers
                     return BadRequest("It Seems there is no 1 Year TBill for the last week");
                 }
 
-                var bondDates = _db.Bonds
+                var bondDates = fXdBonds
                 .Select(b => new { b.MaturityDate, b.IssueDate })
                 .ToList();
 
-                var maxTenure = bondDates.Max(b => (b.MaturityDate.Date - b.IssueDate.Date).TotalDays / 364);
+                var maxTenure = bondDates.Max(b => (b.MaturityDate.Date - parsedDate.Date).TotalDays / 364);
+                // var _roundedMaxTenure = Math.Floor(maxTenure);
+                var _floorMaxTenure = Math.Floor(maxTenure);
+                var _ceilMaxTenure = Math.Ceiling(maxTenure);
 
 
                 // Generate benchmark ranges dynamically
-                Dictionary<int, (double, double)> benchmarkRanges = YieldCurveHelper.GenerateBenchmarkRanges(maxTenure);
+                Dictionary<int, (double, double)> benchmarkRanges = YieldCurveHelper.GenerateBenchmarkRanges(_floorMaxTenure);
 
                 Dictionary<int, bool> benchmarksFound = new Dictionary<int, bool>();
 
