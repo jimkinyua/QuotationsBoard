@@ -713,8 +713,7 @@ namespace Quotations_Board_Backend.Controllers
                         yieldCurves.Add(new YieldCurve
                         {
                             BenchMarkTenor = benchmark.Key,
-                            Yield = impliedYield.Yield,
-                            // CanBeUsedForYieldCurve = canBeUsedForYieldCurve,
+                            Yield = Math.Round(impliedYield.Yield, 4, MidpointRounding.AwayFromZero),
                             BondUsed = closestBond.IssueNumber,
                             IssueDate = closestBond.IssueDate,
                             MaturityDate = closestBond.MaturityDate,
@@ -730,7 +729,7 @@ namespace Quotations_Board_Backend.Controllers
                 yieldCurves.Add(new YieldCurve
                 {
                     BenchMarkTenor = 1,
-                    Yield = currentOneYearTBill.Yield,
+                    Yield = Math.Round(currentOneYearTBill.Yield, 4, MidpointRounding.AwayFromZero),
                     CanBeUsedForYieldCurve = true,
                     BondUsed = "1 Year TBill",
                     IssueDate = currentOneYearTBill.IssueDate,

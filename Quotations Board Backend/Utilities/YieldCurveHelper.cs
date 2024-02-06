@@ -74,7 +74,8 @@ public static class YieldCurveHelper
         // Applying the linear interpolation formula: y = y1 + ((x - x1) * (y2 - y1) / (x2 - x1))
         // where y is the interpolated yield, x is the target tenor, x1 and y1 are the tenor and yield of the previous data point,
         // and x2 and y2 are the tenor and yield of the next data point.
-        return previousData.Yield + tenorRatio * yieldDifference;
+        var interpolatedYield = previousData.Yield + (tenorRatio * yieldDifference);
+        return Math.Round(interpolatedYield, 4, MidpointRounding.AwayFromZero);
     }
 
 
