@@ -16,7 +16,7 @@ public class BondAverageStatistic
     public string BondCategory { get; set; } = null!;
     public string BondType { get; set; } = null!;
     public decimal PreviousImpliedYield { get; set; }
-    public string Isin { get; set; } = null!;
+    public string ISIN { get; set; } = null!;
     public decimal DaysImpliedYield { get; set; }
 
 }

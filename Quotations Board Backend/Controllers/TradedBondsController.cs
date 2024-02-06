@@ -624,7 +624,7 @@ namespace Quotations_Board_Backend.Controllers
                                 BondType = "T-Bill",
                                 AverageWeightedTradeYield = _tB.Yield,
                                 AverageWeightedQuotedYield = _tB.Yield,
-                                Isin = "T-Bill"
+                                ISIN = "T-Bill"
                             };
                         }
 
@@ -645,7 +645,7 @@ namespace Quotations_Board_Backend.Controllers
                                 BondType = "T-Bill",
                                 AverageWeightedTradeYield = _tB.Yield,
                                 AverageWeightedQuotedYield = _tB.Yield,
-                                Isin = "T-Bill"
+                                ISIN = "T-Bill"
 
                             };
                         }
@@ -667,7 +667,7 @@ namespace Quotations_Board_Backend.Controllers
                                 BondType = "T-Bill",
                                 AverageWeightedTradeYield = _tB.Yield,
                                 AverageWeightedQuotedYield = _tB.Yield,
-                                Isin = "T-Bill"
+                                ISIN = "T-Bill"
 
                             };
                         }
@@ -719,7 +719,7 @@ namespace Quotations_Board_Backend.Controllers
                             BondCategory = bond.BondCategory,
                             BondType = bond.BondType,
                             PreviousImpliedYield = previousImpliedYield != null ? previousImpliedYield.Yield : 0,
-                            Isin = bond.Isin,
+                            ISIN = bond.Isin,
                             DaysImpliedYield = currentImplied
                         };
 
