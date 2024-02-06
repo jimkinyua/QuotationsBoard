@@ -720,7 +720,7 @@ namespace Quotations_Board_Backend.Controllers
                             BondType = bond.BondType,
                             PreviousImpliedYield = previousImpliedYield != null ? previousImpliedYield.Yield : 0,
                             Isin = bond.Isin,
-                            DaysImpliedYield = ImpliedYieldString
+                            DaysImpliedYield = currentImplied
                         };
 
 
