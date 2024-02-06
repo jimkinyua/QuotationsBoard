@@ -112,7 +112,7 @@ public static class YieldCurveHelper
         using (var context = new QuotationsBoardContext())
         {
             var _unMaturedBonds = context.Bonds.Where(b => b.MaturityDate > DateTime.Now).ToList();
-            var fXdBonds = _unMaturedBonds.Where(b => b.BondCategory == "USD").ToList();
+            var fXdBonds = _unMaturedBonds.Where(b => b.BondCategory == "FXD").ToList();
 
             var bondDates = fXdBonds
                            .Select(b => new { b.MaturityDate, b.IssueDate })
