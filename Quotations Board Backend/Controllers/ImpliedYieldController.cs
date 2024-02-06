@@ -683,6 +683,7 @@ namespace Quotations_Board_Backend.Controllers
                 {24, (24, 24.9)}, // 24 year bucket
                 {25, (25, 25.9)}, // 25 year bucket
                 };
+                Dictionary<int, bool> benchmarksFound = new Dictionary<int, bool>();
 
                 List<int> benchMarkTenorsForYiedCurve = new List<int> { 2, 5, 10, 15, 20, 25 };
                 HashSet<string> usedBondIds = new HashSet<string>();
@@ -693,11 +694,19 @@ namespace Quotations_Board_Backend.Controllers
                 foreach (var benchmark in benchmarkRanges)
                 {
 
-
-                    // // Get the bond that is closest to the upper bound of the range
                     var closestBond = GetClosestBond(fXdBonds, benchmark, usedBondIds, parsedDate);
 
-
+                    // if no bond is found within the range,create a blank entry
+                    if (closestBond == null)
+                    {
+                        yieldCurves.Add(new YieldCurve
+                        {
+                            BenchMarkTenor = benchmark.Key,
+                            BenchMarkFound = false,
+                            Yield = 0,
+                        });
+                        continue;
+                    }
 
                     if (closestBond != null && !usedBondIds.Contains(closestBond.Id))
                     {
@@ -722,9 +731,12 @@ namespace Quotations_Board_Backend.Controllers
                             BondUsed = closestBond.IssueNumber,
                             IssueDate = closestBond.IssueDate,
                             MaturityDate = closestBond.MaturityDate,
-                            Coupon = closestBond.CouponRate
+                            Coupon = closestBond.CouponRate,
+                            BenchMarkFound = true,
                         });
                     }
+
+
 
                 }
                 // tadd the 1 year TBill to the yield curve
@@ -736,6 +748,7 @@ namespace Quotations_Board_Backend.Controllers
                     BondUsed = "1 Year TBill",
                     IssueDate = currentOneYearTBill.IssueDate,
                     MaturityDate = currentOneYearTBill.MaturityDate,
+                    BenchMarkFound = true,
                 });
 
                 return Ok(yieldCurves);

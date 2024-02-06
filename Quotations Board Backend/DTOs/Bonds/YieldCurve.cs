@@ -7,5 +7,6 @@ public class YieldCurve
     public DateTime IssueDate { get; set; }
     public DateTime MaturityDate { get; set; }
     public decimal Coupon { get; set; }
+    public Boolean BenchMarkFound { get; set; } = false;
 
 }
