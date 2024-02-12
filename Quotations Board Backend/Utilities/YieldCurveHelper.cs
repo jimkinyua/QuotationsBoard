@@ -4,18 +4,18 @@ public static class YieldCurveHelper
     {
         for (int i = 0; i < yieldCurveDataList.Count; i++)
         {
-            if (IsYieldMissing(yieldCurveDataList[i]))
+            // if (IsYieldMissing(yieldCurveDataList[i]))
+            // {
+            YieldCurve previousData = FindPreviousDataWithYield(yieldCurveDataList, i);
+            YieldCurve nextData = FindNextDataWithYield(yieldCurveDataList, i);
+
+            if (previousData != null && nextData != null)
             {
-                YieldCurve previousData = FindPreviousDataWithYield(yieldCurveDataList, i);
-                YieldCurve nextData = FindNextDataWithYield(yieldCurveDataList, i);
-
-                if (previousData != null && nextData != null)
-                {
-                    yieldCurveDataList[i].Yield = PerformLinearInterpolation(previousData, nextData, yieldCurveDataList[i].BenchMarkTenor);
-                    yieldCurveDataList[i].BondUsed = "Interpolated";
-                }
-
+                yieldCurveDataList[i].Yield = PerformLinearInterpolation(previousData, nextData, yieldCurveDataList[i].BenchMarkTenor);
+                yieldCurveDataList[i].BondUsed = "Interpolated";
             }
+
+            // }
 
 
         }
