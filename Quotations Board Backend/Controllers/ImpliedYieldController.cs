@@ -688,6 +688,7 @@ namespace Quotations_Board_Backend.Controllers
                     IssueDate = currentOneYearTBill.IssueDate,
                     MaturityDate = currentOneYearTBill.MaturityDate,
                     BenchMarkFound = true,
+                    Tenure = 1
                 });
 
                 foreach (var benchmark in benchmarkRanges)
@@ -703,6 +704,7 @@ namespace Quotations_Board_Backend.Controllers
                             BenchMarkTenor = benchmark.Key,
                             BenchMarkFound = false,
                             Yield = 0,
+                            Tenure = benchmark.Key
                         });
                         tenuresThatRequireInterPolation.Add(benchmark.Key);
                         continue;
@@ -721,6 +723,7 @@ namespace Quotations_Board_Backend.Controllers
                         {
                             return BadRequest($"The Bond {BondWithExactTenure.IssueNumber} seems not to have an Implied Yield.");
                         }
+                        var BondTenure = Math.Round((BondWithExactTenure.MaturityDate.Date - parsedDate.Date).TotalDays / 364, 4, MidpointRounding.AwayFromZero);
                         yieldCurves.Add(new YieldCurve
                         {
                             BenchMarkTenor = benchmark.Key,
@@ -730,6 +733,7 @@ namespace Quotations_Board_Backend.Controllers
                             MaturityDate = BondWithExactTenure.MaturityDate,
                             Coupon = BondWithExactTenure.CouponRate,
                             BenchMarkFound = true,
+                            Tenure = BondTenure
                         });
                         usedBondIds.Add(BondWithExactTenure.Id);
                     }
@@ -748,6 +752,7 @@ namespace Quotations_Board_Backend.Controllers
                             {
                                 return BadRequest($"The Bond {bond.IssueNumber} seems not to have an Implied Yield. This is required for Yield Curve Calculation especiliy for interpolation");
                             }
+                            var BondTenure = Math.Round((bond.MaturityDate.Date - parsedDate.Date).TotalDays / 364, 4, MidpointRounding.AwayFromZero);
                             yieldCurves.Add(new YieldCurve
                             {
                                 BenchMarkTenor = benchmark.Key,
@@ -757,6 +762,7 @@ namespace Quotations_Board_Backend.Controllers
                                 MaturityDate = bond.MaturityDate,
                                 Coupon = bond.CouponRate,
                                 BenchMarkFound = true,
+                                Tenure = BondTenure
                             });
                             usedBondIds.Add(bond.Id);
                         }
