@@ -673,6 +673,7 @@ namespace Quotations_Board_Backend.Controllers
                 Dictionary<int, bool> benchmarksFound = new Dictionary<int, bool>();
 
                 List<int> benchMarkTenorsForYiedCurve = new List<int> { 2, 5, 10, 15, 20, 25 };
+                HashSet<double> tenuresThatRequireInterPolation = new HashSet<double>();
                 HashSet<string> usedBondIds = new HashSet<string>();
 
                 // for each benchmark range, fetch the bond that is closest to the benchmark range
@@ -703,6 +704,7 @@ namespace Quotations_Board_Backend.Controllers
                             BenchMarkFound = false,
                             Yield = 0,
                         });
+                        tenuresThatRequireInterPolation.Add(benchmark.Key);
                         continue;
                     }
                     else
@@ -733,6 +735,7 @@ namespace Quotations_Board_Backend.Controllers
                     }
                     else
                     {
+                        tenuresThatRequireInterPolation.Add(benchmark.Key);
                         // FOR EACH OF THE BONDS WITHIN THE TENURE, Create a Yield Curve (We will interpolate the missing ones later)
                         foreach (var bond in bondsWithinThisTenure)
                         {
@@ -763,7 +766,7 @@ namespace Quotations_Board_Backend.Controllers
 
 
                 // interpolate the yield curve
-                var interpolatedYieldCurve = YieldCurveHelper.InterpolateMissingYields(yieldCurves);
+                var interpolatedYieldCurve = YieldCurveHelper.InterpolateMissingYields(yieldCurves, tenuresThatRequireInterPolation);
 
                 return Ok(interpolatedYieldCurve);
 
