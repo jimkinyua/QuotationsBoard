@@ -697,7 +697,7 @@ namespace Quotations_Board_Backend.Controllers
                     //var closestBond = GetClosestBond(fXdBonds, benchmark, usedBondIds, parsedDate);
                     var bondsWithinThisTenure = YieldCurveHelper.GetBondsInTenorRange(fXdBonds, benchmark, usedBondIds, parsedDate);
 
-                    if (bondsWithinThisTenure == null)
+                    if (bondsWithinThisTenure.Count() == 0)
                     {
                         yieldCurves.Add(new YieldCurve
                         {
