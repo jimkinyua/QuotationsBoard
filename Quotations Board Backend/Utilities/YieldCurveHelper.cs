@@ -4,28 +4,85 @@ public static class YieldCurveHelper
     {
         for (int i = 0; i < yieldCurveDataList.Count; i++)
         {
-            // if (IsYieldMissing(yieldCurveDataList[i]))
-            // {
-            YieldCurve previousData = FindPreviousDataWithYield(yieldCurveDataList, i);
-            YieldCurve nextData = FindNextDataWithYield(yieldCurveDataList, i);
-
-            if (previousData != null && nextData != null)
+            if (IsYieldMissing(yieldCurveDataList[i]))
             {
-                yieldCurveDataList[i].Yield = PerformLinearInterpolation(previousData, nextData, yieldCurveDataList[i].BenchMarkTenor);
-                yieldCurveDataList[i].BondUsed = "Interpolated";
-            }
+                YieldCurve previousData = FindPreviousDataWithYield(yieldCurveDataList, i);
+                YieldCurve nextData = FindNextDataWithYield(yieldCurveDataList, i);
 
-            // }
+                if (previousData != null && nextData != null)
+                {
+                    yieldCurveDataList[i].Yield = PerformLinearInterpolation(previousData, nextData, yieldCurveDataList[i].BenchMarkTenor);
+                    yieldCurveDataList[i].BondUsed = "Interpolated";
+                }
+
+            }
 
 
         }
 
         return yieldCurveDataList;
     }
+
+    public static IEnumerable<Bond> GetBondsInTenorRange(IEnumerable<Bond> bonds, KeyValuePair<int, (double, double)> benchmark, HashSet<string> usedBondIds, DateTime dateInQuestion)
+    {
+        // Define the benchmark range
+        var lowerBound = benchmark.Value.Item1;
+        var upperBound = benchmark.Value.Item2;
+        var midpoint = (lowerBound + upperBound) / 2;
+
+        var yieldsInTenorRange = bonds
+               .Where(bond =>
+               {
+                   var yearsToMaturity = (bond.MaturityDate.Date - dateInQuestion.Date).TotalDays / 364;
+                   return yearsToMaturity >= lowerBound && yearsToMaturity <= upperBound;
+               })
+               .ToList();
+
+        return yieldsInTenorRange;
+
+    }
+
+    public static Bond? GetBondWithExactTenure(IEnumerable<Bond> bondsWithinRange, double tenure, DateTime dateInQuestion)
+    {
+        var bonds = bondsWithinRange
+         .Where(bond =>
+         {
+             var yearsToMaturity = Math.Round((bond.MaturityDate.Date - dateInQuestion.Date).TotalDays / 364, 2, MidpointRounding.AwayFromZero);
+             return yearsToMaturity == tenure;
+         })
+         .ToList();
+
+        // break a tie if may are there
+        if (bonds.Any())
+        {
+            // Then, order by OutstandingValue to break ties among those with similar differences
+            bonds.OrderBy(x => x.OutstandingValue).ToList();
+
+        }
+        return bonds.First();
+
+    }
     private static bool IsYieldMissing(YieldCurve data)
     {
         return data.Yield == 0 || string.IsNullOrEmpty(data.BondUsed);
     }
+
+    // receives a list of bonds and tenure then filters out that are within the tenure
+    public static List<Bond> GetBondsWithinTenure(List<Bond> bonds, double tenure, DateTime DateInQuestion)
+    {
+        List<Bond> bondsWithinTenure = new List<Bond>();
+        foreach (var bond in bonds)
+        {
+            var YearsToMaturity = (bond.MaturityDate - DateInQuestion).TotalDays / 364;
+            if (YearsToMaturity > tenure || YearsToMaturity < tenure)
+            {
+                bondsWithinTenure.Add(bond);
+            }
+        }
+        return bondsWithinTenure;
+    }
+
+
 
 
     private static YieldCurve FindPreviousDataWithYield(List<YieldCurve> dataList, int currentIndex)
@@ -126,6 +183,9 @@ public static class YieldCurveHelper
             return GenerateBenchmarkRanges(_floorMaxTenure);
         }
     }
+
+
+
 
 
 

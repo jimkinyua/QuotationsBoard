@@ -677,54 +677,6 @@ namespace Quotations_Board_Backend.Controllers
 
                 // for each benchmark range, fetch the bond that is closest to the benchmark range
                 List<YieldCurve> yieldCurves = new List<YieldCurve>();
-
-                foreach (var benchmark in benchmarkRanges)
-                {
-
-                    var closestBond = GetClosestBond(fXdBonds, benchmark, usedBondIds, parsedDate);
-
-                    // if no bond is found within the range,create a blank entry
-                    if (closestBond == null)
-                    {
-                        yieldCurves.Add(new YieldCurve
-                        {
-                            BenchMarkTenor = benchmark.Key,
-                            BenchMarkFound = false,
-                            Yield = 0,
-                        });
-                        continue;
-                    }
-
-                    if (closestBond != null && !usedBondIds.Contains(closestBond.Id))
-                    {
-                        usedBondIds.Add(closestBond.Id);
-
-                        // bool canBeUsedForYieldCurve = benchMarkTenorsForYiedCurve.Contains(benchmark.Key);
-                        // get the implied yield for the bond based on the date in question
-                        var impliedYield = _db.ImpliedYields.Where(i => i.BondId == closestBond.Id && i.YieldDate.Date == parsedDate.Date).FirstOrDefault();
-                        var _remainingTimeToMaturity = closestBond.MaturityDate.Date - parsedDate.Date;
-                        decimal remainingTimeToMaturity = (decimal)_remainingTimeToMaturity.TotalDays / 364;
-                        remainingTimeToMaturity = Math.Round(remainingTimeToMaturity, 1, MidpointRounding.AwayFromZero);
-
-                        if (impliedYield == null)
-                        {
-                            continue;
-                        }
-                        yieldCurves.Add(new YieldCurve
-                        {
-                            BenchMarkTenor = benchmark.Key,
-                            Yield = Math.Round(impliedYield.Yield, 4, MidpointRounding.AwayFromZero),
-                            BondUsed = closestBond.IssueNumber,
-                            IssueDate = closestBond.IssueDate,
-                            MaturityDate = closestBond.MaturityDate,
-                            Coupon = closestBond.CouponRate,
-                            BenchMarkFound = true,
-                        });
-                    }
-
-
-
-                }
                 // tadd the 1 year TBill to the yield curve
                 yieldCurves.Add(new YieldCurve
                 {
@@ -736,6 +688,79 @@ namespace Quotations_Board_Backend.Controllers
                     MaturityDate = currentOneYearTBill.MaturityDate,
                     BenchMarkFound = true,
                 });
+
+                foreach (var benchmark in benchmarkRanges)
+                {
+                    Bond? BondWithExactTenure = null;
+                    //var closestBond = GetClosestBond(fXdBonds, benchmark, usedBondIds, parsedDate);
+                    var bondsWithinThisTenure = YieldCurveHelper.GetBondsInTenorRange(fXdBonds, benchmark, usedBondIds, parsedDate);
+
+                    if (bondsWithinThisTenure == null)
+                    {
+                        yieldCurves.Add(new YieldCurve
+                        {
+                            BenchMarkTenor = benchmark.Key,
+                            BenchMarkFound = false,
+                            Yield = 0,
+                        });
+                        continue;
+                    }
+                    else
+                    {
+                        BondWithExactTenure = YieldCurveHelper.GetBondWithExactTenure(bondsWithinThisTenure, benchmark.Value.Item1, parsedDate);
+
+                    }
+
+                    if (BondWithExactTenure != null)
+                    {
+                        // get implied yield of this Bond
+                        var impliedYield = _db.ImpliedYields.Where(i => i.BondId == BondWithExactTenure.Id && i.YieldDate.Date == parsedDate.Date).FirstOrDefault();
+                        if (impliedYield == null)
+                        {
+                            return BadRequest($"The Bond {BondWithExactTenure.IssueNumber} seems not to have an Implied Yield.");
+                        }
+                        yieldCurves.Add(new YieldCurve
+                        {
+                            BenchMarkTenor = benchmark.Key,
+                            Yield = Math.Round(impliedYield.Yield, 4, MidpointRounding.AwayFromZero),
+                            BondUsed = BondWithExactTenure.IssueNumber,
+                            IssueDate = BondWithExactTenure.IssueDate,
+                            MaturityDate = BondWithExactTenure.MaturityDate,
+                            Coupon = BondWithExactTenure.CouponRate,
+                            BenchMarkFound = true,
+                        });
+                        usedBondIds.Add(BondWithExactTenure.Id);
+                    }
+                    else
+                    {
+                        // FOR EACH OF THE BONDS WITHIN THE TENURE, Create a Yield Curve (We will interpolate the missing ones later)
+                        foreach (var bond in bondsWithinThisTenure)
+                        {
+                            if (usedBondIds.Contains(bond.Id))
+                            {
+                                continue; // Skip bonds that have already been used
+                            }
+                            var impliedYield = _db.ImpliedYields.Where(i => i.BondId == bond.Id && i.YieldDate.Date == parsedDate.Date).FirstOrDefault();
+                            if (impliedYield == null)
+                            {
+                                return BadRequest($"The Bond {bond.IssueNumber} seems not to have an Implied Yield. This is required for Yield Curve Calculation especiliy for interpolation");
+                            }
+                            yieldCurves.Add(new YieldCurve
+                            {
+                                BenchMarkTenor = benchmark.Key,
+                                Yield = Math.Round(impliedYield.Yield, 4, MidpointRounding.AwayFromZero),
+                                BondUsed = bond.IssueNumber,
+                                IssueDate = bond.IssueDate,
+                                MaturityDate = bond.MaturityDate,
+                                Coupon = bond.CouponRate,
+                                BenchMarkFound = true,
+                            });
+                            usedBondIds.Add(bond.Id);
+                        }
+                    }
+
+                }
+
 
                 // interpolate the yield curve
                 var interpolatedYieldCurve = YieldCurveHelper.InterpolateMissingYields(yieldCurves);
@@ -839,9 +864,10 @@ namespace Quotations_Board_Backend.Controllers
                 return orderedBonds.First(); // Return the bond with the lowest difference and maturity score
             }
             return null;
-
-
         }
+
+
+
 
 
 
