@@ -1,24 +1,55 @@
 public static class YieldCurveHelper
 {
-    public static List<YieldCurve> InterpolateMissingYields(List<YieldCurve> yieldCurveDataList, HashSet<double> tenuresThatRequireInterPolation)
+    public static List<YieldCurve> InterpolateWhereNecessary(List<YieldCurve> yieldCurveDataList, HashSet<double> tenuresThatRequireInterPolation)
     {
-        for (int i = 0; i < yieldCurveDataList.Count; i++)
+        yieldCurveDataList.Sort((x, y) => x.Tenure.CompareTo(y.Tenure));
+        foreach (var tenureToInterpolate in tenuresThatRequireInterPolation)
         {
-            if (IsYieldMissing(yieldCurveDataList[i]))
+            decimal m = (decimal)tenureToInterpolate;
+            // Find the closest tenures before and after the tenure we want to interpolate
+            var previousData = FindPreviousDataWithYield(yieldCurveDataList, tenureToInterpolate);
+            var nextData = FindNextDataWithYield(yieldCurveDataList, tenureToInterpolate);
+            if (previousData != null && nextData != null)
             {
-                YieldCurve previousData = FindPreviousDataWithYield(yieldCurveDataList, i);
-                YieldCurve nextData = FindNextDataWithYield(yieldCurveDataList, i);
+                // Perform the interpolation
+                double interpolatedYield = (double)PerformLinearInterpolation(previousData, nextData, m);
 
-                if (previousData != null && nextData != null)
+                // Create a new YieldCurve object for the interpolated yield
+                var interpolatedYieldCurve = new YieldCurve
                 {
-                    yieldCurveDataList[i].Yield = PerformLinearInterpolation(previousData, nextData, yieldCurveDataList[i].BenchMarkTenor);
-                    yieldCurveDataList[i].BondUsed = "Interpolated";
-                }
+                    BenchMarkTenor = (int)Math.Round(tenureToInterpolate, 0), // Assuming BenchMarkTenor is an integer
+                    Yield = (decimal)interpolatedYield,
+                    BondUsed = "Interpolated",
+                    // IssueDate and MaturityDate could be interpolated or left blank depending on your requirements
+                    BenchMarkFound = true,
+                    Tenure = tenureToInterpolate
+                };
 
+                // Find the correct index to insert the new interpolatedYieldCurve
+                int insertIndex = yieldCurveDataList.FindIndex(y => y.Tenure > tenureToInterpolate);
+                if (insertIndex < 0) insertIndex = yieldCurveDataList.Count; // If not found, add to the end
+
+                // Insert the interpolatedYieldCurve into the yieldCurveDataList
+                yieldCurveDataList.Insert(insertIndex, interpolatedYieldCurve);
             }
-
-
         }
+        // for (int i = 0; i < yieldCurveDataList.Count; i++)
+        // {
+        //     if (IsYieldMissing(yieldCurveDataList[i]))
+        //     {
+        //         YieldCurve previousData = FindPreviousDataWithYield(yieldCurveDataList, i);
+        //         YieldCurve nextData = FindNextDataWithYield(yieldCurveDataList, i);
+
+        //         if (previousData != null && nextData != null)
+        //         {
+        //             yieldCurveDataList[i].Yield = PerformLinearInterpolation(previousData, nextData, yieldCurveDataList[i].BenchMarkTenor);
+        //             yieldCurveDataList[i].BondUsed = "Interpolated";
+        //         }
+
+        //     }
+
+
+        // }
 
         return yieldCurveDataList;
     }
@@ -97,6 +128,44 @@ public static class YieldCurveHelper
         }
         return null; // No previous data found
     }
+    public static YieldCurve FindPreviousDataWithYield(List<YieldCurve> yieldCurveDataList, double tenureToInterpolate)
+    {
+        YieldCurve previousData = null;
+
+        // Loop backwards through the sorted list to find the previous data point with a yield
+        for (int i = yieldCurveDataList.Count - 1; i >= 0; i--)
+        {
+            // Check if the current data point has a yield and a tenure less than the tenure to interpolate
+            if (!IsYieldMissing(yieldCurveDataList[i]) && yieldCurveDataList[i].Tenure < tenureToInterpolate)
+            {
+                previousData = yieldCurveDataList[i];
+                break; // Exit the loop once the previous data point is found
+            }
+        }
+
+        // If no previous data is found, previousData remains null
+        return previousData;
+    }
+
+    public static YieldCurve FindNextDataWithYield(List<YieldCurve> yieldCurveDataList, double tenureToInterpolate)
+    {
+        YieldCurve nextData = null;
+
+        // Loop through the sorted list to find the next data point with a yield
+        foreach (var yieldCurve in yieldCurveDataList)
+        {
+            // Check if the current data point has a yield and a tenure greater than the tenure to interpolate
+            if (!IsYieldMissing(yieldCurve) && yieldCurve.Tenure > tenureToInterpolate)
+            {
+                nextData = yieldCurve;
+                break; // Exit the loop once the next data point is found
+            }
+        }
+
+        // If no next data is found, nextData remains null
+        return nextData;
+    }
+
 
     private static YieldCurve FindNextDataWithYield(List<YieldCurve> dataList, int currentIndex)
     {

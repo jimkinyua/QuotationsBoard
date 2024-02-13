@@ -699,13 +699,13 @@ namespace Quotations_Board_Backend.Controllers
 
                     if (bondsWithinThisTenure.Count() == 0)
                     {
-                        yieldCurves.Add(new YieldCurve
-                        {
-                            BenchMarkTenor = benchmark.Key,
-                            BenchMarkFound = false,
-                            Yield = 0,
-                            Tenure = benchmark.Key
-                        });
+                        // yieldCurves.Add(new YieldCurve
+                        // {
+                        //     BenchMarkTenor = benchmark.Key,
+                        //     BenchMarkFound = false,
+                        //     Yield = 0,
+                        //     Tenure = benchmark.Key
+                        // });
                         tenuresThatRequireInterPolation.Add(benchmark.Key);
                         continue;
                     }
@@ -772,7 +772,7 @@ namespace Quotations_Board_Backend.Controllers
 
 
                 // interpolate the yield curve
-                var interpolatedYieldCurve = YieldCurveHelper.InterpolateMissingYields(yieldCurves, tenuresThatRequireInterPolation);
+                var interpolatedYieldCurve = YieldCurveHelper.InterpolateWhereNecessary(yieldCurves, tenuresThatRequireInterPolation);
 
                 return Ok(interpolatedYieldCurve);
 
