@@ -678,16 +678,14 @@ namespace Quotations_Board_Backend.Controllers
 
                 // for each benchmark range, fetch the bond that is closest to the benchmark range
                 List<YieldCurve> yieldCurves = new List<YieldCurve>();
+                List<YieldCurveCalculation> yieldCurveCalculations = new List<YieldCurveCalculation>();
                 // tadd the 1 year TBill to the yield curve
-                yieldCurves.Add(new YieldCurve
+                yieldCurveCalculations.Add(new YieldCurveCalculation
                 {
-                    BenchMarkTenor = 1,
-                    Yield = Math.Round(currentOneYearTBill.Yield, 4, MidpointRounding.AwayFromZero),
-                    CanBeUsedForYieldCurve = true,
+                    Yield = (double)Math.Round(currentOneYearTBill.Yield, 4, MidpointRounding.AwayFromZero),
                     BondUsed = "1 Year TBill",
                     IssueDate = currentOneYearTBill.IssueDate,
                     MaturityDate = currentOneYearTBill.MaturityDate,
-                    BenchMarkFound = true,
                     Tenure = 1
                 });
 
@@ -724,15 +722,12 @@ namespace Quotations_Board_Backend.Controllers
                             return BadRequest($"The Bond {BondWithExactTenure.IssueNumber} seems not to have an Implied Yield.");
                         }
                         var BondTenure = Math.Round((BondWithExactTenure.MaturityDate.Date - parsedDate.Date).TotalDays / 364, 4, MidpointRounding.AwayFromZero);
-                        yieldCurves.Add(new YieldCurve
+                        yieldCurveCalculations.Add(new YieldCurveCalculation
                         {
-                            BenchMarkTenor = benchmark.Key,
-                            Yield = Math.Round(impliedYield.Yield, 4, MidpointRounding.AwayFromZero),
+                            Yield = (double)Math.Round(impliedYield.Yield, 4, MidpointRounding.AwayFromZero),
                             BondUsed = BondWithExactTenure.IssueNumber,
                             IssueDate = BondWithExactTenure.IssueDate,
                             MaturityDate = BondWithExactTenure.MaturityDate,
-                            Coupon = BondWithExactTenure.CouponRate,
-                            BenchMarkFound = true,
                             Tenure = BondTenure
                         });
                         usedBondIds.Add(BondWithExactTenure.Id);
@@ -753,15 +748,12 @@ namespace Quotations_Board_Backend.Controllers
                                 return BadRequest($"The Bond {bond.IssueNumber} seems not to have an Implied Yield. This is required for Yield Curve Calculation especiliy for interpolation");
                             }
                             var BondTenure = Math.Round((bond.MaturityDate.Date - parsedDate.Date).TotalDays / 364, 4, MidpointRounding.AwayFromZero);
-                            yieldCurves.Add(new YieldCurve
+                            yieldCurveCalculations.Add(new YieldCurveCalculation
                             {
-                                BenchMarkTenor = benchmark.Key,
-                                Yield = Math.Round(impliedYield.Yield, 4, MidpointRounding.AwayFromZero),
+                                Yield = (double)Math.Round(impliedYield.Yield, 4, MidpointRounding.AwayFromZero),
                                 BondUsed = bond.IssueNumber,
                                 IssueDate = bond.IssueDate,
                                 MaturityDate = bond.MaturityDate,
-                                Coupon = bond.CouponRate,
-                                BenchMarkFound = true,
                                 Tenure = BondTenure
                             });
                             usedBondIds.Add(bond.Id);
@@ -772,7 +764,7 @@ namespace Quotations_Board_Backend.Controllers
 
 
                 // interpolate the yield curve
-                var interpolatedYieldCurve = YieldCurveHelper.InterpolateWhereNecessary(yieldCurves, tenuresThatRequireInterPolation);
+                var interpolatedYieldCurve = YieldCurveHelper.InterpolateWhereNecessary(yieldCurveCalculations, tenuresThatRequireInterPolation);
 
                 return Ok(interpolatedYieldCurve);
 

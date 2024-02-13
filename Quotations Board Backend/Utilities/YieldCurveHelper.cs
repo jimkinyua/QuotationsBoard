@@ -1,27 +1,23 @@
 public static class YieldCurveHelper
 {
-    public static List<YieldCurve> InterpolateWhereNecessary(List<YieldCurve> yieldCurveDataList, HashSet<double> tenuresThatRequireInterPolation)
+    public static List<YieldCurveCalculation> InterpolateWhereNecessary(List<YieldCurveCalculation> yieldCurveDataList, HashSet<double> tenuresThatRequireInterPolation)
     {
         yieldCurveDataList.Sort((x, y) => x.Tenure.CompareTo(y.Tenure));
         foreach (var tenureToInterpolate in tenuresThatRequireInterPolation)
         {
-            decimal m = (decimal)tenureToInterpolate;
             // Find the closest tenures before and after the tenure we want to interpolate
             var previousData = FindPreviousDataWithYield(yieldCurveDataList, tenureToInterpolate);
             var nextData = FindNextDataWithYield(yieldCurveDataList, tenureToInterpolate);
             if (previousData != null && nextData != null)
             {
                 // Perform the interpolation
-                double interpolatedYield = (double)PerformLinearInterpolation(previousData, nextData, m);
+                double interpolatedYield = PerformLinearInterpolation(previousData, nextData, tenureToInterpolate);
 
                 // Create a new YieldCurve object for the interpolated yield
-                var interpolatedYieldCurve = new YieldCurve
+                var interpolatedYieldCurve = new YieldCurveCalculation
                 {
-                    BenchMarkTenor = (int)Math.Round(tenureToInterpolate, 0), // Assuming BenchMarkTenor is an integer
-                    Yield = (decimal)interpolatedYield,
+                    Yield = interpolatedYield,
                     BondUsed = "Interpolated",
-                    // IssueDate and MaturityDate could be interpolated or left blank depending on your requirements
-                    BenchMarkFound = true,
                     Tenure = tenureToInterpolate
                 };
 
@@ -33,23 +29,6 @@ public static class YieldCurveHelper
                 yieldCurveDataList.Insert(insertIndex, interpolatedYieldCurve);
             }
         }
-        // for (int i = 0; i < yieldCurveDataList.Count; i++)
-        // {
-        //     if (IsYieldMissing(yieldCurveDataList[i]))
-        //     {
-        //         YieldCurve previousData = FindPreviousDataWithYield(yieldCurveDataList, i);
-        //         YieldCurve nextData = FindNextDataWithYield(yieldCurveDataList, i);
-
-        //         if (previousData != null && nextData != null)
-        //         {
-        //             yieldCurveDataList[i].Yield = PerformLinearInterpolation(previousData, nextData, yieldCurveDataList[i].BenchMarkTenor);
-        //             yieldCurveDataList[i].BondUsed = "Interpolated";
-        //         }
-
-        //     }
-
-
-        // }
 
         return yieldCurveDataList;
     }
@@ -94,7 +73,7 @@ public static class YieldCurveHelper
         }
         return null;
     }
-    private static bool IsYieldMissing(YieldCurve data)
+    private static bool IsYieldMissing(YieldCurveCalculation data)
     {
         return data.Yield == 0 || string.IsNullOrEmpty(data.BondUsed);
     }
@@ -117,7 +96,7 @@ public static class YieldCurveHelper
 
 
 
-    private static YieldCurve FindPreviousDataWithYield(List<YieldCurve> dataList, int currentIndex)
+    private static YieldCurveCalculation FindPreviousDataWithYield(List<YieldCurveCalculation> dataList, int currentIndex)
     {
         for (int i = currentIndex - 1; i >= 0; i--)
         {
@@ -128,9 +107,9 @@ public static class YieldCurveHelper
         }
         return null; // No previous data found
     }
-    public static YieldCurve FindPreviousDataWithYield(List<YieldCurve> yieldCurveDataList, double tenureToInterpolate)
+    public static YieldCurveCalculation FindPreviousDataWithYield(List<YieldCurveCalculation> yieldCurveDataList, double tenureToInterpolate)
     {
-        YieldCurve previousData = null;
+        YieldCurveCalculation previousData = null;
 
         // Loop backwards through the sorted list to find the previous data point with a yield
         for (int i = yieldCurveDataList.Count - 1; i >= 0; i--)
@@ -147,9 +126,9 @@ public static class YieldCurveHelper
         return previousData;
     }
 
-    public static YieldCurve FindNextDataWithYield(List<YieldCurve> yieldCurveDataList, double tenureToInterpolate)
+    public static YieldCurveCalculation FindNextDataWithYield(List<YieldCurveCalculation> yieldCurveDataList, double tenureToInterpolate)
     {
-        YieldCurve nextData = null;
+        YieldCurveCalculation nextData = null;
 
         // Loop through the sorted list to find the next data point with a yield
         foreach (var yieldCurve in yieldCurveDataList)
@@ -167,7 +146,7 @@ public static class YieldCurveHelper
     }
 
 
-    private static YieldCurve FindNextDataWithYield(List<YieldCurve> dataList, int currentIndex)
+    private static YieldCurveCalculation FindNextDataWithYield(List<YieldCurveCalculation> dataList, int currentIndex)
     {
         for (int i = currentIndex + 1; i < dataList.Count; i++)
         {
@@ -187,16 +166,16 @@ public static class YieldCurveHelper
     /// <param name="nextData">The data point after the target tenor.</param>
     /// <param name="targetTenor">The target tenor for which the yield is to be interpolated.</param>
     /// <returns>The interpolated yield at the target tenor.</returns>
-    private static decimal PerformLinearInterpolation(YieldCurve previousData, YieldCurve nextData, decimal targetTenor)
+    private static double PerformLinearInterpolation(YieldCurveCalculation previousData, YieldCurveCalculation nextData, double targetTenor)
     {
         // tenorDifference represents (x2 - x1), the difference in tenor between the next and previous data points.
-        var tenorDifference = nextData.BenchMarkTenor - previousData.BenchMarkTenor;
+        var tenorDifference = nextData.Tenure - previousData.Tenure;
 
         // yieldDifference represents (y2 - y1), the difference in yield between the next and previous data points.
-        decimal yieldDifference = nextData.Yield - previousData.Yield;
+        double yieldDifference = nextData.Yield - previousData.Yield;
 
         // tenorRatio represents ((x - x1) / (x2 - x1)), the proportion of the target tenor between the previous and next tenors.
-        decimal tenorRatio = (targetTenor - previousData.BenchMarkTenor) / tenorDifference;
+        double tenorRatio = (targetTenor - previousData.Tenure) / tenorDifference;
 
         // Applying the linear interpolation formula: y = y1 + ((x - x1) * (y2 - y1) / (x2 - x1))
         // where y is the interpolated yield, x is the target tenor, x1 and y1 are the tenor and yield of the previous data point,
