@@ -1,6 +1,6 @@
 public static class YieldCurveHelper
 {
-    public static List<YieldCurve> InterpolateMissingYields(List<YieldCurve> yieldCurveDataList)
+    public static List<YieldCurve> InterpolateMissingYields(List<YieldCurve> yieldCurveDataList, HashSet<double> tenuresThatRequireInterPolation)
     {
         for (int i = 0; i < yieldCurveDataList.Count; i++)
         {
