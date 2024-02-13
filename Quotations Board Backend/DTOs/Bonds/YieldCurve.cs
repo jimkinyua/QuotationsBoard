@@ -1,7 +1,7 @@
 public class YieldCurve
 {
-    public decimal BenchMarkTenor { get; set; }
-    public decimal Yield { get; set; }
+    public double BenchMarkTenor { get; set; }
+    public double Yield { get; set; }
     public Boolean CanBeUsedForYieldCurve { get; set; } = true;
     public string BondUsed { get; set; } = string.Empty;
     public DateTime IssueDate { get; set; }

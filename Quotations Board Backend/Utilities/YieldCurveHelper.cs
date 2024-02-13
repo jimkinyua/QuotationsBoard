@@ -57,7 +57,7 @@ public static class YieldCurveHelper
         var bonds = bondsWithinRange
          .Where(bond =>
          {
-             var yearsToMaturity = Math.Round((bond.MaturityDate.Date - dateInQuestion.Date).TotalDays / 364, 2, MidpointRounding.AwayFromZero);
+             var yearsToMaturity = Math.Round((bond.MaturityDate.Date - dateInQuestion.Date).TotalDays / 364, 4, MidpointRounding.AwayFromZero);
              return yearsToMaturity == tenure;
          })
          .ToList();

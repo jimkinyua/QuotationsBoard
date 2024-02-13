@@ -674,6 +674,7 @@ namespace Quotations_Board_Backend.Controllers
 
                 List<int> benchMarkTenorsForYiedCurve = new List<int> { 2, 5, 10, 15, 20, 25 };
                 HashSet<double> tenuresThatRequireInterPolation = new HashSet<double>();
+                HashSet<double> tenuresThatDoNotRequireInterpolation = new HashSet<double>();
                 HashSet<string> usedBondIds = new HashSet<string>();
 
                 // for each benchmark range, fetch the bond that is closest to the benchmark range
@@ -688,6 +689,7 @@ namespace Quotations_Board_Backend.Controllers
                     MaturityDate = currentOneYearTBill.MaturityDate,
                     Tenure = 1
                 });
+                tenuresThatDoNotRequireInterpolation.Add(1);
 
                 foreach (var benchmark in benchmarkRanges)
                 {
@@ -697,13 +699,6 @@ namespace Quotations_Board_Backend.Controllers
 
                     if (bondsWithinThisTenure.Count() == 0)
                     {
-                        // yieldCurves.Add(new YieldCurve
-                        // {
-                        //     BenchMarkTenor = benchmark.Key,
-                        //     BenchMarkFound = false,
-                        //     Yield = 0,
-                        //     Tenure = benchmark.Key
-                        // });
                         tenuresThatRequireInterPolation.Add(benchmark.Key);
                         continue;
                     }
@@ -731,6 +726,7 @@ namespace Quotations_Board_Backend.Controllers
                             Tenure = BondTenure
                         });
                         usedBondIds.Add(BondWithExactTenure.Id);
+                        tenuresThatDoNotRequireInterpolation.Add(BondTenure);
                     }
                     else
                     {
@@ -766,7 +762,41 @@ namespace Quotations_Board_Backend.Controllers
                 // interpolate the yield curve
                 var interpolatedYieldCurve = YieldCurveHelper.InterpolateWhereNecessary(yieldCurveCalculations, tenuresThatRequireInterPolation);
 
-                return Ok(interpolatedYieldCurve);
+                HashSet<double> tenuresToPlot = new HashSet<double>();
+                foreach (var interpolatedTenure in tenuresThatRequireInterPolation)
+                {
+                    tenuresToPlot.Add(interpolatedTenure);
+                }
+                foreach (var notInterpolated in tenuresThatDoNotRequireInterpolation)
+                {
+                    tenuresToPlot.Add(notInterpolated);
+                }
+
+                foreach (var tenureToPlot in tenuresToPlot)
+                {
+                    foreach (var yieldCurveCalculation in yieldCurveCalculations)
+                    {
+                        var _BondUsed = "Interpolated";
+                        if (tenuresThatDoNotRequireInterpolation.Contains(yieldCurveCalculation.Tenure))
+                        {
+                            _BondUsed = yieldCurveCalculation.BondUsed;
+                        }
+
+                        if (yieldCurveCalculation.Tenure == tenureToPlot)
+                        {
+                            yieldCurves.Add(new YieldCurve
+                            {
+                                Tenure = tenureToPlot,
+                                Yield = yieldCurveCalculation.Yield,
+                                CanBeUsedForYieldCurve = true,
+                                BondUsed = _BondUsed,
+                                BenchMarkTenor = tenureToPlot,
+                            });
+                        }
+                    }
+                }
+
+                return Ok(yieldCurves);
 
             }
 

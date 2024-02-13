@@ -1939,7 +1939,7 @@ namespace Quotations_Board_Backend.Controllers
                             YieldCurve yieldCurve = new YieldCurve
                             {
                                 BenchMarkTenor = benchmarkRange.Key,
-                                Yield = (decimal)closestBond.AverageQuotedYield,
+                                Yield = (double)closestBond.AverageQuotedYield,
                                 BondUsed = bondDetails.IssueNumber,
                                 IssueDate = bondDetails.IssueDate,
                                 MaturityDate = bondDetails.MaturityDate,
@@ -1953,7 +1953,7 @@ namespace Quotations_Board_Backend.Controllers
                     YieldCurve tBillYieldCurve = new YieldCurve
                     {
                         BenchMarkTenor = 1,
-                        Yield = (decimal)currentOneYearTBill.Yield,
+                        Yield = (double)currentOneYearTBill.Yield,
                         IssueDate = currentOneYearTBill.IssueDate,
                         MaturityDate = currentOneYearTBill.MaturityDate,
                     };
