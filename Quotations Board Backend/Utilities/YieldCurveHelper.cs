@@ -57,10 +57,11 @@ public static class YieldCurveHelper
         {
             // Then, order by OutstandingValue to break ties among those with similar differences
             bonds.OrderBy(x => x.OutstandingValue).ToList();
+            return bonds.First();
+
 
         }
-        return bonds.First();
-
+        return null;
     }
     private static bool IsYieldMissing(YieldCurve data)
     {
