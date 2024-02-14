@@ -53,10 +53,10 @@ namespace Quotations_Board_Backend.Controllers
                         return BadRequest("Bond has matured");
                     }
                     // ensure bond is an FXD
-                    if (bond.BondCategory != BondCategories.FXD)
-                    {
-                        return BadRequest("Only FXD bonds are allowed to be quoted");
-                    }
+                    // if (bond.BondCategory != BondCategories.FXD)
+                    // {
+                    //     return BadRequest("Only FXD bonds are allowed to be quoted");
+                    // }
                     Quotation quotation = new Quotation
                     {
                         BondId = newQuotation.BondId,
@@ -445,10 +445,10 @@ namespace Quotations_Board_Backend.Controllers
                         errors.Add($"Row {rowToBeginAt}: Bond ID '{bondId}' has matured.");
                     }
                     // ensure bond is an FXD
-                    if (bondExists.BondCategory != BondCategories.FXD)
-                    {
-                        errors.Add($"Row {rowToBeginAt}: Only FXD bonds are allowed to be quoted.");
-                    }
+                    // if (bondExists.BondCategory != BondCategories.FXD)
+                    // {
+                    //     errors.Add($"Row {rowToBeginAt}: Only FXD bonds are allowed to be quoted.");
+                    // }
                 }
             }
 

@@ -433,7 +433,7 @@ namespace Quotations_Board_Backend.Controllers
         // gets average statistics for all bonds (Trades only) for a specific date
         [HttpGet]
         [Route("GetAverageTradeStatistics/{For}")]
-        [Authorize(Roles = CustomRoles.SuperAdmin, AuthenticationSchemes = "Bearer")]
+        [Authorize(Roles = $"{CustomRoles.SuperAdmin},{CustomRoles.Institution}", AuthenticationSchemes = "Bearer")]
 
         public async Task<ActionResult<List<BondTradeAverageStatistic>>> GetAverageTradeStatistics(string? For = "default")
         {
