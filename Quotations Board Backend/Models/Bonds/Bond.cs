@@ -15,6 +15,7 @@ public class Bond
     public string BondType { get; set; } = null!;
     public string IssueNumber { get; set; } = null!;
     public string BondCategory { get; set; } = "IFB";
+    public Boolean IsBenchMarkBond { get; set; } = false;
     public virtual ICollection<Quotation> Quotations { get; set; } = null!;
     public virtual ICollection<ImpliedYield> ImpliedYields { get; set; } = null!;
 }

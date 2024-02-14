@@ -19,4 +19,6 @@ public class NewBondDTO
     [Required]
     public string IssueNumber { get; set; } = null!;
     public string BondCategory { get; set; } = "";
+    public Boolean IsBenchMarkBond { get; set; } = false;
+
 }

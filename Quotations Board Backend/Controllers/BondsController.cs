@@ -196,6 +196,33 @@ namespace Quotations_Board_Backend.Controllers
             return Ok(bondDTOs);
         }
 
+        // Benchmark Bonds
+        [HttpGet("BenchmarkBonds")]
+        public async Task<ActionResult<IEnumerable<BondDTO>>> GetBenchmarkBonds()
+        {
+            var bonds = await _context.Bonds.Where(b => b.IsBenchMarkBond == true).ToListAsync();
+            List<BondDTO> bondDTOs = new List<BondDTO>();
+            foreach (var bond in bonds)
+            {
+                BondDTO bondDTO = new BondDTO
+                {
+                    Id = bond.Id,
+                    Isin = bond.Isin,
+                    IssueDate = bond.IssueDate,
+                    MaturityDate = bond.MaturityDate,
+                    OutstandingValue = bond.OutstandingValue,
+                    CouponType = bond.CouponType,
+                    CouponRate = bond.CouponRate,
+                    BondType = bond.BondType,
+                    IssueNumber = bond.IssueNumber,
+                    BondCategory = bond.BondCategory,
+                    YearsRemainingToMaturity = Math.Round((bond.MaturityDate - DateTime.Now).TotalDays / 365, 2, MidpointRounding.AwayFromZero)
+                };
+                bondDTOs.Add(bondDTO);
+            }
+            return Ok(bondDTOs);
+        }
+
         // get the bond summary (trade aveges, quote averages, etc) given a bond id and date
         [HttpGet("BondPerformanceSummary/{bondId}/{date}")]
         public async Task<ActionResult<BondAverageStatistic>> GetBondPerformanceSummary(string bondId, string? date = "default")
