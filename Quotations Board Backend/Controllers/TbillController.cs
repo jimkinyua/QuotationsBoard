@@ -135,8 +135,37 @@ namespace Quotations_Board_Backend.Controllers
 
         public async Task<ActionResult<TBillDTO>> GetAllTbills()
         {
+            // If today is Sunday, Monday, Tuesday, or Wednesday, you should use the T-Bill from the previous week.
+            // If today is Thursday, Friday, or Saturday, you should use the T-Bill from the current week.
+
             try
             {
+
+                // Get today's date and the current day of the week
+                var Today = DateTime.Now;
+                DayOfWeek currentDay = Today.DayOfWeek;
+
+                // Calculate the start of the current week (Sunday)
+                var startOfCurrentWeek = Today.AddDays(-(int)Today.DayOfWeek + (int)DayOfWeek.Sunday);
+
+                // Calculate the start of the last week
+                var startOfLastWeek = startOfCurrentWeek.AddDays(-7);
+
+                // Determine the Thursday of the current week
+                var thursdayOfCurrentWeek = startOfCurrentWeek.AddDays((int)DayOfWeek.Thursday - (int)DayOfWeek.Sunday);
+
+                DateTime effectiveStartDate;
+                if (Today < thursdayOfCurrentWeek)
+                {
+                    // If today is before Thursday, use the T-Bill from the previous week
+                    effectiveStartDate = startOfLastWeek;
+                }
+                else
+                {
+                    // If today is Thursday or later, use this week's T-Bill
+                    effectiveStartDate = startOfCurrentWeek;
+                }
+
                 using (var context = new QuotationsBoardContext())
                 {
                     var tbills = await context.TBills
@@ -144,13 +173,11 @@ namespace Quotations_Board_Backend.Controllers
                     .ToListAsync();
                     Dictionary<string, CurrentTbill> currentTbills = new Dictionary<string, CurrentTbill>();
                     // foreach tbill tenor pick the one for the most recent
-                    // Most recent is the Last week depending on the day of the week
-                    var Today = DateTime.Now;
-                    var startOfLastWeek = Today.AddDays(-(int)Today.DayOfWeek - 7);
-                    var endOfLastWeek = startOfLastWeek.AddDays(6);
+
 
                     // most recent tbills are within startOfLastWeek and endOfLastWeek
-                    var mostRecentTbills = tbills.Where(x => x.IssueDate.Date >= startOfLastWeek.Date && x.IssueDate.Date <= endOfLastWeek.Date).ToList();
+                    var mostRecentTbills = tbills.Where(x => x.IssueDate.Date >= effectiveStartDate.Date && x.IssueDate.Date <= Today.Date).ToList();
+
                     if (mostRecentTbills.Count > 0)
                     {
                         foreach (var tbill in mostRecentTbills)
