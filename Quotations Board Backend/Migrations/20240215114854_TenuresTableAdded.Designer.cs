@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,10 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Quotations_Board_Backend.Migrations
 {
     [DbContext(typeof(QuotationsBoardContext))]
-    partial class QuotationsBoardContextModelSnapshot : ModelSnapshot
+    [Migration("20240215114854_TenuresTableAdded")]
+    partial class TenuresTableAdded
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -27,10 +29,6 @@ namespace Quotations_Board_Backend.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("nvarchar(450)");
 
-                    b.Property<string>("BondCategory")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<string>("BondType")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -41,9 +39,6 @@ namespace Quotations_Board_Backend.Migrations
                     b.Property<string>("CouponType")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
-
-                    b.Property<bool>("IsBenchMarkBond")
-                        .HasColumnType("bit");
 
                     b.Property<string>("Isin")
                         .IsRequired()
@@ -123,9 +118,6 @@ namespace Quotations_Board_Backend.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("TransactionID")
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<DateTime>("TransactionTime")
                         .HasColumnType("datetime2");
 
@@ -172,9 +164,6 @@ namespace Quotations_Board_Backend.Migrations
 
                     b.Property<DateTime>("TradeDate")
                         .HasColumnType("datetime2");
-
-                    b.Property<string>("TransactionID")
-                        .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime>("TransactionTime")
                         .HasColumnType("datetime2");
@@ -239,15 +228,9 @@ namespace Quotations_Board_Backend.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<DateTime>("DeactivatedAt")
-                        .HasColumnType("datetime2");
-
                     b.Property<string>("InstitutionType")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime>("ModifiedAt")
-                        .HasColumnType("datetime2");
 
                     b.Property<string>("OrganizationAddress")
                         .IsRequired()
@@ -258,10 +241,6 @@ namespace Quotations_Board_Backend.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("OrganizationName")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Status")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
@@ -580,9 +559,6 @@ namespace Quotations_Board_Backend.Migrations
                     b.Property<decimal>("SellingYield")
                         .HasColumnType("decimal(18,2)");
 
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("datetime2");
-
                     b.Property<string>("UserId")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -594,60 +570,6 @@ namespace Quotations_Board_Backend.Migrations
                     b.HasIndex("InstitutionId");
 
                     b.ToTable("Quotations");
-                });
-
-            modelBuilder.Entity("QuotationEdit", b =>
-                {
-                    b.Property<string>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<string>("BondId")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<decimal>("BuyVolume")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<decimal>("BuyingYield")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<string>("Comment")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("InstitutionId")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("QuotationId")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<string>("RejectionReason")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<decimal>("SellVolume")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<decimal>("SellingYield")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("UserId")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("QuotationId");
-
-                    b.ToTable("QuotationEdits");
                 });
 
             modelBuilder.Entity("TBill", b =>
@@ -694,9 +616,11 @@ namespace Quotations_Board_Backend.Migrations
                     b.Property<decimal>("Yield")
                         .HasColumnType("decimal(18,2)");
 
+                    b.Property<DateTime>("YieldDate")
+                        .HasColumnType("datetime2");
+
                     b.HasKey("Id");
 
-                    b.ToTable("TBills");
                     b.HasIndex("TBillId");
 
                     b.ToTable("TBillYields");
@@ -858,15 +782,15 @@ namespace Quotations_Board_Backend.Migrations
                     b.Navigation("Institution");
                 });
 
-            modelBuilder.Entity("QuotationEdit", b =>
+            modelBuilder.Entity("TBillYield", b =>
                 {
-                    b.HasOne("Quotation", "Quotation")
-                        .WithMany("QuotationEdits")
-                        .HasForeignKey("QuotationId")
+                    b.HasOne("TBill", "TBill")
+                        .WithMany("TBillYields")
+                        .HasForeignKey("TBillId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("Quotation");
+                    b.Navigation("TBill");
                 });
 
             modelBuilder.Entity("Bond", b =>
@@ -893,9 +817,9 @@ namespace Quotations_Board_Backend.Migrations
                     b.Navigation("Quotations");
                 });
 
-            modelBuilder.Entity("Quotation", b =>
+            modelBuilder.Entity("TBill", b =>
                 {
-                    b.Navigation("QuotationEdits");
+                    b.Navigation("TBillYields");
                 });
 #pragma warning restore 612, 618
         }
