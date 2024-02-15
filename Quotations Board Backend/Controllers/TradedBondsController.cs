@@ -619,7 +619,7 @@ namespace Quotations_Board_Backend.Controllers
                             {
                                 BondId = _tB.Id,
                                 BondName = _tB.Tenor.ToString() + " Days T-Bill",
-                                YearsToMaturity = _tB.MaturityDate.Date.Subtract(parsedDate.Date).TotalDays / 364,
+                                YearsToMaturity = (double) _tB.Tenor/ 364,
                                 BondCategory = "T-Bill",
                                 BondType = "T-Bill",
                                 AverageWeightedTradeYield = _tB.Yield,
@@ -640,7 +640,7 @@ namespace Quotations_Board_Backend.Controllers
                             {
                                 BondId = _tB.Id,
                                 BondName = _tB.Tenor.ToString() + " Days T-Bill",
-                                YearsToMaturity = _tB.MaturityDate.Date.Subtract(parsedDate.Date).TotalDays / 364,
+                                YearsToMaturity =(double) _tB.Tenor / 364,
                                 BondCategory = "T-Bill",
                                 BondType = "T-Bill",
                                 AverageWeightedTradeYield = _tB.Yield,
@@ -662,7 +662,7 @@ namespace Quotations_Board_Backend.Controllers
                             {
                                 BondId = _tB.Id,
                                 BondName = _tB.Tenor.ToString() + " Days T-Bill",
-                                YearsToMaturity = _tB.MaturityDate.Date.Subtract(parsedDate.Date).TotalDays / 364,
+                                YearsToMaturity = (double)_tB.Tenor / 364,
                                 BondCategory = "T-Bill",
                                 BondType = "T-Bill",
                                 AverageWeightedTradeYield = _tB.Yield,
@@ -709,7 +709,7 @@ namespace Quotations_Board_Backend.Controllers
 
 
                         var m = diffrenceBetweenSelectedDateAndMaturityDate.TotalDays / 364;
-                        var yearsToMaturity = Math.Round(m, 2, MidpointRounding.AwayFromZero);
+                        var yearsToMaturity = Math.Round(m, 4, MidpointRounding.AwayFromZero);
 
                         bondStatisticsDict[bond.Id] = new BondAverageStatistic
                         {
