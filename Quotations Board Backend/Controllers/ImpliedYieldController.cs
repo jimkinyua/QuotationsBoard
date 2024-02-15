@@ -214,6 +214,7 @@ namespace Quotations_Board_Backend.Controllers
                 var excelIssueNo = worksheet.Cell(row, 1).Value.ToString();
                 var yieldValue = worksheet.Cell(row, 2).Value.ToString();
                 var yieldDate = worksheet.Cell(row, 3).Value.ToString();
+                var yiedlValueAsFloat = float.Parse(yieldValue);
 
                 using (var dbContext = new QuotationsBoardContext())
                 {
@@ -236,7 +237,7 @@ namespace Quotations_Board_Backend.Controllers
                     var impliedYield = new ImpliedYield
                     {
                         BondId = bondExists.Id,
-                        Yield = decimal.Parse(yieldValue),
+                        Yield = (decimal) Math.Round(yiedlValueAsFloat, 4,MidpointRounding.AwayFromZero),
                         YieldDate = DateTime.Parse(yieldDate)
                     };
 
@@ -322,8 +323,8 @@ namespace Quotations_Board_Backend.Controllers
                         decimal _preImpYield = 0;
                         if (previousImpliedYield == null)
                         {
-                            continue;
-                            // return BadRequest($"No Previous Implied Yield for Bond {bond.IssueNumber}");
+                           continue;
+                           // return BadRequest($"No Previous Implied Yield for Bond {bond.IssueNumber}");
                         }
                         else
                         {
@@ -444,7 +445,7 @@ namespace Quotations_Board_Backend.Controllers
                 averageWeightedTradedYield = (averageBuyYield + averageSellYield) / 2;
             }
 
-            return averageWeightedTradedYield;
+            return Math.Round(averageWeightedTradedYield, 4, MidpointRounding.AwayFromZero);
         }
 
         private decimal CalculateAverageWeightedQuotedYield(List<Quotation> quotations)
@@ -463,7 +464,8 @@ namespace Quotations_Board_Backend.Controllers
                 averageWeightedQuotedYield = (averageBuyYield + averageSellYield) / 2;
             }
 
-            return averageWeightedQuotedYield;
+            return Math.Round(averageWeightedQuotedYield, 4, MidpointRounding.AwayFromZero);
+
         }
 
         // Confrim Implied Yield
@@ -592,7 +594,7 @@ namespace Quotations_Board_Backend.Controllers
                         {
                             BondName = bond.IssueNumber,
                             YearsToMaturity = yearsToMaturity,
-                            Yield = bondImpliedYield.Yield,
+                            Yield =  Math.Round(bondImpliedYield.Yield, 4, MidpointRounding.AwayFromZero),
                             YieldDate = bondImpliedYield.YieldDate,
                         };
                         impliedYieldDTOs.Add(impliedYieldDTO);
