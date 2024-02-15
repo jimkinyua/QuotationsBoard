@@ -41,22 +41,24 @@ namespace Quotations_Board_Backend.Controllers
                 {
                     LoginTokenDTO TokenContents = UtilityService.GetUserIdFromCurrentRequest(Request);
                     var userId = UtilityService.GetUserIdFromToken(Request);
-                    // get the bond details
+                    // Validate bond
+                    var bondValidationResult = await QuotationsHelper.ValidateBond(newQuotation.BondId);
+                    if (bondValidationResult != null)
+                    {
+                        return BadRequest(bondValidationResult);
+                    }
                     var bond = await context.Bonds.FirstOrDefaultAsync(b => b.Id == newQuotation.BondId);
                     if (bond == null)
                     {
                         return BadRequest("Invalid bond");
                     }
-                    // ensure bond is not matured
-                    if (bond.MaturityDate < DateTime.Now)
+                    // Validate quotation time (if required)
+                    if (!QuotationsHelper.IsValidQuotationTime(DateTime.Now))
                     {
-                        return BadRequest("Bond has matured");
+                        return BadRequest("Quotations past 9 am are not accepted");
                     }
-                    // ensure bond is an FXD
-                    // if (bond.BondCategory != BondCategories.FXD)
-                    // {
-                    //     return BadRequest("Only FXD bonds are allowed to be quoted");
-                    // }
+
+
                     Quotation quotation = new Quotation
                     {
                         BondId = newQuotation.BondId,
@@ -68,37 +70,13 @@ namespace Quotations_Board_Backend.Controllers
                         InstitutionId = TokenContents.InstitutionId,
                         SellVolume = newQuotation.SellVolume
                     };
-                    // Quotes Past 9 am will not be accepted
-                    // if (quotation.CreatedAt.Hour >= 9)
-                    // {
-                    //     return BadRequest("Quotations past 9 am are not accepted");
-                    // }
-                    // Ensure selling yield is not greater than buying yield
-                    if (quotation.SellingYield > quotation.BuyingYield)
-                    {
-                        return BadRequest("Selling yield cannot be greater than buying yield");
-                    }
 
-                    // ensure Selling Yield is not greater than 100
-                    if (quotation.SellingYield > 100)
+                    // Validate yields
+                    var yieldValidationResult = QuotationsHelper.ValidateYields(quotation.BuyingYield, quotation.SellingYield);
+                    if (yieldValidationResult != null)
                     {
-                        return BadRequest("Selling yield cannot be greater than 100");
+                        return BadRequest(yieldValidationResult);
                     }
-
-                    // ensure Buying Yield is not greater than 100
-                    if (quotation.BuyingYield > 100)
-                    {
-                        return BadRequest("Buying yield cannot be greater than 100");
-                    }
-
-                    // Ensure difrence between selling yield and buying yield is not greater than 1%
-                    var difference = Math.Abs(quotation.BuyingYield - quotation.SellingYield);
-                    // var percentageDifference = Math.Round((difference / quotation.BuyingYield) * 100, 2);
-                    if (difference > 1)
-                    {
-                        return BadRequest("The difference between selling yield and buying yield divided by Buying Yield, cannot be greater than 1%. The current difference is " + difference + "%");
-                    }
-
 
                     // Ensure that today this institution has not already filled a quotation for this bond
                     var existingQuotation = await context.Quotations.FirstOrDefaultAsync(q => q.InstitutionId == quotation.InstitutionId && q.BondId == quotation.BondId && q.CreatedAt.Date == quotation.CreatedAt.Date);
@@ -136,22 +114,26 @@ namespace Quotations_Board_Backend.Controllers
                             return StatusCode(201, quotation);
                         }
 
-                        decimal currentTotalWeightedYield = (quotation.BuyingYield * quotation.BuyVolume) + (quotation.SellingYield * quotation.SellVolume);
-                        decimal currentQuotationVolume = quotation.BuyVolume + quotation.SellVolume;
-                        decimal currentAverageWeightedYield = currentTotalWeightedYield / currentQuotationVolume;
-                        var change = Math.Abs(currentAverageWeightedYield - LastImpliedYield);
+                        var RemainingTenorInYearsQuotedBond = QuotationsHelper.CalculateRemainingTenor(bond.MaturityDate, quotation.CreatedAt);
 
-                        if (change > 1)
+                        // fetch the Tenure from db
+
+                        if (await QuotationsHelper.IsValidationEnabledForTenureAsync(RemainingTenorInYearsQuotedBond))
                         {
-                            return BadRequest("Quotation rejected. The current average weighted yield significantly differs from the last implied yield recorded on " + mostRecentTradingDay + ". The percentage change of " + change + "% exceeds the allowable limit of 1%");
+                            decimal currentAverageWeightedYield = QuotationsHelper.CalculateCurrentAverageWeightedYield(quotation.BuyingYield, quotation.BuyVolume, quotation.SellingYield, quotation.SellVolume);
+                            var change = Math.Abs(currentAverageWeightedYield - LastImpliedYield);
+                            if (change > 1)
+                            {
+                                return BadRequest($"Quotation Rejected: The change in yield is {change}%, which significantly differs from the last implied yield recorded on {mostRecentTradingDay}. This exceeds our allowable limit of 1%. To resolve this, please adjust your buying or selling yields to bring the change within the 1% limit and resubmit the quotation.");
+                            }
+
                         }
-                        else
-                        {
-                            // Save the quotation
-                            await context.Quotations.AddAsync(quotation);
-                            await context.SaveChangesAsync();
-                            return StatusCode(201, quotation);
-                        }
+
+                        // Save the quotation
+                        await context.Quotations.AddAsync(quotation);
+                        await context.SaveChangesAsync();
+                        return StatusCode(201, quotation);
+
 
                     }
 
@@ -184,11 +166,11 @@ namespace Quotations_Board_Backend.Controllers
                     LoginTokenDTO TokenContents = UtilityService.GetUserIdFromCurrentRequest(Request);
                     var userId = UtilityService.GetUserIdFromToken(Request);
 
-                    // Is it past 9 am?
-                    // if (DateTime.Now.Hour >= 9)
-                    // {
-                    //     return BadRequest("Bulk upload quotations past 9 am are not accepted");
-                    // }
+                    // Validate quotation time (if required)
+                    if (!QuotationsHelper.IsValidQuotationTime(DateTime.Now))
+                    {
+                        return BadRequest("Quotations past 9 am are not accepted");
+                    }
 
                     // Read the excel file
                     var excelFile = bulkUpload.ExcelFile;
@@ -209,7 +191,7 @@ namespace Quotations_Board_Backend.Controllers
                             {
 
                                 db.Database.EnsureCreated();
-                                var quotes = ReadExcelData(sheetWhereDataIsLocated);
+                                var quotes = await ReadExcelDataAsync(sheetWhereDataIsLocated);
                                 await db.Quotations.AddRangeAsync(quotes);
                                 await db.SaveChangesAsync();
                                 return StatusCode(201);
@@ -229,7 +211,7 @@ namespace Quotations_Board_Backend.Controllers
 
         }
 
-        private List<Quotation> ReadExcelData(IXLWorksheet worksheet)
+        private async Task<List<Quotation>> ReadExcelDataAsync(IXLWorksheet worksheet)
         {
             var quotationRows = new List<Quotation>();
             int rowCount = CountNonEmptyRows(worksheet);
@@ -249,7 +231,7 @@ namespace Quotations_Board_Backend.Controllers
 
                 if (isEmptyRow) continue; // Skip this row if it's empty
 
-                var bondId = worksheet.Cell(row, 1).Value.ToString();
+                var bondId = worksheet.Cell(row, 1).Value.ToString().Trim();
                 using (var dbContext = new QuotationsBoardContext())
                 {
                     dbContext.Database.EnsureCreated();
@@ -276,31 +258,10 @@ namespace Quotations_Board_Backend.Controllers
                     var sellYield = decimal.Parse(worksheet.Cell(row, 4).Value.ToString());
                     var buyVolume = int.Parse(worksheet.Cell(row, 3).Value.ToString());
                     var sellVolume = int.Parse(worksheet.Cell(row, 5).Value.ToString());
-
-                    //  Ensure selling yield is not greater than 100
-                    if (sellYield > 100)
+                    var yieldValidationResult = QuotationsHelper.ValidateYields(buyYield, sellYield);
+                    if (yieldValidationResult != null)
                     {
-                        throw new Exception($"Selling yield cannot be greater than 100.");
-                    }
-
-
-                    //  Ensure buying yield is not greater than 100
-                    if (buyYield > 100)
-                    {
-                        throw new Exception($"Buying yield cannot be greater than 100.");
-                    }
-
-                    if (sellYield > buyYield)
-                    {
-                        throw new Exception($"Selling yield cannot be greater than buying yield.");
-                    }
-
-                    // Ensure difrence between selling yield and buying yield is not greater than 1%
-                    var difference = buyYield - sellYield;
-
-                    if (difference > 1)
-                    {
-                        throw new Exception($"The difference between selling yield and buying yield cannot be greater than 1%. The current difference is {difference}% check on row {row}");
+                        throw new Exception(yieldValidationResult);
                     }
 
                     // Enusre that today this institution has not already filled a quotation for this bond
@@ -344,20 +305,18 @@ namespace Quotations_Board_Backend.Controllers
                             quotationRows.Add(quote);
                             continue;
                         }
-                        decimal currentTotalWeightedYield = (buyYield * buyVolume) + (sellYield * sellVolume);
-                        decimal currentQuotationVolume = buyVolume + sellVolume;
-                        decimal currentAverageWeightedYield = currentTotalWeightedYield / currentQuotationVolume;
-                        var change = Math.Abs(currentAverageWeightedYield - LastImpliedYield);
-                        // var percentgeChange = (change / averageRecentWeightedYield) * 100;
-                        // if greater than 1% reject the quotation
-                        if (change > 1)
+                        var RemainingTenorInYearsQuotedBond = QuotationsHelper.CalculateRemainingTenor(bond.MaturityDate, quote.CreatedAt);
+                        if (await QuotationsHelper.IsValidationEnabledForTenureAsync(RemainingTenorInYearsQuotedBond))
                         {
-                            throw new Exception($"Quotation at row {row} rejected. The current average weighted yield ({currentAverageWeightedYield:0.##}%) significantly differs from the last implied yield ({LastImpliedYield:0.##}%) recorded on {mostRecentTradingDay:yyyy-MM-dd}. The percentage change of {change:0.##}% exceeds the allowable limit of 1%.");
+                            decimal currentAverageWeightedYield = QuotationsHelper.CalculateCurrentAverageWeightedYield(quote.BuyingYield, quote.BuyVolume, quote.SellingYield, quote.SellVolume);
+                            var change = Math.Abs(currentAverageWeightedYield - LastImpliedYield);
+                            if (change > 1)
+                            {
+                                throw new Exception($"Quotation at row {row} rejected. The current average weighted yield ({currentAverageWeightedYield:0.##}%) significantly differs from the last implied yield ({LastImpliedYield:0.##}%) recorded on {mostRecentTradingDay:yyyy-MM-dd}. The percentage change of {change:0.##}% exceeds the allowable limit of 1%.");
+                            }
                         }
-                        else
-                        {
-                            quotationRows.Add(quote);
-                        }
+                        quotationRows.Add(quote);
+
 
                     }
                 }
@@ -506,23 +465,8 @@ namespace Quotations_Board_Backend.Controllers
                         return BadRequest("A quotation edit has already been made for this quotation that has not been approved or rejected");
                     }
 
-                    // Essure selling Yield is not greater than 100
-                    if (editQuotation.SellYield > 100)
-                    {
-                        return BadRequest("Selling yield cannot be greater than 100");
-                    }
-
-                    // Essure buying Yield is not greater than 100
-                    if (editQuotation.BuyYield > 100)
-                    {
-                        return BadRequest("Buying yield cannot be greater than 100");
-                    }
-
-                    // Ensure selling yield is not greater than buying yield
-                    if (editQuotation.SellYield > editQuotation.BuyYield)
-                    {
-                        return BadRequest("Selling yield cannot be greater than buying yield");
-                    }
+                    // Validate yields
+                    var yieldValidationResult = QuotationsHelper.ValidateYields(editQuotation.BuyYield, editQuotation.SellYield);
 
                     // Ensure difrence between selling yield and buying yield is not greater than 1%
                     var difference = editQuotation.BuyYield - editQuotation.SellYield;
