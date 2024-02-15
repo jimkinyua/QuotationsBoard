@@ -12,7 +12,7 @@ namespace Quotations_Board_Backend.Controllers
         // create a new Tenure 
 
         [HttpPost]
-        [HttpPost("CreateTenure")]
+        [Route("CreateTenure")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
@@ -62,7 +62,7 @@ namespace Quotations_Board_Backend.Controllers
         // update a Tenure
 
         [HttpPut]
-        [HttpPut("UpdateTenure")]
+        [Route("UpdateTenure")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -142,7 +142,7 @@ namespace Quotations_Board_Backend.Controllers
         // get all Tenures that are not deleted
 
         [HttpGet]
-        [HttpGet("GetTenures")]
+        [Route("GetTenures")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
 
@@ -174,7 +174,7 @@ namespace Quotations_Board_Backend.Controllers
         // disable validation for a Tenure
 
         [HttpPost]
-        [HttpPost("DisableValidation/{tenureId}")]
+        [Route("DisableValidation/{tenureId}")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]

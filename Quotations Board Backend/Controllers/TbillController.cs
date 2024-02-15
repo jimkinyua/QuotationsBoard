@@ -13,7 +13,7 @@ namespace Quotations_Board_Backend.Controllers
         [HttpPost("AddNewTbill")]
         [ProducesResponseType(StatusCodes.Status201Created)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        [Authorize(Roles = CustomRoles.SuperAdmin, AuthenticationSchemes = "Bearer")]
+        //[Authorize(Roles = CustomRoles.SuperAdmin, AuthenticationSchemes = "Bearer")]
 
         public async Task<ActionResult> AddNewTbill([FromBody] NewTbill newTbill)
         {
@@ -131,7 +131,7 @@ namespace Quotations_Board_Backend.Controllers
         [HttpGet("GetAllTbills")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        [Authorize(AuthenticationSchemes = "Bearer")]
+       // [Authorize(AuthenticationSchemes = "Bearer")]
 
         public async Task<ActionResult<TBillDTO>> GetAllTbills()
         {
