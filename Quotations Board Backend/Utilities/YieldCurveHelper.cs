@@ -36,21 +36,32 @@ public static class YieldCurveHelper
     public static IEnumerable<Bond> GetBondsInTenorRange(IEnumerable<Bond> bonds, KeyValuePair<int, (double, double)> benchmark, HashSet<string> usedBondIds, DateTime dateInQuestion)
     {
         // Define the benchmark range
-        var lowerBound = benchmark.Value.Item1;
-        var upperBound = benchmark.Value.Item2;
-        var midpoint = (lowerBound + upperBound) / 2;
+        double lowerBound = benchmark.Value.Item1;
+        double upperBound = benchmark.Value.Item2;
 
-        var yieldsInTenorRange = bonds
-               .Where(bond =>
-               {
-                   var yearsToMaturity = (bond.MaturityDate.Date - dateInQuestion.Date).TotalDays / 364;
-                   return yearsToMaturity >= lowerBound && yearsToMaturity <= upperBound;
-               })
-               .ToList();
-
-        return yieldsInTenorRange;
-
+        // Filter bonds within the tenor range
+        return bonds.Where(bond => IsBondInTenorRange(bond, dateInQuestion, lowerBound, upperBound)).ToList();
     }
+    
+    // This separate method calculates if a bond is within the tenor range
+    private static bool IsBondInTenorRange(Bond bond, DateTime dateInQuestion, double lowerBound, double upperBound)
+    {
+        double yearsToMaturity = CalculateYearsToMaturity(bond.MaturityDate, dateInQuestion);
+        // Use Math.Floor to truncate the decimal part of yearsToMaturity
+        double truncatedYearsToMaturity = Math.Floor(yearsToMaturity);
+        if (truncatedYearsToMaturity >= lowerBound && truncatedYearsToMaturity <= upperBound)
+        {
+            return true; 
+        }
+         return false;
+    }
+
+    // This method calculates the years to maturity for a bond
+    private static double CalculateYearsToMaturity(DateTime maturityDate, DateTime currentDate)
+    {
+        return (maturityDate.Date - currentDate.Date).TotalDays / 364;
+    }
+
 
     public static Bond? GetBondWithExactTenure(IEnumerable<Bond> bondsWithinRange, double tenure, DateTime dateInQuestion)
     {
@@ -189,7 +200,7 @@ public static class YieldCurveHelper
     public static Dictionary<int, (double, double)> GenerateBenchmarkRanges(double maxTenure)
     {
         Dictionary<int, (double, double)> benchmarkRanges = new Dictionary<int, (double, double)>();
-        int startYear = 2; // Assuming you want to start from 2 years
+        int startYear = 1; // Assuming you want to start from 2 years
 
         for (int year = startYear; year <= Math.Ceiling(maxTenure); year++)
         {

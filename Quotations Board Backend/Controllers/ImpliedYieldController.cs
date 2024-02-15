@@ -697,7 +697,7 @@ namespace Quotations_Board_Backend.Controllers
                     //var closestBond = GetClosestBond(fXdBonds, benchmark, usedBondIds, parsedDate);
                     var bondsWithinThisTenure = YieldCurveHelper.GetBondsInTenorRange(fXdBonds, benchmark, usedBondIds, parsedDate);
 
-                    if (bondsWithinThisTenure.Count() == 0)
+                    if (bondsWithinThisTenure.Count() == 0 && benchmark.Key !=1)
                     {
                         tenuresThatRequireInterPolation.Add(benchmark.Key);
                         continue;
