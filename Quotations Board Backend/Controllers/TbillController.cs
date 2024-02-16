@@ -25,17 +25,24 @@ namespace Quotations_Board_Backend.Controllers
 
             try
             {
+                var (startOfCycle, endOfCycle) = TBillHelper.GetTBillCycle(DateTime.Now);
                 var IssueNo = Guid.NewGuid().ToString().Substring(0, 6);
-                // Maturity date is calculated from Issue date and Tenor
                 var maturityDate = newTbill.IssueDate.AddMonths((int)newTbill.Tenor);
                 using (var context = new QuotationsBoardContext())
                 {
-                    // Make sure that for this IssueDate, there is no TBill with the same Tenor
-                    var _existingTbill = await context.TBills.FirstOrDefaultAsync(x => x.IssueDate.Date == newTbill.IssueDate.Date && x.Tenor == newTbill.Tenor);
-                    if (_existingTbill != null)
+
+
+                    var existingTbill = await context.TBills
+                    .AnyAsync(t => t.Tenor == newTbill.Tenor &&
+                    t.IssueDate >= startOfCycle &&
+                    t.IssueDate < endOfCycle);
+
+                    if (existingTbill)
                     {
-                        return BadRequest("TBill with same Tenor already exists for this Issue Date");
+                        // If a T-Bill with the same tenor in the same cycle exists, return an error
+                        return BadRequest("A T-Bill with the same tenor for the current cycle already exists.");
                     }
+
                     TBill newTBill = new TBill
                     {
                         IssueNumber = IssueNo, //newTbill.IssueNumber,
@@ -131,40 +138,17 @@ namespace Quotations_Board_Backend.Controllers
         [HttpGet("GetAllTbills")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
-       // [Authorize(AuthenticationSchemes = "Bearer")]
+        // [Authorize(AuthenticationSchemes = "Bearer")]
 
         public async Task<ActionResult<TBillDTO>> GetAllTbills()
         {
-            // If today is Sunday, Monday, Tuesday, or Wednesday, you should use the T-Bill from the previous week.
-            // If today is Thursday, Friday, or Saturday, you should use the T-Bill from the current week.
 
             try
             {
-
-                // Get today's date and the current day of the week
                 var Today = DateTime.Now;
-                DayOfWeek currentDay = Today.DayOfWeek;
+                var (startOfCycle, endOfCycle) = TBillHelper.GetTBillCycle(Today);
+                var (startOfLastWeek, endOfLastWeek) = TBillHelper.GetPreviousTBillCycle(Today);
 
-                // Calculate the start of the current week (Sunday)
-                var startOfCurrentWeek = Today.AddDays(-(int)Today.DayOfWeek + (int)DayOfWeek.Sunday);
-
-                // Calculate the start of the last week
-                var startOfLastWeek = startOfCurrentWeek.AddDays(-7);
-
-                // Determine the Thursday of the current week
-                var thursdayOfCurrentWeek = startOfCurrentWeek.AddDays((int)DayOfWeek.Thursday - (int)DayOfWeek.Sunday);
-
-                DateTime effectiveStartDate;
-                if (Today < thursdayOfCurrentWeek)
-                {
-                    // If today is before Thursday, use the T-Bill from the previous week
-                    effectiveStartDate = startOfLastWeek;
-                }
-                else
-                {
-                    // If today is Thursday or later, use this week's T-Bill
-                    effectiveStartDate = startOfCurrentWeek;
-                }
 
                 using (var context = new QuotationsBoardContext())
                 {
@@ -176,7 +160,7 @@ namespace Quotations_Board_Backend.Controllers
 
 
                     // most recent tbills are within startOfLastWeek and endOfLastWeek
-                    var mostRecentTbills = tbills.Where(x => x.IssueDate.Date >= effectiveStartDate.Date && x.IssueDate.Date <= Today.Date).ToList();
+                    var mostRecentTbills = tbills.Where(x => x.IssueDate.Date >= startOfCycle.Date && x.IssueDate.Date <= Today.Date).ToList();
 
                     if (mostRecentTbills.Count > 0)
                     {
