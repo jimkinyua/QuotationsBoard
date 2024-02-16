@@ -596,13 +596,14 @@ namespace Quotations_Board_Backend.Controllers
                 {
                     db.Database.EnsureCreated();
                     var allNotMaturedBonds = await db.Bonds.Where(b => b.MaturityDate.Date > parsedDate.Date).ToListAsync();
-                    DateTime LastWeekRelativeToSelectedDate = parsedDate.AddDays(-7);
-                    DateTime startOfLastWeek = LastWeekRelativeToSelectedDate.AddDays(-(int)LastWeekRelativeToSelectedDate.DayOfWeek); // Sunday
-                    DateTime endOfLastWeek = LastWeekRelativeToSelectedDate.AddDays(6 - (int)LastWeekRelativeToSelectedDate.DayOfWeek); // Saturday
+                    var (startOfCycle, endOfCycle) = TBillHelper.GetCurrentTBillCycle(parsedDate);
+                    // DateTime LastWeekRelativeToSelectedDate = parsedDate.AddDays(-7);
+                    // DateTime startOfLastWeek = LastWeekRelativeToSelectedDate.AddDays(-(int)LastWeekRelativeToSelectedDate.DayOfWeek); // Sunday
+                    // DateTime endOfLastWeek = LastWeekRelativeToSelectedDate.AddDays(6 - (int)LastWeekRelativeToSelectedDate.DayOfWeek); // Saturday
 
                     var LastWeeksTBill = db.TBills
-                                           .Where(t => t.IssueDate.Date >= startOfLastWeek.Date
-                                                       && t.IssueDate.Date <= endOfLastWeek.Date
+                                           .Where(t => t.IssueDate.Date >= startOfCycle.Date
+                                                       && t.IssueDate.Date <= endOfCycle.Date
                                                        && t.Tenor <= 364)
                                                        .ToList();
                     foreach (var _tB in LastWeeksTBill)
@@ -619,10 +620,10 @@ namespace Quotations_Board_Backend.Controllers
                             {
                                 BondId = _tB.Id,
                                 BondName = _tB.Tenor.ToString() + " Days T-Bill",
-                                YearsToMaturity = (double) _tB.Tenor/ 364,
+                                YearsToMaturity = (double)_tB.Tenor / 364,
                                 BondCategory = "T-Bill",
                                 BondType = "T-Bill",
-                                AverageWeightedTradeYield =(decimal) _tB.Yield,
+                                AverageWeightedTradeYield = (decimal)_tB.Yield,
                                 AverageWeightedQuotedYield = (decimal)_tB.Yield,
                                 ISIN = "T-Bill"
                             };
@@ -640,7 +641,7 @@ namespace Quotations_Board_Backend.Controllers
                             {
                                 BondId = _tB.Id,
                                 BondName = _tB.Tenor.ToString() + " Days T-Bill",
-                                YearsToMaturity =(double) _tB.Tenor / 364,
+                                YearsToMaturity = (double)_tB.Tenor / 364,
                                 BondCategory = "T-Bill",
                                 BondType = "T-Bill",
                                 AverageWeightedTradeYield = (decimal)_tB.Yield,
