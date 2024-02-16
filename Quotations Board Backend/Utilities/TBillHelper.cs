@@ -30,9 +30,9 @@ public static class TBillHelper
         return effectiveStartDate;
     }
 
-    public static (DateTime cycleStart, DateTime cycleEnd) GetTBillCycle(DateTime date)
+    public static (DateTime cycleStart, DateTime cycleEnd) GetCurrentTBillCycle(DateTime date)
     {
-        // Find the number for Thursday (which is 4)
+        // Find the number for Wednesday (which is 3)
         int numberForThursday = (int)DayOfWeek.Thursday;
 
         // Find the number for the current day of the week
@@ -47,10 +47,10 @@ public static class TBillHelper
         // Use modulo to wrap around the week if necessary (to stay within 0-6 range)
         int daysUntilThursday = differencePlusWeek % 7;
 
-        DateTime cycleEnd = date.AddDays(daysUntilThursday);
+        DateTime cycleEnd = date.AddDays(daysUntilThursday-1);
 
-        // If the given date is Thursday, it is the end of the cycle, so no need to add days
-        if (date.DayOfWeek == DayOfWeek.Thursday)
+        // If the given date is Wednesday, it is the end of the cycle, so no need to add days
+        if (date.DayOfWeek == DayOfWeek.Wednesday)
         {
             cycleEnd = date;
         }
@@ -63,26 +63,10 @@ public static class TBillHelper
 
     public static (DateTime cycleStart, DateTime cycleEnd) GetPreviousTBillCycle(DateTime date)
     {
-        // Find the number for Thursday (which is 4)
-        int numberForThursday = (int)DayOfWeek.Thursday;
 
-        // Find the number for the current day of the week
-        int numberForCurrentDay = (int)date.DayOfWeek;
-
-        // Calculate the difference in days between the current day and the last Thursday
-        // This might be negative if the current day is after Thursday, so we add 7 and then take modulo 7 to correct it
-        int differenceToLastThursday = (numberForCurrentDay - numberForThursday + 7) % 7;
-
-        // If today is Thursday, differenceToLastThursday will be 0, meaning we don't need to subtract any days to get to Thursday
-        // Otherwise, we subtract the difference to get to the last Thursday
-        DateTime currentCycleEnd = date.AddDays(-differenceToLastThursday);
-
-        // The cycle starts on the Friday of the same week as the last Thursday
-        DateTime currentCycleStart = currentCycleEnd.AddDays(-6);
-
-        // To get the previous cycle, subtract 7 days from the start and end of the current cycle
-        DateTime previousCycleEnd = currentCycleEnd.AddDays(-7);
-        DateTime previousCycleStart = currentCycleStart.AddDays(-7);
+        var (startOfCycle, endOfCycle) = GetCurrentTBillCycle(date);
+        var previousCycleStart = startOfCycle.AddDays(-7);
+        var previousCycleEnd = endOfCycle.AddDays(-7);
 
         return (previousCycleStart, previousCycleEnd);
     }

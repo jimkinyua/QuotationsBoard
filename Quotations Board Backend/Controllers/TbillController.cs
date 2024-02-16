@@ -25,9 +25,9 @@ namespace Quotations_Board_Backend.Controllers
 
             try
             {
-                var (startOfCycle, endOfCycle) = TBillHelper.GetTBillCycle(DateTime.Now);
+                var (startOfCycle, endOfCycle) = TBillHelper.GetCurrentTBillCycle(newTbill.IssueDate);
                 var IssueNo = Guid.NewGuid().ToString().Substring(0, 6);
-                var maturityDate = newTbill.IssueDate.AddMonths((int)newTbill.Tenor);
+                var maturityDate = newTbill.IssueDate.AddDays((int)newTbill.Tenor);
                 using (var context = new QuotationsBoardContext())
                 {
 
@@ -35,12 +35,12 @@ namespace Quotations_Board_Backend.Controllers
                     var existingTbill = await context.TBills
                     .AnyAsync(t => t.Tenor == newTbill.Tenor &&
                     t.IssueDate >= startOfCycle &&
-                    t.IssueDate < endOfCycle);
+                    t.IssueDate <= endOfCycle);
 
                     if (existingTbill)
                     {
                         // If a T-Bill with the same tenor in the same cycle exists, return an error
-                        return BadRequest("A T-Bill with the same tenor for the current cycle already exists.");
+                        return BadRequest("A T-Bill with the same tenor for the week beginning " + startOfCycle.ToString("dd/MM/yyyy") + " and ending " + endOfCycle.ToString("dd/MM/yyyy") + " already exists.");
                     }
 
                     TBill newTBill = new TBill
@@ -146,7 +146,7 @@ namespace Quotations_Board_Backend.Controllers
             try
             {
                 var Today = DateTime.Now;
-                var (startOfCycle, endOfCycle) = TBillHelper.GetTBillCycle(Today);
+                var (startOfCycle, endOfCycle) = TBillHelper.GetCurrentTBillCycle(Today);
                 var (startOfLastWeek, endOfLastWeek) = TBillHelper.GetPreviousTBillCycle(Today);
 
 
@@ -160,7 +160,7 @@ namespace Quotations_Board_Backend.Controllers
 
 
                     // most recent tbills are within startOfLastWeek and endOfLastWeek
-                    var mostRecentTbills = tbills.Where(x => x.IssueDate.Date >= startOfCycle.Date && x.IssueDate.Date <= Today.Date).ToList();
+                    var mostRecentTbills = tbills.Where(x => x.IssueDate.Date >= startOfCycle.Date && x.IssueDate.Date <= endOfCycle.Date).ToList();
 
                     if (mostRecentTbills.Count > 0)
                     {
