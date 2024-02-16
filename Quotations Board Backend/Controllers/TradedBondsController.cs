@@ -622,8 +622,8 @@ namespace Quotations_Board_Backend.Controllers
                                 YearsToMaturity = (double) _tB.Tenor/ 364,
                                 BondCategory = "T-Bill",
                                 BondType = "T-Bill",
-                                AverageWeightedTradeYield = _tB.Yield,
-                                AverageWeightedQuotedYield = _tB.Yield,
+                                AverageWeightedTradeYield =(decimal) _tB.Yield,
+                                AverageWeightedQuotedYield = (decimal)_tB.Yield,
                                 ISIN = "T-Bill"
                             };
                         }
@@ -643,8 +643,8 @@ namespace Quotations_Board_Backend.Controllers
                                 YearsToMaturity =(double) _tB.Tenor / 364,
                                 BondCategory = "T-Bill",
                                 BondType = "T-Bill",
-                                AverageWeightedTradeYield = _tB.Yield,
-                                AverageWeightedQuotedYield = _tB.Yield,
+                                AverageWeightedTradeYield = (decimal)_tB.Yield,
+                                AverageWeightedQuotedYield = (decimal)_tB.Yield,
                                 ISIN = "T-Bill"
 
                             };
@@ -665,8 +665,8 @@ namespace Quotations_Board_Backend.Controllers
                                 YearsToMaturity = (double)_tB.Tenor / 364,
                                 BondCategory = "T-Bill",
                                 BondType = "T-Bill",
-                                AverageWeightedTradeYield = _tB.Yield,
-                                AverageWeightedQuotedYield = _tB.Yield,
+                                AverageWeightedTradeYield = (decimal)_tB.Yield,
+                                AverageWeightedQuotedYield = (decimal)_tB.Yield,
                                 ISIN = "T-Bill"
 
                             };

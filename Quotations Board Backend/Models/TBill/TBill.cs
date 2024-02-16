@@ -12,5 +12,5 @@ public class TBill
     public double Tenor { get; set; }
     public string CreatedBy { get; set; } = null!;
     public DateTime CreatedOn { get; set; }
-    public decimal Yield { get; set; }
+    public double Yield { get; set; }
 }

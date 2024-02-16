@@ -789,10 +789,10 @@ namespace Quotations_Board_Backend.Controllers
                             yieldCurves.Add(new YieldCurve
                             {
                                 Tenure = tenureToPlot,
-                                Yield = yieldCurveCalculation.Yield,
+                                Yield = (double)(decimal)yieldCurveCalculation.Yield,
                                 CanBeUsedForYieldCurve = true,
                                 BondUsed = _BondUsed,
-                                BenchMarkTenor = tenureToPlot,
+                                BenchMarkTenor = (double)(decimal)tenureToPlot,
                             });
                         }
                     }

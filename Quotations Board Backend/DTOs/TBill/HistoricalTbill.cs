@@ -6,8 +6,8 @@ public class HistoricalTbill
     public DateTime MaturityDate { get; set; }
     public double Tenor { get; set; }
     public DateTime CreatedOn { get; set; }
-    public decimal Yield { get; set; }
-    public decimal Variance { get; set; }
-    public decimal LastAuction { get; set; }
+    public double Yield { get; set; }
+    public double Variance { get; set; }
+    public double LastAuction { get; set; }
 }
 
