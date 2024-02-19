@@ -634,25 +634,20 @@ namespace Quotations_Board_Backend.Controllers
                     }
                     parsedDate = targetTradeDate.Date;
                 }
+                var (startOfCycle, endOfCycle) = TBillHelper.GetCurrentTBillCycle(parsedDate);
 
-                var LastWeek = parsedDate.AddDays(-7);
-                DateTime startOfLastWeek = LastWeek.AddDays(-(int)LastWeek.DayOfWeek + (int)DayOfWeek.Monday);
-                DateTime endOfLastWeek = LastWeek.AddDays(+(int)LastWeek.DayOfWeek + (int)DayOfWeek.Sunday);
                 // Fetch all Bonds  under FXD Category that are not matured
                 var fXdBonds = _db.Bonds.Where(b => b.BondCategory == "FXD" && b.MaturityDate.Date > parsedDate.Date).ToList();
                 // var fXdBonds = _db.Bonds.Where(b => b.MaturityDate.Date > DateTime.Now.Date).ToList();
 
                 var currentOneYearTBill = _db.TBills
-                .Where(t => t.Tenor >= 364
-                && t.IssueDate.Date >= startOfLastWeek.Date
-                && t.IssueDate.Date <= endOfLastWeek.Date
-                )
-                .OrderByDescending(t => t.IssueDate)
+                .Where(t => t.Tenor >= 364 && t.IssueDate.Date >= startOfCycle.Date && t.IssueDate.Date <= endOfCycle.Date)
                 .FirstOrDefault();
+
 
                 if (currentOneYearTBill == null)
                 {
-                    return BadRequest("It Seems there is no 1 Year TBill for the last week");
+                    return BadRequest("Seems the 1 year TBill for the current week starting from " + startOfCycle + " to " + endOfCycle + " does not exist.");
                 }
 
                 var bondDates = fXdBonds
