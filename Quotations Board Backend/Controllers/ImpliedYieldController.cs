@@ -734,7 +734,7 @@ namespace Quotations_Board_Backend.Controllers
                             var impliedYield = _db.ImpliedYields.Where(i => i.BondId == bond.Id && i.YieldDate.Date == parsedDate.Date).FirstOrDefault();
                             if (impliedYield == null)
                             {
-                                return BadRequest($"The Bond {bond.IssueNumber} seems not to have an Implied Yield. This is required for Yield Curve Calculation especiliy for interpolation");
+                                return BadRequest($"The Bond {bond.IssueNumber} seems not to have an Implied Yield for the date {parsedDate}");
                             }
                             var BondTenure = Math.Round((bond.MaturityDate.Date - parsedDate.Date).TotalDays / 364, 4, MidpointRounding.AwayFromZero);
                             yieldCurveCalculations.Add(new YieldCurveCalculation
