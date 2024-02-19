@@ -237,7 +237,7 @@ namespace Quotations_Board_Backend.Controllers
                     var impliedYield = new ImpliedYield
                     {
                         BondId = bondExists.Id,
-                        Yield = (decimal)Math.Round(yiedlValueAsFloat, 4, MidpointRounding.AwayFromZero),
+                        Yield = Math.Round(yiedlValueAsFloat, 4, MidpointRounding.AwayFromZero),
                         YieldDate = DateTime.Parse(yieldDate)
                     };
 
@@ -285,7 +285,7 @@ namespace Quotations_Board_Backend.Controllers
 
 
 
-                    decimal AllowedMarginOfError = 1M;
+                    double AllowedMarginOfError = 1;
                     var curentIneYearTBill = currentTbills.Where(t => t.Tenor >= 364).FirstOrDefault();
                     var oneYearTBillForLastWeek = lastWeekTbills.Where(t => t.Tenor >= 364).FirstOrDefault();
                     if (curentIneYearTBill == null)
@@ -316,7 +316,7 @@ namespace Quotations_Board_Backend.Controllers
                         //         && i.YieldDate.Date >= startOfLastWeekButOne.Date
                         //         && i.YieldDate.Date <= endOfLastWeekButOne.Date)
                         // .OrderByDescending(i => i.YieldDate).FirstOrDefault();
-                        decimal _preImpYield = 0;
+                        double _preImpYield = 0;
                         if (previousImpliedYield == null)
                         {
                             continue;
@@ -333,7 +333,7 @@ namespace Quotations_Board_Backend.Controllers
                         bool isQuotedWithinMargin = IsWithinMargin(averageWeightedQuotedYield, _preImpYield, AllowedMarginOfError);
                         bool isTradedWithinMargin = IsWithinMargin(averageWeightedTradedYield, _preImpYield, AllowedMarginOfError);
 
-                        decimal impliedYield;
+                        double impliedYield;
                         int selectedYield;
                         var reasonForSelection = string.Empty;
 
@@ -388,7 +388,7 @@ namespace Quotations_Board_Backend.Controllers
             }
         }
 
-        private bool IsWithinMargin(decimal value, decimal previousYiedld, decimal maxAllowwdDiffrence)
+        private bool IsWithinMargin(double value, double previousYiedld, double maxAllowwdDiffrence)
         {
             var diffrence = Math.Abs(value - previousYiedld);
             if (diffrence <= maxAllowwdDiffrence)
@@ -425,16 +425,16 @@ namespace Quotations_Board_Backend.Controllers
         }
 
         // Calculates the Average Weighted Traded Yield for a Bond
-        private decimal CalculateAverageWeightedTradedYield(List<BondTradeLine> bondTradeLines)
+        private double CalculateAverageWeightedTradedYield(List<BondTradeLine> bondTradeLines)
         {
-            decimal averageWeightedTradedYield = 0;
-            decimal totalWeightedBuyYield = bondTradeLines.Where(x => x.Side == "BUY" && x.ExecutedSize >= 50000000).Sum(x => x.Yield * x.ExecutedSize);
-            decimal totalWeightedSellYield = bondTradeLines.Where(x => x.Side == "SELL" && x.ExecutedSize >= 50000000).Sum(x => x.Yield * x.ExecutedSize);
-            decimal totalBuyVolume = bondTradeLines.Where(x => x.Side == "BUY" && x.ExecutedSize >= 50000000).Sum(x => x.ExecutedSize);
-            decimal totalSellVolume = bondTradeLines.Where(x => x.Side == "SELL" && x.ExecutedSize >= 50000000).Sum(x => x.ExecutedSize);
+            double averageWeightedTradedYield = 0;
+            double totalWeightedBuyYield = bondTradeLines.Where(x => x.Side == "BUY" && x.ExecutedSize >= 50000000).Sum(x => x.Yield * x.ExecutedSize);
+            double totalWeightedSellYield = bondTradeLines.Where(x => x.Side == "SELL" && x.ExecutedSize >= 50000000).Sum(x => x.Yield * x.ExecutedSize);
+            double totalBuyVolume = bondTradeLines.Where(x => x.Side == "BUY" && x.ExecutedSize >= 50000000).Sum(x => x.ExecutedSize);
+            double totalSellVolume = bondTradeLines.Where(x => x.Side == "SELL" && x.ExecutedSize >= 50000000).Sum(x => x.ExecutedSize);
 
-            decimal averageBuyYield = totalBuyVolume > 0 ? totalWeightedBuyYield / totalBuyVolume : 0;
-            decimal averageSellYield = totalSellVolume > 0 ? totalWeightedSellYield / totalSellVolume : 0;
+            double averageBuyYield = totalBuyVolume > 0 ? totalWeightedBuyYield / totalBuyVolume : 0;
+            double averageSellYield = totalSellVolume > 0 ? totalWeightedSellYield / totalSellVolume : 0;
 
             if (totalBuyVolume > 0 || totalSellVolume > 0)
             {
@@ -444,16 +444,16 @@ namespace Quotations_Board_Backend.Controllers
             return Math.Round(averageWeightedTradedYield, 4, MidpointRounding.AwayFromZero);
         }
 
-        private decimal CalculateAverageWeightedQuotedYield(List<Quotation> quotations)
+        private double CalculateAverageWeightedQuotedYield(List<Quotation> quotations)
         {
-            decimal averageWeightedQuotedYield = 0;
-            decimal totalWeightedBuyYield = quotations.Where(x => x.BuyVolume >= 50000000).Sum(x => x.BuyingYield * x.BuyVolume);
-            decimal totalWeightedSellYield = quotations.Where(x => x.SellVolume >= 50000000).Sum(x => x.SellingYield * x.SellVolume);
-            decimal totalBuyVolume = quotations.Where(x => x.BuyVolume >= 50000000).Sum(x => x.BuyVolume);
-            decimal totalSellVolume = quotations.Where(x => x.SellVolume >= 50000000).Sum(x => x.SellVolume);
+            double averageWeightedQuotedYield = 0;
+            double totalWeightedBuyYield = quotations.Where(x => x.BuyVolume >= 50000000).Sum(x => x.BuyingYield * x.BuyVolume);
+            double totalWeightedSellYield = quotations.Where(x => x.SellVolume >= 50000000).Sum(x => x.SellingYield * x.SellVolume);
+            double totalBuyVolume = quotations.Where(x => x.BuyVolume >= 50000000).Sum(x => x.BuyVolume);
+            double totalSellVolume = quotations.Where(x => x.SellVolume >= 50000000).Sum(x => x.SellVolume);
 
-            decimal averageBuyYield = totalBuyVolume > 0 ? totalWeightedBuyYield / totalBuyVolume : 0;
-            decimal averageSellYield = totalSellVolume > 0 ? totalWeightedSellYield / totalSellVolume : 0;
+            double averageBuyYield = totalBuyVolume > 0 ? totalWeightedBuyYield / totalBuyVolume : 0;
+            double averageSellYield = totalSellVolume > 0 ? totalWeightedSellYield / totalSellVolume : 0;
 
             if (totalBuyVolume > 0 || totalSellVolume > 0)
             {
@@ -498,7 +498,7 @@ namespace Quotations_Board_Backend.Controllers
                         {
                             return BadRequest($"Bond with Id {impliedYield.BondId} does not exist or has matured");
                         }
-                        decimal YieldToSave = 0;
+                        double YieldToSave = 0;
                         var selectedImpliedYield = impliedYield.SelectedYield;
                         if (selectedImpliedYield == SelectedYield.PreviousYield)
                         {

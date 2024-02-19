@@ -7,7 +7,7 @@ public class ImpliedYield
     [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
     public string Id { get; set; } = null!;
     public DateTime YieldDate { get; set; }
-    public decimal Yield { get; set; }
+    public double Yield { get; set; }
     [ForeignKey("BondId")]
     public Bond Bond { get; set; } = null!;
     public string BondId { get; set; } = null!;

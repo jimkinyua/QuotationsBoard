@@ -8,10 +8,10 @@ public static class QuotationsHelper
         return (decimal)Math.Floor(remainingTenorInYears);
     }
 
-    public static decimal CalculateCurrentAverageWeightedYield(decimal buyYield, decimal buyVolume, decimal sellYield, decimal sellVolume)
+    public static double CalculateCurrentAverageWeightedYield(double buyYield, double buyVolume, double sellYield, double sellVolume)
     {
-        decimal currentTotalWeightedYield = (buyYield * buyVolume) + (sellYield * sellVolume);
-        decimal currentQuotationVolume = buyVolume + sellVolume;
+        double currentTotalWeightedYield = (buyYield * buyVolume) + (sellYield * sellVolume);
+        double currentQuotationVolume = buyVolume + sellVolume;
         return currentTotalWeightedYield / currentQuotationVolume;
     }
     public static async Task<bool> IsValidationEnabledForTenureAsync(decimal tenor)
@@ -61,7 +61,7 @@ public static class QuotationsHelper
         return true;
     }
 
-    public static string ValidateYields(decimal buyingYield, decimal sellingYield)
+    public static string ValidateYields(double buyingYield, double sellingYield)
     {
         if (sellingYield > buyingYield)
         {

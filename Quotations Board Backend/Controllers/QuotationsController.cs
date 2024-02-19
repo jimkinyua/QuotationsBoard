@@ -106,7 +106,7 @@ namespace Quotations_Board_Backend.Controllers
                                                     .OrderByDescending(q => q.CreatedAt)
                                                     .Select(q => q.BuyingYield)
                                                     .FirstOrDefault();
-                        if (LastImpliedYield == default(decimal))
+                        if (LastImpliedYield == default(double))
                         {
                             // Save the quotation
                             await context.Quotations.AddAsync(quotation);
@@ -120,7 +120,7 @@ namespace Quotations_Board_Backend.Controllers
 
                         if (await QuotationsHelper.IsValidationEnabledForTenureAsync(RemainingTenorInYearsQuotedBond))
                         {
-                            decimal currentAverageWeightedYield = QuotationsHelper.CalculateCurrentAverageWeightedYield(quotation.BuyingYield, quotation.BuyVolume, quotation.SellingYield, quotation.SellVolume);
+                            double currentAverageWeightedYield = QuotationsHelper.CalculateCurrentAverageWeightedYield(quotation.BuyingYield, quotation.BuyVolume, quotation.SellingYield, quotation.SellVolume);
                             var change = Math.Abs(currentAverageWeightedYield - LastImpliedYield);
                             if (change > 1)
                             {
@@ -254,8 +254,8 @@ namespace Quotations_Board_Backend.Controllers
                     }
 
                     // Ensure selling yield is not greater than buying yield
-                    var buyYield = decimal.Parse(worksheet.Cell(row, 2).Value.ToString());
-                    var sellYield = decimal.Parse(worksheet.Cell(row, 4).Value.ToString());
+                    var buyYield = double.Parse(worksheet.Cell(row, 2).Value.ToString());
+                    var sellYield = double.Parse(worksheet.Cell(row, 4).Value.ToString());
                     var buyVolume = int.Parse(worksheet.Cell(row, 3).Value.ToString());
                     var sellVolume = int.Parse(worksheet.Cell(row, 5).Value.ToString());
                     var yieldValidationResult = QuotationsHelper.ValidateYields(buyYield, sellYield);
@@ -280,9 +280,9 @@ namespace Quotations_Board_Backend.Controllers
                     Quotation quote = new Quotation
                     {
                         BondId = bond.Id,
-                        BuyingYield = decimal.Parse(worksheet.Cell(row, 2).Value.ToString()),
+                        BuyingYield = double.Parse(worksheet.Cell(row, 2).Value.ToString()),
                         BuyVolume = int.Parse(worksheet.Cell(row, 3).Value.ToString()),
-                        SellingYield = decimal.Parse(worksheet.Cell(row, 4).Value.ToString()),
+                        SellingYield = double.Parse(worksheet.Cell(row, 4).Value.ToString()),
                         SellVolume = int.Parse(worksheet.Cell(row, 5).Value.ToString()),
                         UserId = UtilityService.GetUserIdFromToken(Request),
                         CreatedAt = DateTime.Now,
@@ -300,7 +300,7 @@ namespace Quotations_Board_Backend.Controllers
                             .OrderByDescending(q => q.CreatedAt)
                             .Select(q => q.BuyingYield)
                             .FirstOrDefault();
-                        if (LastImpliedYield == default(decimal))
+                        if (LastImpliedYield == default(double))
                         {
                             quotationRows.Add(quote);
                             continue;
@@ -308,7 +308,7 @@ namespace Quotations_Board_Backend.Controllers
                         var RemainingTenorInYearsQuotedBond = QuotationsHelper.CalculateRemainingTenor(bond.MaturityDate, quote.CreatedAt);
                         if (await QuotationsHelper.IsValidationEnabledForTenureAsync(RemainingTenorInYearsQuotedBond))
                         {
-                            decimal currentAverageWeightedYield = QuotationsHelper.CalculateCurrentAverageWeightedYield(quote.BuyingYield, quote.BuyVolume, quote.SellingYield, quote.SellVolume);
+                            double currentAverageWeightedYield = QuotationsHelper.CalculateCurrentAverageWeightedYield(quote.BuyingYield, quote.BuyVolume, quote.SellingYield, quote.SellVolume);
                             var change = Math.Abs(currentAverageWeightedYield - LastImpliedYield);
                             if (change > 1)
                             {
@@ -1837,7 +1837,7 @@ namespace Quotations_Board_Backend.Controllers
                         var totalSellVolume = quotationsForBond.Sum(x => x.SellVolume);
                         var weightedSellingYield = quotationsForBond.Sum(x => x.SellingYield * x.SellVolume) / totalSellVolume;
                         var totalQuotes = quotationsForBond.Count;
-                        var averageWeightedYield = (weightedBuyingYield + weightedSellingYield) / 2;
+                        double averageWeightedYield = (weightedBuyingYield + weightedSellingYield) / 2;
                         BondAndAverageQuotedYield bondAndAverageQuotedYield = new BondAndAverageQuotedYield
                         {
                             BondId = bondQuotes.Key,

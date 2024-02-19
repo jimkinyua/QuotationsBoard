@@ -1,12 +1,12 @@
 public class QuoteStatistic
 {
-    public decimal TotalSellingYield { get; set; }
-    public decimal TotalBuyingYield { get; set; }
-    public decimal AverageSellYield { get; set; }
-    public decimal AverageBuyYield { get; set; }
-    public decimal AverageYield { get; set; }
-    public decimal TotalQuotations { get; set; }
-    public decimal TotalBuyVolume { get; set; }
-    public decimal TotalSellVolume { get; set; }
+    public double TotalSellingYield { get; set; }
+    public double TotalBuyingYield { get; set; }
+    public double AverageSellYield { get; set; }
+    public double AverageBuyYield { get; set; }
+    public double AverageYield { get; set; }
+    public double TotalQuotations { get; set; }
+    public double TotalBuyVolume { get; set; }
+    public double TotalSellVolume { get; set; }
 
 }

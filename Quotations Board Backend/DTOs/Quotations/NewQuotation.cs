@@ -7,15 +7,15 @@ public class NewQuotation
     [Required]
     [Range(0, 100)]
     [ExactDecimalPlaces(4)]
-    public decimal BuyYield { get; set; }
+    public double BuyYield { get; set; }
     [Required]
     [Range(0, 100)]
     [ExactDecimalPlaces(4)]
-    public decimal SellYield { get; set; }
+    public double SellYield { get; set; }
     [Required]
-    public decimal BuyVolume { get; set; } = 50000;
+    public double BuyVolume { get; set; } = 50000;
     [Required]
-    public decimal SellVolume { get; set; } = 50000;
+    public double SellVolume { get; set; } = 50000;
 
 }
 

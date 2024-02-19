@@ -623,9 +623,9 @@ namespace Quotations_Board_Backend.Controllers
                                 YearsToMaturity = (double)_tB.Tenor / 364,
                                 BondCategory = "T-Bill",
                                 BondType = "T-Bill",
-                                AverageWeightedTradeYield = (decimal)_tB.Yield,
-                                AverageWeightedQuotedYield = (decimal)_tB.Yield,
-                                DaysImpliedYield = (decimal)_tB.Yield,
+                                AverageWeightedTradeYield = _tB.Yield,
+                                AverageWeightedQuotedYield = _tB.Yield,
+                                DaysImpliedYield = _tB.Yield,
                                 ISIN = "T-Bill"
                             };
                         }
@@ -645,9 +645,9 @@ namespace Quotations_Board_Backend.Controllers
                                 YearsToMaturity = (double)_tB.Tenor / 364,
                                 BondCategory = "T-Bill",
                                 BondType = "T-Bill",
-                                AverageWeightedTradeYield = (decimal)_tB.Yield,
-                                AverageWeightedQuotedYield = (decimal)_tB.Yield,
-                                DaysImpliedYield = (decimal)_tB.Yield,
+                                AverageWeightedTradeYield = _tB.Yield,
+                                AverageWeightedQuotedYield = _tB.Yield,
+                                DaysImpliedYield = _tB.Yield,
                                 ISIN = "T-Bill"
 
                             };
@@ -668,9 +668,9 @@ namespace Quotations_Board_Backend.Controllers
                                 YearsToMaturity = (double)_tB.Tenor / 364,
                                 BondCategory = "T-Bill",
                                 BondType = "T-Bill",
-                                AverageWeightedTradeYield = (decimal)_tB.Yield,
-                                AverageWeightedQuotedYield = (decimal)_tB.Yield,
-                                DaysImpliedYield = (decimal)_tB.Yield,
+                                AverageWeightedTradeYield = _tB.Yield,
+                                AverageWeightedQuotedYield = _tB.Yield,
+                                DaysImpliedYield = _tB.Yield,
                                 ISIN = "T-Bill"
 
                             };
@@ -689,7 +689,7 @@ namespace Quotations_Board_Backend.Controllers
                         .OrderByDescending(i => i.YieldDate)
                         .FirstOrDefault();
 
-                        decimal currentImplied = 0;
+                        double currentImplied = 0;
                         var stringImplied = "Not Yet Calculated";
 
                         // get implied yield for the bond as at the selected date
@@ -768,10 +768,10 @@ namespace Quotations_Board_Backend.Controllers
                             var averageCombinedVolume = totalCombinedVolume / totalQuotesCount;
 
                             // Initialize yields
-                            decimal totalWeightedBuyYield = 0;
-                            decimal totalWeightedSellYield = 0;
-                            decimal averageWeightedSellYield = 0;
-                            decimal averageWeightedBuyYield = 0;
+                            double totalWeightedBuyYield = 0;
+                            double totalWeightedSellYield = 0;
+                            double averageWeightedSellYield = 0;
+                            double averageWeightedBuyYield = 0;
 
                             // Compute weighted buy yield only if buy volume is sufficient
                             if (_quotedBuyVolume >= 50000000)
@@ -787,7 +787,7 @@ namespace Quotations_Board_Backend.Controllers
                                 averageWeightedSellYield = totalWeightedSellYield / _quotedSellVolume;
                             }
 
-                            decimal averageTotalWeightedYield = 0;
+                            double averageTotalWeightedYield = 0;
                             var count = 0;
                             if (_quotedBuyVolume >= 50000000) { averageTotalWeightedYield += averageWeightedBuyYield; count++; }
                             if (_quotedSellVolume >= 50000000) { averageTotalWeightedYield += averageWeightedSellYield; count++; }
@@ -831,7 +831,7 @@ namespace Quotations_Board_Backend.Controllers
 
                                 var yieldByVolume = bond_trade_line.Where(x => x.Side == "BUY" && x.ExecutedSize >= 50000000).Sum(x => x.Yield * x.ExecutedSize);
                                 var _totalBuyExecutedVolume = bond_trade_line.Where(x => x.Side == "BUY" && x.ExecutedSize >= 50000000).Sum(x => x.ExecutedSize);
-                                var averageWeightedBuyYield = _totalBuyExecutedVolume > 0 ? yieldByVolume / _totalBuyExecutedVolume : 0;
+                                double averageWeightedBuyYield = _totalBuyExecutedVolume > 0 ? yieldByVolume / _totalBuyExecutedVolume : 0;
 
                                 var totalBuyExecutedVolume = bond_trade_line.Where(x => x.Side == "BUY" && x.ExecutedSize >= 50000000).Sum(x => x.ExecutedSize);
                                 var totalTradeCount = bond_trade_line.Count();
@@ -931,12 +931,12 @@ namespace Quotations_Board_Backend.Controllers
                 {
                     Side = side, // This will only be "BUY" due to the check above
                     SecurityId = worksheet.Cell(row, 3).Value.ToString().Trim(),
-                    ExecutedSize = decimal.Parse(worksheet.Cell(row, 4).Value.ToString()),
-                    ExecutedPrice = decimal.Parse(worksheet.Cell(row, 5).Value.ToString()),
+                    ExecutedSize = double.Parse(worksheet.Cell(row, 4).Value.ToString()),
+                    ExecutedPrice = double.Parse(worksheet.Cell(row, 5).Value.ToString()),
                     ExecutionID = worksheet.Cell(row, 6).Value.ToString(),
                     TradeDate = DateTime.Parse(worksheet.Cell(row, 13).Value.ToString()),
                     DirtyPrice = decimal.Parse(worksheet.Cell(row, 8).Value.ToString()),
-                    Yield = decimal.Parse(worksheet.Cell(row, 9).Value.ToString()),
+                    Yield = double.Parse(worksheet.Cell(row, 9).Value.ToString()),
                     TradeReportID = worksheet.Cell(row, 11).Value.ToString(),
                 };
                 UploadedTrades.Add(UploadedTrade);
