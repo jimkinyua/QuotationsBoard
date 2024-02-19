@@ -43,7 +43,7 @@ namespace Quotations_Board_Backend.Controllers
                     BondType = bond.BondType,
                     IssueNumber = bond.IssueNumber,
                     BondCategory = bond.BondCategory,
-                    YearsRemainingToMaturity = Math.Round((bond.MaturityDate - DateTime.Now).TotalDays / 365, 2, MidpointRounding.AwayFromZero)
+                    YearsRemainingToMaturity = Math.Round((bond.MaturityDate.Date - DateTime.Now.Date).TotalDays / 365, 4, MidpointRounding.AwayFromZero)
                 };
                 bondDTOs.Add(bondDTO);
             }
