@@ -237,7 +237,7 @@ namespace Quotations_Board_Backend.Controllers
                     var impliedYield = new ImpliedYield
                     {
                         BondId = bondExists.Id,
-                        Yield = (decimal) Math.Round(yiedlValueAsFloat, 4,MidpointRounding.AwayFromZero),
+                        Yield = (decimal)Math.Round(yiedlValueAsFloat, 4, MidpointRounding.AwayFromZero),
                         YieldDate = DateTime.Parse(yieldDate)
                     };
 
@@ -262,11 +262,10 @@ namespace Quotations_Board_Backend.Controllers
                 using (var db = new QuotationsBoardContext())
                 {
                     var DateInQuestion = DateTime.Now.Date;
-                    // var DateInQuestion = DateInQuestion_.AddDays(-1);
-                    var LastWeek = DateInQuestion.AddDays(-7);
 
-                    DateTime startOfLastWeek = LastWeek.AddDays(-(int)LastWeek.DayOfWeek + (int)DayOfWeek.Monday);
-                    DateTime endOfLastWeek = LastWeek.AddDays(+(int)LastWeek.DayOfWeek + (int)DayOfWeek.Sunday);
+                    var (startOfCycle, endOfCycle) = TBillHelper.GetCurrentTBillCycle(DateInQuestion);
+                    var (startOfLastWeek, endOfLastWeek) = TBillHelper.GetPreviousTBillCycle(DateInQuestion);
+
 
                     List<ComputedImpliedYield> computedImpliedYields = new List<ComputedImpliedYield>();
                     var bonds = db.Bonds.ToList();
@@ -274,31 +273,28 @@ namespace Quotations_Board_Backend.Controllers
                     var bondsNotMatured = bonds.Where(b => b.MaturityDate.Date > DateTime.Now.Date).ToList();
                     var tBillsNotMature = TBills.Where(t => t.MaturityDate.Date > DateTime.Now.Date).ToList();
 
-                    var LastWeeksTBill = tBillsNotMature
-                        .Where(t => t.IssueDate.Date >= startOfLastWeek.Date
-                                    && t.IssueDate.Date <= endOfLastWeek.Date
-                                    && t.Tenor >= 364)
+                    var currentTbills = tBillsNotMature
+                        .Where(t => t.IssueDate.Date >= startOfCycle.Date
+                                    && t.IssueDate.Date <= endOfCycle.Date)
                         .ToList();
 
-                    DateTime startOfLastWeekButOne = LastWeek.AddDays(-7).AddDays(-(int)LastWeek.DayOfWeek + (int)DayOfWeek.Monday);
-                    DateTime endOfLastWeekButOne = LastWeek.AddDays(-7).AddDays(+(int)LastWeek.DayOfWeek + (int)DayOfWeek.Sunday);
+                    var lastWeekTbills = tBillsNotMature
+                    .Where(t => t.IssueDate.Date >= startOfLastWeek.Date
+                                && t.IssueDate.Date <= endOfLastWeek.Date)
+                    .ToList();
 
-                    var lastWeekButOneTBill = tBillsNotMature
-                        .Where(t => t.IssueDate.Date >= startOfLastWeekButOne.Date
-                                    && t.IssueDate.Date <= endOfLastWeekButOne.Date
-                                    && t.Tenor >= 364)
-                        .ToList();
+
 
                     decimal AllowedMarginOfError = 1M;
-                    var oneYearTBillForLastWeek = LastWeeksTBill.Where(t => t.Tenor >= 364).FirstOrDefault();
-                    var oneYearTBillForLastWeekButOne = lastWeekButOneTBill.Where(t => t.Tenor >= 364).FirstOrDefault();
-                    if (oneYearTBillForLastWeekButOne == null)
+                    var curentIneYearTBill = currentTbills.Where(t => t.Tenor >= 364).FirstOrDefault();
+                    var oneYearTBillForLastWeek = lastWeekTbills.Where(t => t.Tenor >= 364).FirstOrDefault();
+                    if (curentIneYearTBill == null)
                     {
-                        return BadRequest("No 1 Year TBill for Last Week But One");
+                        return BadRequest("One year Tbill for the current week starting from " + startOfCycle + " to " + endOfCycle + " does not exist. This is required to calculate the variance betwwen the current and previous One Year TBill");
                     }
                     if (oneYearTBillForLastWeek == null)
                     {
-                        return BadRequest("No 1 Year TBill for Last Week");
+                        return BadRequest("One year Tbill fro teh week starting from " + startOfLastWeek + " to " + endOfLastWeek + " does not exist. This is required to calculate the variance betwwen the current and previous One Year TBill");
                     }
 
                     foreach (var bond in bondsNotMatured)
@@ -323,8 +319,8 @@ namespace Quotations_Board_Backend.Controllers
                         decimal _preImpYield = 0;
                         if (previousImpliedYield == null)
                         {
-                           continue;
-                           // return BadRequest($"No Previous Implied Yield for Bond {bond.IssueNumber}");
+                            continue;
+                            // return BadRequest($"No Previous Implied Yield for Bond {bond.IssueNumber}");
                         }
                         else
                         {
@@ -332,7 +328,7 @@ namespace Quotations_Board_Backend.Controllers
                         }
                         var QuotedAndPrevious = averageWeightedQuotedYield - _preImpYield; //previousImpliedYield.Yield;
                         var TradedAndPrevious = averageWeightedTradedYield - _preImpYield; //previousImpliedYield.Yield;
-                        var VarianceinTBills = oneYearTBillForLastWeek.Yield - oneYearTBillForLastWeekButOne.Yield;
+                        var VarianceinTBills = (curentIneYearTBill.Yield - oneYearTBillForLastWeek.Yield);
 
                         bool isQuotedWithinMargin = IsWithinMargin(averageWeightedQuotedYield, _preImpYield, AllowedMarginOfError);
                         bool isTradedWithinMargin = IsWithinMargin(averageWeightedTradedYield, _preImpYield, AllowedMarginOfError);
@@ -358,7 +354,7 @@ namespace Quotations_Board_Backend.Controllers
                         {
                             impliedYield = averageWeightedTradedYield;
                             selectedYield = SelectedYield.TradedYield;
-                            reasonForSelection = $"Selected Traded yield ({averageWeightedTradedYield}%). AveraQuoted yield is  {averageWeightedQuotedYield}%, Previous Implied Yield is {_preImpYield}%)";
+                            reasonForSelection = $"Selected Traded yield ({averageWeightedTradedYield}%). Average Quoted yield is  {averageWeightedQuotedYield}%, Previous Implied Yield is {_preImpYield}%)";
                         }
                         else
                         {
@@ -594,7 +590,7 @@ namespace Quotations_Board_Backend.Controllers
                         {
                             BondName = bond.IssueNumber,
                             YearsToMaturity = yearsToMaturity,
-                            Yield =  Math.Round(bondImpliedYield.Yield, 4, MidpointRounding.AwayFromZero),
+                            Yield = Math.Round(bondImpliedYield.Yield, 4, MidpointRounding.AwayFromZero),
                             YieldDate = bondImpliedYield.YieldDate,
                         };
                         impliedYieldDTOs.Add(impliedYieldDTO);
@@ -699,7 +695,7 @@ namespace Quotations_Board_Backend.Controllers
                     //var closestBond = GetClosestBond(fXdBonds, benchmark, usedBondIds, parsedDate);
                     var bondsWithinThisTenure = YieldCurveHelper.GetBondsInTenorRange(fXdBonds, benchmark, usedBondIds, parsedDate);
 
-                    if (bondsWithinThisTenure.Count() == 0 && benchmark.Key !=1)
+                    if (bondsWithinThisTenure.Count() == 0 && benchmark.Key != 1)
                     {
                         tenuresThatRequireInterPolation.Add(benchmark.Key);
                         continue;
