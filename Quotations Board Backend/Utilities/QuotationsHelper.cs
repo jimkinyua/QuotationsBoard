@@ -4,7 +4,7 @@ public static class QuotationsHelper
 {
     public static decimal CalculateRemainingTenor(DateTime maturityDate, DateTime createdAt)
     {
-        var remainingTenorInYears = Math.Round((maturityDate - createdAt).TotalDays / 364, 4, MidpointRounding.AwayFromZero);
+        var remainingTenorInYears = Math.Round((maturityDate.Date - createdAt.Date).TotalDays / 364, 4, MidpointRounding.AwayFromZero);
         return (decimal)Math.Floor(remainingTenorInYears);
     }
 
