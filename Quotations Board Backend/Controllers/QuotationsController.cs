@@ -1933,6 +1933,39 @@ namespace Quotations_Board_Backend.Controllers
                     }
                     // interpolate the yield curve
                     var interpolatedYieldCurve = YieldCurveHelper.InterpolateWhereNecessary(yieldCurveCalculations, tenuresThatRequireInterPolation);
+                    HashSet<double> tenuresToPlot = new HashSet<double>();
+                    foreach (var interpolatedTenure in tenuresThatRequireInterPolation)
+                    {
+                        tenuresToPlot.Add(interpolatedTenure);
+                    }
+                    foreach (var notInterpolated in tenuresThatDoNotRequireInterpolation)
+                    {
+                        tenuresToPlot.Add(notInterpolated);
+                    }
+
+                    foreach (var tenureToPlot in tenuresToPlot)
+                    {
+                        foreach (var yieldCurveCalculation in yieldCurveCalculations)
+                        {
+                            var _BondUsed = "Interpolated";
+                            if (tenuresThatDoNotRequireInterpolation.Contains(yieldCurveCalculation.Tenure))
+                            {
+                                _BondUsed = yieldCurveCalculation.BondUsed;
+                            }
+
+                            if (yieldCurveCalculation.Tenure == tenureToPlot)
+                            {
+                                yieldCurves.Add(new YieldCurve
+                                {
+                                    Tenure = tenureToPlot,
+                                    Yield = yieldCurveCalculation.Yield,
+                                    CanBeUsedForYieldCurve = true,
+                                    BondUsed = _BondUsed,
+                                    BenchMarkTenor = tenureToPlot,
+                                });
+                            }
+                        }
+                    }
                     return StatusCode(200, yieldCurves);
                 }
             }
