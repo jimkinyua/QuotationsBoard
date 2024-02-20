@@ -1898,7 +1898,7 @@ namespace Quotations_Board_Backend.Controllers
                                 };
                                 yieldCurveCalculations.Add(yieldCurve);
                                 usedBondIds.Add(BondWithExactTenure.Id);
-                                tenuresThatDoNotRequireInterpolation.Add(benchmarkRange.Key);
+                                tenuresThatDoNotRequireInterpolation.Add(BondTenure);
                             }
                             else
                             {
@@ -1910,6 +1910,11 @@ namespace Quotations_Board_Backend.Controllers
                         {
                             foreach (var bond in bondsWithinThisTenure)
                             {
+                                if (usedBondIds.Contains(bond.Id))
+                                {
+                                    continue; // Skip bonds that have already been used
+                                }
+
                                 var bondAndAverageQuotedYield = bondAndAverageQuotedYields.FirstOrDefault(b => b.BondId == bond.Id);
                                 if (bondAndAverageQuotedYield != null)
                                 {
@@ -1925,6 +1930,7 @@ namespace Quotations_Board_Backend.Controllers
                                     yieldCurveCalculations.Add(yieldCurve);
                                     usedBondIds.Add(bond.Id);
                                     tenuresThatDoNotRequireInterpolation.Add(benchmarkRange.Key);
+                                    usedBondIds.Add(bond.Id);
                                 }
                             }
                         }
