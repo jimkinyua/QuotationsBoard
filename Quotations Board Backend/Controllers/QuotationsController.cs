@@ -1929,7 +1929,7 @@ namespace Quotations_Board_Backend.Controllers
                                     };
                                     yieldCurveCalculations.Add(yieldCurve);
                                     usedBondIds.Add(bond.Id);
-                                    tenuresThatDoNotRequireInterpolation.Add(benchmarkRange.Key);
+                                    tenuresThatRequireInterPolation.Add(benchmarkRange.Key);
                                     usedBondIds.Add(bond.Id);
                                 }
                             }
