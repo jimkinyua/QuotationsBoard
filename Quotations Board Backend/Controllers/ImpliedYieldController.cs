@@ -850,7 +850,7 @@ namespace Quotations_Board_Backend.Controllers
             var midpoint = (lowerBound + upperBound) / 2;
 
 
-            List<(Bond bond, double difference, decimal OutstandingValue)> bondComparisons = new List<(Bond, double, decimal)>();
+            List<(Bond bond, double difference, double OutstandingValue)> bondComparisons = new List<(Bond, double, double)>();
             foreach (var bond in bonds)
             {
                 // is bond maturiity within the range?
