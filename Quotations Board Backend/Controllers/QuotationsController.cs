@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Globalization;
 
 namespace Quotations_Board_Backend.Controllers
 {
@@ -1785,13 +1786,21 @@ namespace Quotations_Board_Backend.Controllers
                 DateTime fromDate = DateTime.Now;
                 if (From == "default")
                 {
-                    fromDate = DateTime.Now;
+                    fromDate = DateTime.Now.AddDays(-1);
                 }
                 else
                 {
-                    var parsedDate = DateTime.Parse(From);
+
+                    string[] formats = { "dd/MM/yyyy", "yyyy-MM-dd", "MM/dd/yyyy", "dd-MM-yyyy", "dd/MM/yyyy HH:mm:ss", "yyyy-MM-dd HH:mm:ss", "MM/dd/yyyy HH:mm:ss", "dd-MM-yyyy HH:mm:ss" };
+                    DateTime parsedDate;
+                    bool success = DateTime.TryParseExact(From, formats, CultureInfo.InvariantCulture, DateTimeStyles.None, out parsedDate);
+                    if (!success)
+                    {
+                        return BadRequest("The date format is invalid");
+                    }
+
                     // is date valid?
-                    if (fromDate == DateTime.MinValue)
+                    if (parsedDate == DateTime.MinValue)
                     {
                         return BadRequest("Invalid date");
                     }
@@ -1822,7 +1831,7 @@ namespace Quotations_Board_Backend.Controllers
                     YieldCurve tBillYieldCurve = new YieldCurve
                     {
                         BenchMarkTenor = 1,
-                        Yield = (double)(decimal)(double)currentOneYearTBill.Yield,
+                        Yield = currentOneYearTBill.Yield,
                         IssueDate = currentOneYearTBill.IssueDate,
                         MaturityDate = currentOneYearTBill.MaturityDate,
                     };
@@ -1858,11 +1867,7 @@ namespace Quotations_Board_Backend.Controllers
                     {
                         Bond? BondWithExactTenure = null;
 
-                        foreach (var bondAndAverageQuotedYield in bondAndAverageQuotedYields)
-                        {
-
-                        }
-
+                        var bondsWithinThisTenure = YieldCurveHelper.GetBondsInTenorRange(fXdBonds, benchmark, usedBondIds, parsedDate);
 
                     }
 
