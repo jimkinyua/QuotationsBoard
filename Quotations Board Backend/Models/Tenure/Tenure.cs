@@ -8,7 +8,7 @@ public class Tenure
     public string Id { get; set; } = null!;
     public string Name { get; set; } = null!;
     public decimal Tenor { get; set; }
-    public decimal MaximumAmount { get; set; }
+    public double MaximumAmount { get; set; }
     public string? CreatedBy { get; set; }
     public string? UpdatedBy { get; set; }
     public DateTime CreatedAt { get; set; }
