@@ -1816,7 +1816,10 @@ namespace Quotations_Board_Backend.Controllers
                     HashSet<double> tenuresThatRequireInterPolation = new HashSet<double>();
                     HashSet<double> tenuresThatDoNotRequireInterpolation = new HashSet<double>();
                     HashSet<string> usedBondIds = new HashSet<string>();
+                    List<YieldCurveCalculation> yieldCurveCalculations = new List<YieldCurveCalculation>();
+
                     var (startofCycle, endOfCycle) = TBillHelper.GetCurrentTBillCycle(fromDate);
+                    var bondsNotMatured = context.Bonds.Where(b => b.MaturityDate > fromDate).ToList();
 
                     var currentOneYearTBill = context.TBills
                     .Where(t => t.IssueDate >= startofCycle && t.IssueDate <= endOfCycle)
@@ -1828,15 +1831,15 @@ namespace Quotations_Board_Backend.Controllers
                         return BadRequest("It Seems there is no 1 Year TBill for the cycle beggining from " + startofCycle + " to " + endOfCycle);
                     }
 
-                    YieldCurve tBillYieldCurve = new YieldCurve
+                    YieldCurveCalculation tBillYieldCurve = new YieldCurveCalculation
                     {
-                        BenchMarkTenor = 1,
+                        Tenure = 1,
                         Yield = currentOneYearTBill.Yield,
                         IssueDate = currentOneYearTBill.IssueDate,
                         MaturityDate = currentOneYearTBill.MaturityDate,
                     };
 
-                    yieldCurves.Add(tBillYieldCurve);
+                    yieldCurveCalculations.Add(tBillYieldCurve);
 
                     var quotations = await context.Quotations.Include(x => x.Institution).Where(q => q.CreatedAt.Date == fromDate.Date).ToListAsync();
                     var groupedQuotations = quotations.GroupBy(x => x.BondId);
@@ -1867,10 +1870,69 @@ namespace Quotations_Board_Backend.Controllers
                     {
                         Bond? BondWithExactTenure = null;
 
-                        var bondsWithinThisTenure = YieldCurveHelper.GetBondsInTenorRange(fXdBonds, benchmark, usedBondIds, parsedDate);
+                        var bondsWithinThisTenure = YieldCurveHelper.GetBondsInTenorRange(bondsNotMatured, benchmarkRange, usedBondIds, fromDate);
+                        if (bondsWithinThisTenure.Count() == 0 && benchmarkRange.Key != 1)
+                        {
+                            tenuresThatRequireInterPolation.Add(benchmarkRange.Key);
+                            continue;
+                        }
+                        else
+                        {
+                            BondWithExactTenure = YieldCurveHelper.GetBondWithExactTenure(bondsWithinThisTenure, benchmarkRange.Value.Item1, fromDate);
+                        }
+
+                        if (BondWithExactTenure != null)
+                        {
+                            // was this bond quoted? some may have excat tenure but not quoted
+                            var bondAndAverageQuotedYield = bondAndAverageQuotedYields.FirstOrDefault(b => b.BondId == BondWithExactTenure.Id);
+                            if (bondAndAverageQuotedYield != null)
+                            {
+                                var BondTenure = Math.Round((BondWithExactTenure.MaturityDate.Date - fromDate.Date).TotalDays / 364, 4, MidpointRounding.AwayFromZero);
+
+                                YieldCurveCalculation yieldCurve = new YieldCurveCalculation
+                                {
+                                    Tenure = BondTenure,
+                                    Yield = bondAndAverageQuotedYield.AverageQuotedYield,
+                                    IssueDate = BondWithExactTenure.IssueDate,
+                                    MaturityDate = BondWithExactTenure.MaturityDate,
+                                };
+                                yieldCurveCalculations.Add(yieldCurve);
+                                usedBondIds.Add(BondWithExactTenure.Id);
+                                tenuresThatDoNotRequireInterpolation.Add(benchmarkRange.Key);
+                            }
+                            else
+                            {
+                                // we need to interpolate
+                                tenuresThatRequireInterPolation.Add(benchmarkRange.Key);
+                            }
+                        }
+                        else
+                        {
+                            foreach (var bond in bondsWithinThisTenure)
+                            {
+                                var bondAndAverageQuotedYield = bondAndAverageQuotedYields.FirstOrDefault(b => b.BondId == bond.Id);
+                                if (bondAndAverageQuotedYield != null)
+                                {
+                                    var BondTenure = Math.Round((bond.MaturityDate.Date - fromDate.Date).TotalDays / 364, 4, MidpointRounding.AwayFromZero);
+
+                                    YieldCurveCalculation yieldCurve = new YieldCurveCalculation
+                                    {
+                                        Tenure = BondTenure,
+                                        Yield = bondAndAverageQuotedYield.AverageQuotedYield,
+                                        IssueDate = bond.IssueDate,
+                                        MaturityDate = bond.MaturityDate,
+                                    };
+                                    yieldCurveCalculations.Add(yieldCurve);
+                                    usedBondIds.Add(bond.Id);
+                                    tenuresThatDoNotRequireInterpolation.Add(benchmarkRange.Key);
+                                }
+                            }
+                        }
+
 
                     }
-
+                    // interpolate the yield curve
+                    var interpolatedYieldCurve = YieldCurveHelper.InterpolateWhereNecessary(yieldCurveCalculations, tenuresThatRequireInterPolation);
                     return StatusCode(200, yieldCurves);
                 }
             }
