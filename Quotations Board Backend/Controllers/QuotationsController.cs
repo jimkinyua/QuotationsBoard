@@ -1800,27 +1800,37 @@ namespace Quotations_Board_Backend.Controllers
 
                 using (var context = new QuotationsBoardContext())
                 {
-                    var quotations = await context.Quotations.Include(x => x.Institution).Where(q => q.CreatedAt.Date == fromDate.Date).ToListAsync();
-                    var groupedQuotations = quotations.GroupBy(x => x.BondId);
+
                     List<BondAndAverageQuotedYield> bondAndAverageQuotedYields = new List<BondAndAverageQuotedYield>();
                     List<YieldCurve> yieldCurves = new List<YieldCurve>();
-
-                    var LastWeek = fromDate.AddDays(-7);
-                    DateTime startOfLastWeek = LastWeek.AddDays(-(int)LastWeek.DayOfWeek + (int)DayOfWeek.Monday);
-                    DateTime endOfLastWeek = LastWeek.AddDays(+(int)LastWeek.DayOfWeek + (int)DayOfWeek.Sunday);
+                    Dictionary<int, (double, double)> benchmarkRanges = YieldCurveHelper.GetBenchmarkRanges(fromDate);
+                    HashSet<double> tenuresThatRequireInterPolation = new HashSet<double>();
+                    HashSet<double> tenuresThatDoNotRequireInterpolation = new HashSet<double>();
+                    HashSet<string> usedBondIds = new HashSet<string>();
+                    var (startofCycle, endOfCycle) = TBillHelper.GetCurrentTBillCycle(fromDate);
 
                     var currentOneYearTBill = context.TBills
-                        .Where(t => t.Tenor >= 364
-                        && t.IssueDate.Date >= startOfLastWeek.Date
-                        && t.IssueDate.Date <= endOfLastWeek.Date
-                        )
+                    .Where(t => t.IssueDate >= startofCycle && t.IssueDate <= endOfCycle)
                     .OrderByDescending(t => t.IssueDate)
                     .FirstOrDefault();
 
                     if (currentOneYearTBill == null)
                     {
-                        return BadRequest("It Seems there is no 1 Year TBill for the last week");
+                        return BadRequest("It Seems there is no 1 Year TBill for the cycle beggining from " + startofCycle + " to " + endOfCycle);
                     }
+
+                    YieldCurve tBillYieldCurve = new YieldCurve
+                    {
+                        BenchMarkTenor = 1,
+                        Yield = (double)(decimal)(double)currentOneYearTBill.Yield,
+                        IssueDate = currentOneYearTBill.IssueDate,
+                        MaturityDate = currentOneYearTBill.MaturityDate,
+                    };
+
+                    yieldCurves.Add(tBillYieldCurve);
+
+                    var quotations = await context.Quotations.Include(x => x.Institution).Where(q => q.CreatedAt.Date == fromDate.Date).ToListAsync();
+                    var groupedQuotations = quotations.GroupBy(x => x.BondId);
 
                     foreach (var bondQuotes in groupedQuotations)
                     {
@@ -1832,12 +1842,8 @@ namespace Quotations_Board_Backend.Controllers
                         var RemainingTenor = (bondDetails.MaturityDate - fromDate.Date).TotalDays / 364;
 
                         var quotationsForBond = bondQuotes.ToList();
-                        var totalBuyVolume = quotationsForBond.Sum(x => x.BuyVolume);
-                        var weightedBuyingYield = quotationsForBond.Sum(x => x.BuyingYield * x.BuyVolume) / totalBuyVolume;
-                        var totalSellVolume = quotationsForBond.Sum(x => x.SellVolume);
-                        var weightedSellingYield = quotationsForBond.Sum(x => x.SellingYield * x.SellVolume) / totalSellVolume;
-                        var totalQuotes = quotationsForBond.Count;
-                        double averageWeightedYield = (weightedBuyingYield + weightedSellingYield) / 2;
+                        double averageWeightedYield = QuotationsHelper.CalculateBondAndAverageQuotedYield(quotationsForBond);
+
                         BondAndAverageQuotedYield bondAndAverageQuotedYield = new BondAndAverageQuotedYield
                         {
                             BondId = bondQuotes.Key,
@@ -1848,60 +1854,17 @@ namespace Quotations_Board_Backend.Controllers
 
                     }
 
-                    Dictionary<int, (double, double)> benchmarkRanges = YieldCurveHelper.GetBenchmarkRanges(fromDate);
-
-
                     foreach (var benchmarkRange in benchmarkRanges)
                     {
-                        BondAndAverageQuotedYield closestBond = null;
-                        double closestDifference = double.MaxValue;
+                        Bond? BondWithExactTenure = null;
 
                         foreach (var bondAndAverageQuotedYield in bondAndAverageQuotedYields)
                         {
-                            var bondTenor = bondAndAverageQuotedYield.BondTenor;
-                            if (bondTenor >= benchmarkRange.Value.Item1 && bondTenor <= benchmarkRange.Value.Item2)
-                            {
-                                // Find the bond closest to the middle of the benchmark range
-                                var midPoint = (benchmarkRange.Value.Item1 + benchmarkRange.Value.Item2) / 2;
-                                var difference = Math.Abs(midPoint - bondTenor);
-                                if (difference < closestDifference)
-                                {
-                                    closestDifference = difference;
-                                    closestBond = bondAndAverageQuotedYield;
-                                }
-                            }
-                        }
-
-                        if (closestBond != null)
-                        {
-                            // Retrieve additional bond details from the database/context if needed
-                            var bondDetails = await context.Bonds.FirstOrDefaultAsync(b => b.Id == closestBond.BondId);
-                            decimal remainingDaysToMaturity = (decimal)(bondDetails.MaturityDate - fromDate.Date).TotalDays;
-                            decimal remainingYearsToMaturity = Math.Round(remainingDaysToMaturity / 364, 1, MidpointRounding.AwayFromZero);
-
-                            // Create a new YieldCurve DTO and fill it with the details
-                            YieldCurve yieldCurve = new YieldCurve
-                            {
-                                BenchMarkTenor = benchmarkRange.Key,
-                                Yield = (double)(decimal)(double)closestBond.AverageQuotedYield,
-                                BondUsed = bondDetails.IssueNumber,
-                                IssueDate = bondDetails.IssueDate,
-                                MaturityDate = bondDetails.MaturityDate,
-                                Coupon = bondDetails.CouponRate // Assuming there's a CouponRate field in your Bond entity
-                            };
-
-                            yieldCurves.Add(yieldCurve);
 
                         }
+
+
                     }
-                    YieldCurve tBillYieldCurve = new YieldCurve
-                    {
-                        BenchMarkTenor = 1,
-                        Yield = (double)(decimal)(double)currentOneYearTBill.Yield,
-                        IssueDate = currentOneYearTBill.IssueDate,
-                        MaturityDate = currentOneYearTBill.MaturityDate,
-                    };
-                    yieldCurves.Add(tBillYieldCurve);
 
                     return StatusCode(200, yieldCurves);
                 }

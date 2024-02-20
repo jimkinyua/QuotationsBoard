@@ -8,6 +8,18 @@ public static class QuotationsHelper
         return (decimal)Math.Floor(remainingTenorInYears);
     }
 
+    public static double CalculateBondAndAverageQuotedYield(List<Quotation> quotationsForBond)
+    {
+        var totalBuyVolume = quotationsForBond.Sum(x => x.BuyVolume);
+        var weightedBuyingYield = quotationsForBond.Sum(x => x.BuyingYield * x.BuyVolume) / totalBuyVolume;
+        var totalSellVolume = quotationsForBond.Sum(x => x.SellVolume);
+        var weightedSellingYield = quotationsForBond.Sum(x => x.SellingYield * x.SellVolume) / totalSellVolume;
+        var totalQuotes = quotationsForBond.Count;
+        double averageWeightedYield = (weightedBuyingYield + weightedSellingYield) / 2;
+        return averageWeightedYield;
+    }
+
+
     public static double CalculateCurrentAverageWeightedYield(double buyYield, double buyVolume, double sellYield, double sellVolume)
     {
         double currentTotalWeightedYield = (buyYield * buyVolume) + (sellYield * sellVolume);
