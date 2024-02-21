@@ -1784,27 +1784,27 @@ namespace Quotations_Board_Backend.Controllers
             try
             {
                 DateTime fromDate = DateTime.Now;
-                if (From == "default")
+                if (From == "default" || From == null || string.IsNullOrWhiteSpace(From))
                 {
-                    fromDate = DateTime.Now.AddDays(-1);
+                    fromDate = DateTime.Now.AddDays(-2);
                 }
                 else
                 {
 
                     string[] formats = { "dd/MM/yyyy", "yyyy-MM-dd", "MM/dd/yyyy", "dd-MM-yyyy", "dd/MM/yyyy HH:mm:ss", "yyyy-MM-dd HH:mm:ss", "MM/dd/yyyy HH:mm:ss", "dd-MM-yyyy HH:mm:ss" };
-                    DateTime parsedDate;
-                    bool success = DateTime.TryParseExact(From, formats, CultureInfo.InvariantCulture, DateTimeStyles.None, out parsedDate);
+                    DateTime targetQuoteDate;
+                    bool success = DateTime.TryParseExact(From, formats, CultureInfo.InvariantCulture, DateTimeStyles.None, out targetQuoteDate);
                     if (!success)
                     {
                         return BadRequest("The date format is invalid");
                     }
 
                     // is date valid?
-                    if (parsedDate == DateTime.MinValue)
+                    if (targetQuoteDate == DateTime.MinValue)
                     {
                         return BadRequest("Invalid date");
                     }
-                    fromDate = parsedDate;
+                    fromDate = targetQuoteDate;
                 }
 
                 using (var context = new QuotationsBoardContext())
