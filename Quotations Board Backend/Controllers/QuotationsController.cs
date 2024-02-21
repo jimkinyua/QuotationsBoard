@@ -1837,9 +1837,11 @@ namespace Quotations_Board_Backend.Controllers
                         Yield = currentOneYearTBill.Yield,
                         IssueDate = currentOneYearTBill.IssueDate,
                         MaturityDate = currentOneYearTBill.MaturityDate,
+                        BondUsed = "1 Year TBill"
                     };
 
                     yieldCurveCalculations.Add(tBillYieldCurve);
+                    tenuresThatDoNotRequireInterpolation.Add(1);
 
                     var quotations = await context.Quotations.Include(x => x.Institution).Where(q => q.CreatedAt.Date == fromDate.Date).ToListAsync();
                     var groupedQuotations = quotations.GroupBy(x => x.BondId);
@@ -1895,6 +1897,7 @@ namespace Quotations_Board_Backend.Controllers
                                     Yield = bondAndAverageQuotedYield.AverageQuotedYield,
                                     IssueDate = BondWithExactTenure.IssueDate,
                                     MaturityDate = BondWithExactTenure.MaturityDate,
+                                    BondUsed = BondWithExactTenure.Isin
                                 };
                                 yieldCurveCalculations.Add(yieldCurve);
                                 usedBondIds.Add(BondWithExactTenure.Id);
@@ -1928,9 +1931,9 @@ namespace Quotations_Board_Backend.Controllers
                                         Yield = bondAndAverageQuotedYield.AverageQuotedYield,
                                         IssueDate = bond.IssueDate,
                                         MaturityDate = bond.MaturityDate,
+                                        BondUsed = bond.Isin
                                     };
                                     yieldCurveCalculations.Add(yieldCurve);
-                                    usedBondIds.Add(bond.Id);
                                     usedBondIds.Add(bond.Id);
                                 }
                             }
