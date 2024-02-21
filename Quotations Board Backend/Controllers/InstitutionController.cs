@@ -310,29 +310,29 @@ namespace Quotations_Board_Backend.Controllers
                     var adminMessage = "";
 
                     var emailHtml = "<html><head><style>" +
-"body { font-family: Arial, sans-serif; background-color: #f5f5f5; margin: 0; padding: 0; }" +
-".container { max-width: 600px; margin: 0 auto; background-color: #ffffff; padding: 20px; }" +
-"h1 { color: #0052CC; }" + /* Blue color similar to the website's theme */
-"p { font-size: 16px; color: #555; }" +
-"a.button { " +
-"text-decoration: none; " +
-"color: #ffffff; " +
-"background-color: #0052CC; " + /* Blue button */
-"padding: 10px 20px; " +
-"border-radius: 5px; " +
-"display: inline-block; " +
-"}" +
-"a.button:hover { background-color: #003E7E; }" + /* Darker blue on hover */
-".logo { text-align: center; margin-bottom: 20px; }" +
-".footer { background-color: #0052CC; color: #ffffff; text-align: center; padding: 10px; font-size: 12px; }" +
-"</style></head><body>" +
-"<div class='container'>" +
-"<div class=\"logo\">" +
-"<img src=\\\"Images\\nselogo.png\\\" alt=\\\"Nairobi Stock Exchange Logo\\\" width=\\\"200px\\\" />" + /* Make sure to replace with actual path */
-"</div>" +
-"<h1>Application Approved</h1>" +
-"<html><head><style>" +
                                         "body { font-family: Arial, sans-serif; background-color: #f5f5f5; margin: 0; padding: 0; }" +
+                                        ".container { max-width: 600px; margin: 0 auto; background-color: #ffffff; padding: 20px; }" +
+                                        "h1 { color: #0052CC; }" + /* Blue color similar to the website's theme */
+                                        "p { font-size: 16px; color: #555; }" +
+                                        "a.button { " +
+                                        "text-decoration: none; " +
+                                        "color: #ffffff; " +
+                                        "background-color: #0052CC; " + /* Blue button */
+                                        "padding: 10px 20px; " +
+                                        "border-radius: 5px; " +
+                                        "display: inline-block; " +
+                                        "}" +
+                                        "a.button:hover { background-color: #003E7E; }" + /* Darker blue on hover */
+                                        ".logo { text-align: center; margin-bottom: 20px; }" +
+                                        ".footer { background-color: #0052CC; color: #ffffff; text-align: center; padding: 10px; font-size: 12px; }" +
+                                        "</style></head><body>" +
+                                        "<div class='container'>" +
+                                        "<div class=\"logo\">" +
+                                        "<img src=\\\"Images\\nselogo.png\\\" alt=\\\"Nairobi Stock Exchange Logo\\\" width=\\\"200px\\\" />" + /* Make sure to replace with actual path */
+                                        "</div>" +
+                                        "<h1>Application Approved</h1>" +
+                                        "<html><head><style>" +
+                                         "body { font-family: Arial, sans-serif; background-color: #f5f5f5; margin: 0; padding: 0; }" +
                                         ".container { max-width: 600px; margin: 0 auto; background-color: #ffffff; padding: 20px; }" +
                                         "h1 { color: #333; }" +
                                         "p { font-size: 16px; color: #555; }" +
@@ -355,16 +355,16 @@ namespace Quotations_Board_Backend.Controllers
                                         "<p>Best regards,</p>" +
                                         "<p>Nairobi Stock Exchange </p>" +
                                         "</div></body></html>" +
-"<a href='{{callbackUrl}}' class='button'>Set Up Your Password</a>" + /* Use the handlebars or templating language as needed */
-"<!-- More email content here -->" +
-"<div class=\"footer\">" +
-"Nairobi Stock Exchange<br>" +
-"Follow us on [social media links] | Contact us at [email address]" +
-"</div>" +
-"</div>" +
-"</body></html>";
+                                        "<a href='{{callbackUrl}}' class='button'>Set Up Your Password</a>" + /* Use the handlebars or templating language as needed */
+                                        "<!-- More email content here -->" +
+                                        "<div class=\"footer\">" +
+                                        "Nairobi Stock Exchange<br>" +
+                                        "Follow us on [social media links] | Contact us at [email address]" +
+                                        "</div>" +
+                                        "</div>" +
+                                        "</body></html>";
 
-                    await UtilityService.SendEmailAsync(institutionApplication.AdministratorEmail, adminSubject, adminMessage);
+                    await UtilityService.SendEmailAsync(institutionApplication.AdministratorEmail, adminSubject, emailHtml);
 
                     return Ok("Application Approved");
                 }
