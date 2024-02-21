@@ -1908,6 +1908,8 @@ namespace Quotations_Board_Backend.Controllers
                         }
                         else
                         {
+                            tenuresThatRequireInterPolation.Add(benchmarkRange.Key);
+
                             foreach (var bond in bondsWithinThisTenure)
                             {
                                 if (usedBondIds.Contains(bond.Id))
@@ -1929,7 +1931,6 @@ namespace Quotations_Board_Backend.Controllers
                                     };
                                     yieldCurveCalculations.Add(yieldCurve);
                                     usedBondIds.Add(bond.Id);
-                                    tenuresThatRequireInterPolation.Add(benchmarkRange.Key);
                                     usedBondIds.Add(bond.Id);
                                 }
                             }
