@@ -1819,7 +1819,8 @@ namespace Quotations_Board_Backend.Controllers
                     List<YieldCurveCalculation> yieldCurveCalculations = new List<YieldCurveCalculation>();
 
                     var (startofCycle, endOfCycle) = TBillHelper.GetCurrentTBillCycle(fromDate);
-                    var bondsNotMatured = context.Bonds.Where(b => b.MaturityDate > fromDate).ToList();
+                    var bondsNotMatured = context.Bonds.Where(b => b.BondCategory == "FXD" && b.MaturityDate.Date > fromDate.Date).ToList();
+
 
                     var currentOneYearTBill = context.TBills
                     .Where(t => t.IssueDate >= startofCycle && t.IssueDate <= endOfCycle)
