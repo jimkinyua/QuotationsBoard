@@ -32,34 +32,37 @@ public static class TBillHelper
 
     public static (DateTime cycleStart, DateTime cycleEnd) GetCurrentTBillCycle(DateTime date)
     {
-        // Find the number for Wednesday (which is 3)
-        int numberForThursday = (int)DayOfWeek.Thursday;
+        DateTime cycleStart;
+        DateTime cycleEnd;
 
-        // Find the number for the current day of the week
-        int numberForCurrentDay = (int)date.DayOfWeek;
-
-        // Calculate the initial difference in days between the current day and Thursday
-        int initialDifference = numberForThursday - numberForCurrentDay;
-
-        // Add 7 days to ensure we're looking forward to the next Thursday, not backward
-        int differencePlusWeek = initialDifference + 7;
-
-        // Use modulo to wrap around the week if necessary (to stay within 0-6 range)
-        int daysUntilThursday = differencePlusWeek % 7;
-
-        DateTime cycleEnd = date.AddDays(daysUntilThursday-1);
-
-        // If the given date is Wednesday, it is the end of the cycle, so no need to add days
-        if (date.DayOfWeek == DayOfWeek.Wednesday)
+        // Check if the given date is Thursday
+        if (date.DayOfWeek == DayOfWeek.Thursday)
         {
-            cycleEnd = date;
+            // If it's Thursday, the cycle starts today
+            cycleStart = date;
+        }
+        else
+        {
+            // If it's not Thursday, find the most recent Thursday. Thats when the cycle started for this date
+            int daysSinceLastThursday = (int)date.DayOfWeek - (int)DayOfWeek.Thursday;
+
+            if (daysSinceLastThursday < 0)
+            {
+                // If the given day is before Thursday in the week, adjust the value
+                daysSinceLastThursday += 7;
+            }
+
+            cycleStart = date.AddDays(-daysSinceLastThursday);
         }
 
-        // The cycle starts on the Friday of the previous week
-        DateTime cycleStart = cycleEnd.AddDays(-6);
+        // The cycle ends on the Wednesday just after the cycle start, which is 6 days after the cycle start
+        cycleEnd = cycleStart.AddDays(6);
 
         return (cycleStart, cycleEnd);
     }
+
+
+
 
     public static (DateTime cycleStart, DateTime cycleEnd) GetPreviousTBillCycle(DateTime date)
     {
