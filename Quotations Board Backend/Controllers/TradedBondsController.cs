@@ -597,6 +597,7 @@ namespace Quotations_Board_Backend.Controllers
                     db.Database.EnsureCreated();
                     var allNotMaturedBonds = await db.Bonds.Where(b => b.MaturityDate.Date > parsedDate.Date).ToListAsync();
                     var (startOfCycle, endOfCycle) = TBillHelper.GetCurrentTBillCycle(parsedDate);
+                    var (previousCylestart, previousCycleEnd) = TBillHelper.GetPreviousTBillCycle(parsedDate);
                     // DateTime LastWeekRelativeToSelectedDate = parsedDate.AddDays(-7);
                     // DateTime startOfLastWeek = LastWeekRelativeToSelectedDate.AddDays(-(int)LastWeekRelativeToSelectedDate.DayOfWeek); // Sunday
                     // DateTime endOfLastWeek = LastWeekRelativeToSelectedDate.AddDays(6 - (int)LastWeekRelativeToSelectedDate.DayOfWeek); // Saturday
@@ -615,6 +616,23 @@ namespace Quotations_Board_Backend.Controllers
                                 continue;
                             }
 
+                            // get its yied on the previous cycle
+                            var previousCycleYield = db.TBills
+                                .Where(t => t.IssueDate.Date >= previousCylestart.Date
+                                            && t.IssueDate.Date <= previousCycleEnd.Date
+                                            && t.Tenor == 364)
+                                .FirstOrDefault();
+
+                            double previous364Yield = 0;
+                            if (previousCycleYield != null)
+                            {
+                                previous364Yield = previousCycleYield.Yield;
+
+                            }
+
+
+                            var change = _tB.Yield - previous364Yield;
+
                             // Add statistics for One Year T-Bill
                             bondStatisticsDict[_tB.Id] = new BondAverageStatistic
                             {
@@ -626,7 +644,8 @@ namespace Quotations_Board_Backend.Controllers
                                 AverageWeightedTradeYield = _tB.Yield,
                                 AverageWeightedQuotedYield = _tB.Yield,
                                 DaysImpliedYield = _tB.Yield,
-                                ISIN = "T-Bill"
+                                ISIN = "T-Bill",
+                                PreviousImpliedYield = previous364Yield,
                             };
                         }
 
@@ -635,6 +654,20 @@ namespace Quotations_Board_Backend.Controllers
                             if (_tB == null)
                             {
                                 continue;
+                            }
+
+                            // get its yied on the previous cycle
+                            var previousCycleYield = db.TBills
+                                .Where(t => t.IssueDate.Date >= previousCylestart.Date
+                                            && t.IssueDate.Date <= previousCycleEnd.Date
+                                            && t.Tenor == 182)
+                                .FirstOrDefault();
+
+                            double previous182Yield = 0;
+                            if (previousCycleYield != null)
+                            {
+                                previous182Yield = previousCycleYield.Yield;
+
                             }
 
                             // Add statistics for Six Months T-Bill
@@ -648,8 +681,8 @@ namespace Quotations_Board_Backend.Controllers
                                 AverageWeightedTradeYield = _tB.Yield,
                                 AverageWeightedQuotedYield = _tB.Yield,
                                 DaysImpliedYield = _tB.Yield,
-                                ISIN = "T-Bill"
-
+                                ISIN = "T-Bill",
+                                PreviousImpliedYield = previous182Yield,
                             };
                         }
 
@@ -659,6 +692,21 @@ namespace Quotations_Board_Backend.Controllers
                             {
                                 continue;
                             }
+
+                            // get its yied on the previous cycle
+                            var previousCycleYield = db.TBills
+                                .Where(t => t.IssueDate.Date >= previousCylestart.Date
+                                            && t.IssueDate.Date <= previousCycleEnd.Date
+                                            && t.Tenor == 91)
+                                .FirstOrDefault();
+
+                            double previous91Yield = 0;
+                            if (previousCycleYield != null)
+                            {
+                                previous91Yield = previousCycleYield.Yield;
+
+                            }
+
 
                             // Add statistics for Three Months T-Bill
                             bondStatisticsDict[_tB.Id] = new BondAverageStatistic
@@ -671,8 +719,8 @@ namespace Quotations_Board_Backend.Controllers
                                 AverageWeightedTradeYield = _tB.Yield,
                                 AverageWeightedQuotedYield = _tB.Yield,
                                 DaysImpliedYield = _tB.Yield,
-                                ISIN = "T-Bill"
-
+                                ISIN = "T-Bill",
+                                PreviousImpliedYield = previous91Yield,
                             };
                         }
 

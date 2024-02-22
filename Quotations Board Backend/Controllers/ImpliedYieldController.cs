@@ -319,8 +319,8 @@ namespace Quotations_Board_Backend.Controllers
                         double _preImpYield = 0;
                         if (previousImpliedYield == null)
                         {
-                            continue;
-                            // return BadRequest($"No Previous Implied Yield for Bond {bond.IssueNumber}");
+                            // continue;
+                            return BadRequest($"Seems the previous Implied Yield for the Bond {bond.IssueNumber} does not exist. Could this be the first time the Implied Yield is being calculated for this Bond? If so, please add the Implied Yield manually via the template provided.");
                         }
                         else
                         {
@@ -488,7 +488,7 @@ namespace Quotations_Board_Backend.Controllers
                     var existingImpliedYield = impliedYields.Where(i => i.YieldDate.Date == DateTime.Now.Date).ToList();
                     if (existingImpliedYield.Any())
                     {
-                        return BadRequest("Implied Yield for today already exists");
+                        return BadRequest("The Implied Yield for today have already been calculated and confirmed");
                     }
 
                     foreach (var impliedYield in confirmImpliedYieldDTO.ImpliedYields)
@@ -514,7 +514,7 @@ namespace Quotations_Board_Backend.Controllers
                         }
                         else
                         {
-                            return BadRequest("Invalid Selected Yield");
+                            return BadRequest("Seems you have selected an invalid Implied Yield");
                         }
 
                         var impliedYieldToSave = new ImpliedYield
