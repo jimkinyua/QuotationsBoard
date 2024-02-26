@@ -645,7 +645,7 @@ namespace Quotations_Board_Backend.Controllers
                                 AverageWeightedQuotedYield = _tB.Yield,
                                 DaysImpliedYield = _tB.Yield,
                                 ISIN = "T-Bill",
-                                PreviousImpliedYield = previous364Yield,
+                                PreviousImpliedYield = _tB.Yield,
                             };
                         }
 
@@ -682,7 +682,7 @@ namespace Quotations_Board_Backend.Controllers
                                 AverageWeightedQuotedYield = _tB.Yield,
                                 DaysImpliedYield = _tB.Yield,
                                 ISIN = "T-Bill",
-                                PreviousImpliedYield = previous182Yield,
+                                PreviousImpliedYield = _tB.Yield,
                             };
                         }
 
@@ -720,7 +720,7 @@ namespace Quotations_Board_Backend.Controllers
                                 AverageWeightedQuotedYield = _tB.Yield,
                                 DaysImpliedYield = _tB.Yield,
                                 ISIN = "T-Bill",
-                                PreviousImpliedYield = previous91Yield,
+                                PreviousImpliedYield = _tB.Yield,
                             };
                         }
 
