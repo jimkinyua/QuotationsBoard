@@ -93,6 +93,7 @@ namespace Quotations_Board_Backend.Controllers
                     tbill.IssueDate = editTbill.IssueDate;
                     tbill.MaturityDate = maturityDate;
                     tbill.Tenor = editTbill.Tenor;
+                    tbill.Yield = editTbill.Yield;
                     context.Entry(tbill).State = EntityState.Modified;
                     await context.SaveChangesAsync();
                     return StatusCode(200, tbill);
