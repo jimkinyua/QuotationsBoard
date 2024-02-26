@@ -202,5 +202,39 @@ namespace Quotations_Board_Backend.Controllers
 
             }
         }
+
+        // enable validation for a Tenure
+
+        [HttpPost]
+        [Route("EnableValidation/{tenureId}")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        public async Task<IActionResult> EnableValidation(string tenureId)
+        {
+            using (var context = new QuotationsBoardContext())
+            {
+                try
+                {
+                    var tenure = context.Tenures.FirstOrDefault(t => t.Id == tenureId);
+                    if (tenure == null)
+                    {
+                        return NotFound();
+                    }
+                    tenure.IsValidationEnabled = true;
+                    context.Tenures.Update(tenure);
+                    await context.SaveChangesAsync();
+                    return Ok();
+                }
+                catch (Exception Ex)
+                {
+                    UtilityService.LogException(Ex);
+                    return StatusCode(500, UtilityService.HandleException(Ex));
+                }
+
+            }
+        }
+
+
     }
 }
