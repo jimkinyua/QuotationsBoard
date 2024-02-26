@@ -485,11 +485,10 @@ namespace Quotations_Board_Backend.Controllers
                     var bondsNotMatured = bonds.Where(b => b.MaturityDate.Date > DateTime.Now.Date).ToList();
 
                     // Enusure that no Imlpied Yiled for today  exists in th eImpliedYield Table
-                    var existingImpliedYield = impliedYields.Where(i => i.YieldDate.Date == DateTime.Now.Date).ToList();
-                    if (existingImpliedYield.Any())
-                    {
-                        return BadRequest("The Implied Yield for today have already been calculated and confirmed");
-                    }
+                    // if (existingImpliedYield.Any())
+                    // {
+                    //     return BadRequest("The Implied Yield for today have already been calculated and confirmed");
+                    // }
 
                     foreach (var impliedYield in confirmImpliedYieldDTO.ImpliedYields)
                     {
@@ -516,15 +515,22 @@ namespace Quotations_Board_Backend.Controllers
                         {
                             return BadRequest("Seems you have selected an invalid Implied Yield");
                         }
-
-                        var impliedYieldToSave = new ImpliedYield
+                        var existingImpliedYield = impliedYields.Where(i => i.YieldDate.Date == DateTime.Now.Date && i.BondId == bondDetails.Id).FirstOrDefault();
+                        if (existingImpliedYield != null)
                         {
-                            BondId = bondDetails.Id,
-                            Yield = YieldToSave,
-                            YieldDate = impliedYield.YieldDate
-                        };
-
-                        db.ImpliedYields.Add(impliedYieldToSave);
+                            existingImpliedYield.Yield = YieldToSave;
+                            db.Entry(existingImpliedYield).State = EntityState.Modified;
+                        }
+                        else
+                        {
+                            var impliedYieldToSave = new ImpliedYield
+                            {
+                                BondId = bondDetails.Id,
+                                Yield = YieldToSave,
+                                YieldDate = impliedYield.YieldDate
+                            };
+                            db.ImpliedYields.Add(impliedYieldToSave);
+                        }
                     }
 
                     db.SaveChanges();
