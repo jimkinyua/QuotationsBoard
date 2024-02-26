@@ -156,7 +156,7 @@ namespace Quotations_Board_Backend.Controllers
         {
             using (var context = new QuotationsBoardContext())
             {
-                try
+                try // get all Tenures that are not deleted
                 {
                     var tenures = context.Tenures.Where(t => t.IsDeleted == false).ToList();
                     var tenuresDTO = tenures.Select(t => new TenureDTO
@@ -166,7 +166,7 @@ namespace Quotations_Board_Backend.Controllers
                         Tenor = t.Tenor,
                         IsValidationEnabled = t.IsValidationEnabled
                     }).ToList();
-                    return Ok(tenuresDTO.OrderByDescending(t => t.Tenor));
+                    return Ok(tenuresDTO.OrderBy(t => t.Tenor));
                 }
                 catch (Exception Ex)
                 {
