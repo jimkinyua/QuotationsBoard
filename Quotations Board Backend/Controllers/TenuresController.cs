@@ -177,57 +177,31 @@ namespace Quotations_Board_Backend.Controllers
             }
         }
 
-        // disable validation for a Tenure
 
-        [HttpPost]
-        [Route("DisableValidation/{tenureId}")]
-        [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status404NotFound)]
-        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public async Task<IActionResult> DisableValidation(string tenureId)
-        {
-            using (var context = new QuotationsBoardContext())
-            {
-                try
-                {
-                    var tenure = context.Tenures.FirstOrDefault(t => t.Id == tenureId);
-                    if (tenure == null)
-                    {
-                        return NotFound();
-                    }
-                    tenure.IsValidationEnabled = false;
-                    context.Tenures.Update(tenure);
-                    await context.SaveChangesAsync();
-                    return Ok();
-                }
-                catch (Exception Ex)
-                {
-                    UtilityService.LogException(Ex);
-                    return StatusCode(500, UtilityService.HandleException(Ex));
-                }
-
-            }
-        }
 
         // enable validation for a Tenure
 
         [HttpPost]
-        [Route("EnableValidation/{tenureId}")]
+        [Route("DisableEnableValidation/{tenureId}")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public async Task<IActionResult> EnableValidation(string tenureId)
+        public async Task<IActionResult> EnableValidation([FromBody] DisableEnableValidation disableEnableValidation)
         {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
             using (var context = new QuotationsBoardContext())
             {
                 try
                 {
-                    var tenure = context.Tenures.FirstOrDefault(t => t.Id == tenureId);
+                    var tenure = context.Tenures.FirstOrDefault(t => t.Id == disableEnableValidation.Id);
                     if (tenure == null)
                     {
                         return NotFound();
                     }
-                    tenure.IsValidationEnabled = true;
+                    tenure.IsValidationEnabled = disableEnableValidation.IsValidationEnabled;
                     context.Tenures.Update(tenure);
                     await context.SaveChangesAsync();
                     return Ok();
