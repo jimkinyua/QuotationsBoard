@@ -160,7 +160,7 @@ namespace Quotations_Board_Backend.Controllers
                         Tenor = t.Tenor,
                         IsValidationEnabled = t.IsValidationEnabled
                     }).ToList();
-                    return Ok(tenuresDTO);
+                    return Ok(tenuresDTO.OrderByDescending(t => t.Tenor));
                 }
                 catch (Exception Ex)
                 {
