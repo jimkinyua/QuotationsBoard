@@ -182,7 +182,7 @@ namespace Quotations_Board_Backend.Controllers
         // enable validation for a Tenure
 
         [HttpPost]
-        [Route("DisableEnableValidation/{tenureId}")]
+        [Route("DisableEnableValidation")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
