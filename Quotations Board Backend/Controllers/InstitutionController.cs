@@ -31,7 +31,7 @@ namespace Quotations_Board_Backend.Controllers
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [SwaggerOperation(Summary = "Register new institution", Description = "Registers a new institution", OperationId = "RegisterInstitution")]
-        [AllowAnonymous]
+        [Authorize(Roles = CustomRoles.SuperAdmin, AuthenticationSchemes = "Bearer")]
         public async Task<IActionResult> RegisterInstitutionAsync([FromBody] RegisterInstitution institution)
         {
             // check if model is valid
@@ -74,7 +74,17 @@ namespace Quotations_Board_Backend.Controllers
                     };
                     context.InstitutionApplications.Add(newApplication);
                     await context.SaveChangesAsync();
-                    return Ok();
+                    var res = await ApproveInstitutionApplicationAsync(newApplication.Id);
+                    // check if the application was approved
+                    if (res is OkObjectResult)
+                    {
+                        return Ok("Institution Registered");
+                    }
+                    else
+                    {
+                        // get the error message
+                        return res;
+                    }
                 }
 
             }
@@ -229,12 +239,8 @@ namespace Quotations_Board_Backend.Controllers
         }
 
         // Approve Application
-        [HttpPost("ApproveApplication/{id}")]
-        [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        [SwaggerOperation(Summary = "Approve Institution Application", Description = "Approves an institution application", OperationId = "ApproveInstitutionApplication")]
-        [Authorize(Roles = CustomRoles.SuperAdmin, AuthenticationSchemes = "Bearer")]
-        public async Task<IActionResult> ApproveInstitutionApplicationAsync(string id)
+
+        private async Task<IActionResult> ApproveInstitutionApplicationAsync(string id)
         {
             try
             {
@@ -288,7 +294,10 @@ namespace Quotations_Board_Backend.Controllers
 
                     }
                     var institutionAdminRole = await context.Roles.FirstOrDefaultAsync(x => x.Name == CustomRoles.InstitutionAdmin);
-
+                    if (institutionAdminRole == null)
+                    {
+                        return BadRequest("Institution Admin Role does not exist");
+                    }
                     // add user to role of InstitutionAdmin
                     var userRole = new IdentityUserRole<string>
                     {
