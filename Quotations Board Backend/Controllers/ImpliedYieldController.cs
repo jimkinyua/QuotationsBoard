@@ -252,7 +252,7 @@ namespace Quotations_Board_Backend.Controllers
         }
 
         // Calculate Implied Yield for each Bond
-        [HttpGet]
+        [HttpPost]
         [Route("CalculateImpliedYield")]
         [Authorize(Roles = CustomRoles.SuperAdmin, AuthenticationSchemes = "Bearer")]
         public ActionResult<IEnumerable<ComputedImpliedYield>> CalculateImpliedYield([FromBody] CalculateImpliedYield calculateImpliedYield)
