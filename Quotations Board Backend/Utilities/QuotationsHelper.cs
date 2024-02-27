@@ -145,14 +145,18 @@ public static class QuotationsHelper
 
 
 
-    public static bool IsWithinMargin(double value, double previousYiedld, double maxAllowwdDiffrence)
+    public static bool IsWithinMargin(double possibleImpliedYield, double previousYiedld, double maxAllowwdDiffrence)
     {
-        var diffrence = Math.Round(Math.Abs(value - previousYiedld), 4, MidpointRounding.AwayFromZero);
-        if (diffrence <= maxAllowwdDiffrence)
+        double epsilon = 1e-10;
+        double difference = Math.Abs(possibleImpliedYield - previousYiedld);
+
+        if (difference < epsilon || difference <= maxAllowwdDiffrence)
         {
             return true;
         }
+
         return false;
+
     }
 
     public static decimal DetermineClosestYield(decimal quoted, decimal traded, decimal variance)
