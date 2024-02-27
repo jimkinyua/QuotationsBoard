@@ -261,7 +261,7 @@ namespace Quotations_Board_Backend.Controllers
             {
                 using (var db = new QuotationsBoardContext())
                 {
-                    var DateInQuestion = DateTime.Now.Date;
+                    var DateInQuestion = DateTime.Now.Date.AddDays(-1);
 
                     var (startOfCycle, endOfCycle) = TBillHelper.GetCurrentTBillCycle(DateInQuestion);
                     var (startOfLastWeek, endOfLastWeek) = TBillHelper.GetPreviousTBillCycle(DateInQuestion);
@@ -390,7 +390,7 @@ namespace Quotations_Board_Backend.Controllers
 
         private bool IsWithinMargin(double value, double previousYiedld, double maxAllowwdDiffrence)
         {
-            var diffrence = Math.Abs(value - previousYiedld);
+            var diffrence = Math.Round(Math.Abs(value - previousYiedld),4,MidpointRounding.AwayFromZero);
             if (diffrence <= maxAllowwdDiffrence)
             {
                 return true;
@@ -436,12 +436,12 @@ namespace Quotations_Board_Backend.Controllers
             double averageBuyYield = totalBuyVolume > 0 ? totalWeightedBuyYield / totalBuyVolume : 0;
             double averageSellYield = totalSellVolume > 0 ? totalWeightedSellYield / totalSellVolume : 0;
 
-            if (totalBuyVolume > 0 || totalSellVolume > 0)
+            /*if (totalBuyVolume > 0 || totalSellVolume > 0)
             {
-                averageWeightedTradedYield = (averageBuyYield + averageSellYield) / 2;
-            }
+                averageWeightedTradedYield = (averageBuyYield + averageSellYield) ;
+            }*/
 
-            return Math.Round(averageWeightedTradedYield, 4, MidpointRounding.AwayFromZero);
+            return Math.Round(averageBuyYield, 4, MidpointRounding.AwayFromZero);
         }
 
         private double CalculateAverageWeightedQuotedYield(List<Quotation> quotations)
