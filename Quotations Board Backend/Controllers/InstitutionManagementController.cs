@@ -10,7 +10,7 @@ namespace Quotations_Board_Backend.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    [Authorize(Roles = $"{CustomRoles.InstitutionAdmin}, {CustomRoles.SuperAdmin}", AuthenticationSchemes = "Bearer")]
+    [Authorize(Roles = $"{CustomRoles.SuperAdmin}", AuthenticationSchemes = "Bearer")]
     public class InstitutionManagementController : ControllerBase
     {
         private readonly IMapper _mapper;
@@ -30,10 +30,12 @@ namespace Quotations_Board_Backend.Controllers
             _roleManager = roleManager;
         }
 
-        [HttpGet("GetInstitutionUsers")]
-        public async Task<ActionResult<List<PortalUserDTO>>> GetInstitutionUsers()
+        [HttpGet("GetInstitutionUsers/{institutionId}")]
+        public async Task<ActionResult<List<PortalUserDTO>>> GetInstitutionUsers(string institutionId)
         {
             LoginTokenDTO TokenContents = UtilityService.GetUserIdFromCurrentRequest(Request);
+            List<PortalUserDTO> portalUserDTO = new List<PortalUserDTO>();
+
             if (TokenContents == null)
             {
                 return Unauthorized();
@@ -44,28 +46,17 @@ namespace Quotations_Board_Backend.Controllers
                 // get roles of curren logged in user if they are superAdmin, fetch all Institution and include Users
 
                 var userRoles = await _userManager.GetRolesAsync(await _userManager.FindByIdAsync(userId));
-                List<Institution> institutions = null;
-                if (userRoles.Count > 0 && userRoles[0] == CustomRoles.SuperAdmin)
-                {
-                    institutions = await context.Institutions
-                       .Include(i => i.PortalUsers)
-                       .ToListAsync();
-                }
-                else
-                {
-                    institutions = await context.Institutions
-                       .Include(i => i.PortalUsers)
-                       .Where(i => i.Id == TokenContents.InstitutionId)
-                       .ToListAsync();
-                }
+                List<Institution> institutions = context.Institutions
+                    .Include(i => i.PortalUsers)
+                    .Where(i => i.Id == institutionId)
+                    .ToList();
 
                 if (institutions.Count == 0)
                 {
-                    return NotFound();
+                    return portalUserDTO;
                 }
                 //var mapper = new MapperConfiguration(cfg => cfg.CreateMap<PortalUser, PortalUserDTO>()).CreateMapper();
                 //var portalUsers = mapper.Map<List<PortalUserDTO>>(institution.PortalUsers);
-                List<PortalUserDTO> portalUserDTO = new List<PortalUserDTO>();
                 foreach (var institution in institutions)
                 {
                     foreach (var user in institution.PortalUsers)
@@ -106,7 +97,7 @@ namespace Quotations_Board_Backend.Controllers
             {
                 Institution? institution = await context.Institutions
                     .Include(i => i.PortalUsers)
-                    .FirstOrDefaultAsync(i => i.Id == TokenContents.InstitutionId);
+                    .FirstOrDefaultAsync(i => i.Id == portalUserDTO.InstitutionId);
                 if (institution == null)
                 {
                     return NotFound();
