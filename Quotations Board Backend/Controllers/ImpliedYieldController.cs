@@ -261,7 +261,7 @@ namespace Quotations_Board_Backend.Controllers
             {
                 using (var db = new QuotationsBoardContext())
                 {
-                    var DateInQuestion = DateTime.Now.Date.AddDays(-1);
+                    var DateInQuestion = DateTime.Now.Date;
 
                     var (startOfCycle, endOfCycle) = TBillHelper.GetCurrentTBillCycle(DateInQuestion);
                     var (startOfLastWeek, endOfLastWeek) = TBillHelper.GetPreviousTBillCycle(DateInQuestion);
