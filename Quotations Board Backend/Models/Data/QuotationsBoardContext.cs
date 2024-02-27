@@ -36,5 +36,6 @@ public class QuotationsBoardContext : IdentityDbContext<PortalUser>
     public DbSet<QuotationEdit> QuotationEdits { get; set; } = null!;
     public DbSet<TBillYield> TBillYields { get; set; } = null!;
     public DbSet<Tenure> Tenures { get; set; } = null!;
+    public DbSet<DraftImpliedYield> DraftImpliedYields { get; set; } = null!;
 
 }

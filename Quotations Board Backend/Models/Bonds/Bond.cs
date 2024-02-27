@@ -18,4 +18,5 @@ public class Bond
     public Boolean IsBenchMarkBond { get; set; } = false;
     public virtual ICollection<Quotation> Quotations { get; set; } = null!;
     public virtual ICollection<ImpliedYield> ImpliedYields { get; set; } = null!;
+    public virtual ICollection<DraftImpliedYield> DraftImpliedYields { get; set; } = null!;
 }
