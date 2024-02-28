@@ -32,7 +32,7 @@ namespace Quotations_Board_Backend.Controllers
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [SwaggerOperation(Summary = "Register new institution", Description = "Registers a new institution", OperationId = "RegisterInstitution")]
-        [Authorize(AuthenticationSchemes = "Bearer")]
+        // [Authorize(AuthenticationSchemes = "Bearer")]
         public async Task<IActionResult> RegisterInstitutionAsync([FromBody] RegisterInstitution institution)
         {
             // check if model is valid
