@@ -28,6 +28,7 @@ namespace Quotations_Board_Backend.Controllers
         }
 
         [HttpPost]
+        [Route("RegisterInstitution")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [SwaggerOperation(Summary = "Register new institution", Description = "Registers a new institution", OperationId = "RegisterInstitution")]
