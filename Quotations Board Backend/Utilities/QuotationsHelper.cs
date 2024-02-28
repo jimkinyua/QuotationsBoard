@@ -148,9 +148,9 @@ public static class QuotationsHelper
     public static bool IsWithinMargin(double possibleImpliedYield, double previousYiedld, double maxAllowwdDiffrence)
     {
         double epsilon = 1e-10;
-        double difference = Math.Abs(possibleImpliedYield - previousYiedld);
+        double difference =Math.Round( Math.Abs(possibleImpliedYield - previousYiedld),4,MidpointRounding.AwayFromZero);
 
-        if (difference < epsilon || difference <= maxAllowwdDiffrence)
+        if (difference <= maxAllowwdDiffrence)
         {
             return true;
         }
