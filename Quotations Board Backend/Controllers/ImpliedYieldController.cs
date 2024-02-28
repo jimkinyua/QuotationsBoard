@@ -694,10 +694,11 @@ namespace Quotations_Board_Backend.Controllers
 
                     foreach (var existingDraft in existingDraftImpliedYield)
                     {
-                        var bondDetails = bondsNotMatured.Where(b => b.IssueNumber == existingDraft.BondId).FirstOrDefault();
+                        var bondDetails = bondsNotMatured.Where(b => b.Id == existingDraft.BondId).FirstOrDefault();
                         if (bondDetails == null)
                         {
-                            return BadRequest($"Bond with Id {existingDraft.BondId} does not exist or has matured");
+                            continue;
+                            // return BadRequest($"Bond with Id {existingDraft.BondId} does not exist or has matured");
                         }
                         double YieldToSave = existingDraft.Yield;
 
