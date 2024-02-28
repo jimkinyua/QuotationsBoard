@@ -594,15 +594,15 @@ namespace Quotations_Board_Backend.Controllers
                             {
                                 continue; // Skip bonds that have already been used
                             }
-                            var impliedYield = _db.ImpliedYields.Where(i => i.BondId == bond.Id && i.YieldDate.Date == parsedDate.Date).FirstOrDefault();
-                            if (impliedYield == null)
+                            var _Possible_impliedYield = _db.DraftImpliedYields.Where(i => i.BondId == bond.Id && i.YieldDate.Date == parsedDate.Date).FirstOrDefault();
+                            if (_Possible_impliedYield == null)
                             {
                                 return BadRequest($"The Bond {bond.IssueNumber} seems not to have an Implied Yield for the date {parsedDate}");
                             }
                             var BondTenure = Math.Round((bond.MaturityDate.Date - parsedDate.Date).TotalDays / 364, 4, MidpointRounding.AwayFromZero);
                             yieldCurveCalculations.Add(new YieldCurveCalculation
                             {
-                                Yield = (double)Math.Round(impliedYield.Yield, 4, MidpointRounding.AwayFromZero),
+                                Yield = (double)Math.Round(_Possible_impliedYield.Yield, 4, MidpointRounding.AwayFromZero),
                                 BondUsed = bond.IssueNumber,
                                 IssueDate = bond.IssueDate,
                                 MaturityDate = bond.MaturityDate,
