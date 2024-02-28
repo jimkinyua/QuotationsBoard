@@ -475,7 +475,7 @@ namespace Quotations_Board_Backend.Controllers
         [Route("GetPreliminaryYieldCurve")]
         [Authorize(Roles = CustomRoles.SuperAdmin, AuthenticationSchemes = "Bearer")]
 
-        public ActionResult<IEnumerable<YieldCurveDTO>> CalculatePreliminaryYieldCurve(string? For = "default")
+        public ActionResult<IEnumerable<YieldCurve>> CalculatePreliminaryYieldCurve(string? For = "default")
         {
             var m = DateTime.Now;
             var parsedDate = DateTime.Now;
@@ -804,7 +804,7 @@ namespace Quotations_Board_Backend.Controllers
         [HttpGet]
         [Route("GetYieldCurve")]
         [Authorize(AuthenticationSchemes = "Bearer")]
-        public ActionResult<IEnumerable<YieldCurveDTO>> GetYieldCurve(string? For = "default")
+        public ActionResult<IEnumerable<YieldCurve>> GetYieldCurve(string? For = "default")
         {
             var m = DateTime.Now;
             var parsedDate = DateTime.Now;
