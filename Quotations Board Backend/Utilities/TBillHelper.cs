@@ -35,24 +35,24 @@ public static class TBillHelper
         DateTime cycleStart;
         DateTime cycleEnd;
 
-        // Check if the given date is Thursday
-        if (date.DayOfWeek == DayOfWeek.Thursday)
+        // Check if the given date is Friday
+        if (date.DayOfWeek == DayOfWeek.Friday)
         {
-            // If it's Thursday, the cycle starts today
+            // If it's Friday, the cycle starts today
             cycleStart = date;
         }
         else
         {
-            // If it's not Thursday, find the most recent Thursday. Thats when the cycle started for this date
-            int daysSinceLastThursday = (int)date.DayOfWeek - (int)DayOfWeek.Thursday;
+            // If it's not Friday, find the most recent Friday. Thats when the cycle started for this date
+            int daysSinceLastFriday = (int)date.DayOfWeek - (int)DayOfWeek.Friday;
 
-            if (daysSinceLastThursday < 0)
+            if (daysSinceLastFriday < 0)
             {
-                // If the given day is before Thursday in the week, adjust the value
-                daysSinceLastThursday += 7;
+                // If the given day is before Friday in the week, adjust the value
+                daysSinceLastFriday += 7;
             }
 
-            cycleStart = date.AddDays(-daysSinceLastThursday);
+            cycleStart = date.AddDays(-daysSinceLastFriday);
         }
 
         // The cycle ends on the Wednesday just after the cycle start, which is 6 days after the cycle start
