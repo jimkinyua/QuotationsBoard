@@ -27,6 +27,64 @@ namespace Quotations_Board_Backend.Controllers
 
         }
 
+
+        [HttpGet("GetInstitutionUsers")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [SwaggerOperation(Summary = "Get Institution Users", Description = "Gets all users of an institution", OperationId = "GetInstitutionUsers")]
+        [Authorize(AuthenticationSchemes = "Bearer")]
+        public async Task<ActionResult<List<PortalUserDTO>>> GetInstitutionUsers()
+        {
+            LoginTokenDTO TokenContents = UtilityService.GetUserIdFromCurrentRequest(Request);
+            List<PortalUserDTO> portalUserDTO = new List<PortalUserDTO>();
+
+            if (TokenContents == null)
+            {
+                return Unauthorized();
+            }
+            var userId = UtilityService.GetUserIdFromToken(Request);
+            using (var context = new QuotationsBoardContext())
+            {
+
+                List<Institution> institutions = context.Institutions
+                    .Include(i => i.PortalUsers)
+                    .Where(i => i.Id == TokenContents.InstitutionId)
+                    .ToList();
+
+                if (institutions.Count == 0)
+                {
+                    return portalUserDTO;
+                }
+                //var mapper = new MapperConfiguration(cfg => cfg.CreateMap<PortalUser, PortalUserDTO>()).CreateMapper();
+                //var portalUsers = mapper.Map<List<PortalUserDTO>>(institution.PortalUsers);
+                foreach (var institution in institutions)
+                {
+                    foreach (var user in institution.PortalUsers)
+                    {
+                        var userRole = await _userManager.GetRolesAsync(user);
+                        if (userRole.Count > 0)
+                        {
+                            portalUserDTO.Add(new PortalUserDTO
+                            {
+                                Id = user.Id,
+                                FirstName = user.FirstName,
+                                LastName = user.LastName,
+                                Email = user.Email,
+                                InstitutionId = user.InstitutionId,
+                                Role = userRole[0],
+                                IsActive = !user.LockoutEnabled,
+                                CreatedAt = institution.CreatedAt
+                            });
+                        }
+                    }
+                }
+
+                return Ok(portalUserDTO);
+
+            }
+        }
+
+
         [HttpPost]
         [Route("RegisterInstitution")]
         [ProducesResponseType(StatusCodes.Status200OK)]
