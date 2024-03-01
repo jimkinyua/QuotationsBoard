@@ -46,6 +46,12 @@ namespace Quotations_Board_Backend.Controllers
                 // get roles of curren logged in user if they are superAdmin, fetch all Institution and include Users
 
                 var userRoles = await _userManager.GetRolesAsync(await _userManager.FindByIdAsync(userId));
+
+                if (institutionId == "index")
+                {
+                    institutionId = TokenContents.InstitutionId;
+                }
+
                 List<Institution> institutions = context.Institutions
                     .Include(i => i.PortalUsers)
                     .Where(i => i.Id == institutionId)
