@@ -600,127 +600,99 @@ namespace Quotations_Board_Backend.Controllers
                     // DateTime startOfLastWeek = LastWeekRelativeToSelectedDate.AddDays(-(int)LastWeekRelativeToSelectedDate.DayOfWeek); // Sunday
                     // DateTime endOfLastWeek = LastWeekRelativeToSelectedDate.AddDays(6 - (int)LastWeekRelativeToSelectedDate.DayOfWeek); // Saturday
 
-                    var LastWeeksTBill = db.TBills
-                                           .Where(t => t.IssueDate.Date >= startOfCycle.Date
-                                                       && t.IssueDate.Date <= endOfCycle.Date
-                                                       && t.Tenor <= 364)
-                                                       .ToList();
-                    foreach (var _tB in LastWeeksTBill)
+                    var PreviousTbillImpliedYields = await db.TBillImpliedYields
+                    .Include(x => x.TBill)
+                    .Where(t => t.Date.Date < parsedDate.Date)
+                    .OrderByDescending(t => t.Date)
+                    .ToListAsync();
+
+                    var CurrentTbillYields = await db.TBillImpliedYields
+                    .Include(x => x.TBill)
+                    .Where(t => t.Date.Date == parsedDate.Date)
+                    .OrderByDescending(t => t.Date)
+                    .ToListAsync();
+
+                    foreach (var tBillYield in CurrentTbillYields)
                     {
-                        if (_tB.Tenor == 364) // One Year T-Bill
+                        if (tBillYield.TBill.Tenor == 364)
                         {
-                            if (_tB == null)
+                            var previous364 = PreviousTbillImpliedYields.Where(t => t.TBill.Tenor == 364).FirstOrDefault();
+                            if (previous364 == null)
                             {
-                                continue;
+                                return BadRequest("The previous implied yield for the 364 days T-Bill is not available");
                             }
+                            var diffrenceBetweenSelectedDateAndMaturityDate = tBillYield.TBill.MaturityDate.Date - parsedDate.Date;
+                            var m = diffrenceBetweenSelectedDateAndMaturityDate.TotalDays / 364;
+                            var yearsToMaturity = Math.Round(m, 4, MidpointRounding.AwayFromZero);
 
-                            // get its yied on the previous cycle
-                            var previousCycleYield = db.TBills
-                                .Where(t => t.IssueDate.Date >= previousCylestart.Date
-                                            && t.IssueDate.Date <= previousCycleEnd.Date
-                                            && t.Tenor == 364)
-                                .FirstOrDefault();
-
-                            double previous364Yield = 0;
-                            if (previousCycleYield != null)
+                            bondStatisticsDict[tBillYield.TBillId] = new BondAverageStatistic
                             {
-                                previous364Yield = previousCycleYield.Yield;
-
-                            }
-
-
-                            var change = _tB.Yield - previous364Yield;
-
-                            // Add statistics for One Year T-Bill
-                            bondStatisticsDict[_tB.Id] = new BondAverageStatistic
-                            {
-                                BondId = _tB.Id,
-                                BondName = _tB.Tenor.ToString() + " Days T-Bill",
-                                YearsToMaturity = (double)_tB.Tenor / 364,
+                                BondId = tBillYield.TBillId,
+                                BondName = tBillYield.TBill.Tenor.ToString() + " Days T-Bill",
+                                YearsToMaturity = yearsToMaturity,
                                 BondCategory = "T-Bill",
                                 BondType = "T-Bill",
-                                AverageWeightedTradeYield = _tB.Yield,
-                                AverageWeightedQuotedYield = _tB.Yield,
-                                DaysImpliedYield = _tB.Yield,
+                                AverageWeightedTradeYield = 0,
+                                AverageWeightedQuotedYield = 0,
+                                DaysImpliedYield = tBillYield.Yield,
                                 ISIN = "T-Bill",
-                                PreviousImpliedYield = previous364Yield,
+                                PreviousImpliedYield = previous364.Yield,
+                            };
+
+                        }
+
+                        if (tBillYield.TBill.Tenor == 182)
+                        {
+                            var previous182 = PreviousTbillImpliedYields.Where(t => t.TBill.Tenor == 182).FirstOrDefault();
+                            if (previous182 == null)
+                            {
+                                return BadRequest("The previous implied yield for the 182 days T-Bill is not available");
+                            }
+                            var diffrenceBetweenSelectedDateAndMaturityDate = tBillYield.TBill.MaturityDate.Date - parsedDate.Date;
+                            var m = diffrenceBetweenSelectedDateAndMaturityDate.TotalDays / 364;
+                            var yearsToMaturity = Math.Round(m, 4, MidpointRounding.AwayFromZero);
+
+                            bondStatisticsDict[tBillYield.TBillId] = new BondAverageStatistic
+                            {
+                                BondId = tBillYield.TBillId,
+                                BondName = tBillYield.TBill.Tenor.ToString() + " Days T-Bill",
+                                YearsToMaturity = yearsToMaturity,
+                                BondCategory = "T-Bill",
+                                BondType = "T-Bill",
+                                AverageWeightedTradeYield = 0,
+                                AverageWeightedQuotedYield = 0,
+                                DaysImpliedYield = tBillYield.Yield,
+                                ISIN = "T-Bill",
+                                PreviousImpliedYield = previous182.Yield,
                             };
                         }
 
-                        if (_tB.Tenor == 182) // Six Months T-Bill
+                        if (tBillYield.TBill.Tenor == 91)
                         {
-                            if (_tB == null)
+                            var previous91 = PreviousTbillImpliedYields.Where(t => t.TBill.Tenor == 91).FirstOrDefault();
+                            if (previous91 == null)
                             {
-                                continue;
+                                return BadRequest("The previous implied yield for the 91 days T-Bill is not available");
                             }
+                            var diffrenceBetweenSelectedDateAndMaturityDate = tBillYield.TBill.MaturityDate.Date - parsedDate.Date;
+                            var m = diffrenceBetweenSelectedDateAndMaturityDate.TotalDays / 364;
+                            var yearsToMaturity = Math.Round(m, 4, MidpointRounding.AwayFromZero);
 
-                            // get its yied on the previous cycle
-                            var previousCycleYield = db.TBills
-                                .Where(t => t.IssueDate.Date >= previousCylestart.Date
-                                            && t.IssueDate.Date <= previousCycleEnd.Date
-                                            && t.Tenor == 182)
-                                .FirstOrDefault();
-
-                            double previous182Yield = 0;
-                            if (previousCycleYield != null)
+                            bondStatisticsDict[tBillYield.TBillId] = new BondAverageStatistic
                             {
-                                previous182Yield = previousCycleYield.Yield;
-
-                            }
-
-                            // Add statistics for Six Months T-Bill
-                            bondStatisticsDict[_tB.Id] = new BondAverageStatistic
-                            {
-                                BondId = _tB.Id,
-                                BondName = _tB.Tenor.ToString() + " Days T-Bill",
-                                YearsToMaturity = (double)_tB.Tenor / 364,
+                                BondId = tBillYield.TBillId,
+                                BondName = tBillYield.TBill.Tenor.ToString() + " Days T-Bill",
+                                YearsToMaturity = yearsToMaturity,
                                 BondCategory = "T-Bill",
                                 BondType = "T-Bill",
-                                AverageWeightedTradeYield = _tB.Yield,
-                                AverageWeightedQuotedYield = _tB.Yield,
-                                DaysImpliedYield = _tB.Yield,
+                                AverageWeightedTradeYield = 0,
+                                AverageWeightedQuotedYield = 0,
+                                DaysImpliedYield = tBillYield.Yield,
                                 ISIN = "T-Bill",
-                                PreviousImpliedYield = previous182Yield,
+                                PreviousImpliedYield = previous91.Yield,
                             };
                         }
 
-                        if (_tB.Tenor == 91) // Three Months T-Bill
-                        {
-                            if (_tB == null)
-                            {
-                                continue;
-                            }
-
-                            // get its yied on the previous cycle
-                            var previousCycleYield = db.TBills
-                                .Where(t => t.IssueDate.Date >= previousCylestart.Date
-                                            && t.IssueDate.Date <= previousCycleEnd.Date
-                                            && t.Tenor == 91)
-                                .FirstOrDefault();
-
-                            double previous91Yield = 0;
-                            if (previousCycleYield != null)
-                            {
-                                previous91Yield = previousCycleYield.Yield;
-
-                            }
-
-
-                            // Add statistics for Three Months T-Bill
-                            bondStatisticsDict[_tB.Id] = new BondAverageStatistic
-                            {
-                                BondId = _tB.Id,
-                                BondName = _tB.Tenor.ToString() + " Days T-Bill",
-                                YearsToMaturity = (double)_tB.Tenor / 364,
-                                BondCategory = "T-Bill",
-                                BondType = "T-Bill",
-                                AverageWeightedTradeYield = _tB.Yield,
-                                AverageWeightedQuotedYield = _tB.Yield,
-                                DaysImpliedYield = _tB.Yield,
-                                ISIN = "T-Bill",
-                                PreviousImpliedYield = previous91Yield,
-                            };
-                        }
 
                     }
 

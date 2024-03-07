@@ -692,6 +692,43 @@ namespace Quotations_Board_Backend.Controllers
                         return BadRequest($"The Draft Implied Yield for the date {confirmImpliedYieldDTO.YieldDate} does not exist");
                     }
 
+                    var (startOfCycle, endOfCycle) = TBillHelper.GetCurrentTBillCycle(confirmImpliedYieldDTO.YieldDate);
+                    var (startOfLastWeek, endOfLastWeek) = TBillHelper.GetPreviousTBillCycle(confirmImpliedYieldDTO.YieldDate);
+
+                    var currentTbills = db.TBills
+                        .Where(t => t.IssueDate.Date >= startOfCycle.Date
+                                    && t.IssueDate.Date <= endOfCycle.Date)
+                        .ToList();
+
+                    var current3MonthTBill = currentTbills.Where(t => t.Tenor >= 91).FirstOrDefault();
+                    var current6MonthTBill = currentTbills.Where(t => t.Tenor >= 182).FirstOrDefault();
+                    var current1YearTBill = currentTbills.Where(t => t.Tenor >= 364).FirstOrDefault();
+                    if (current3MonthTBill == null)
+                    {
+                        return BadRequest("3 month Tbill for the current week starting from " + startOfCycle + " to " + endOfCycle + " does not exist. This is required to calculate the variance betwwen the current and previous 3 Month TBill");
+                    }
+                    if (current6MonthTBill == null)
+                    {
+                        return BadRequest("6 month Tbill for the current week starting from " + startOfCycle + " to " + endOfCycle + " does not exist. This is required to calculate the variance betwwen the current and previous 6 Month TBill");
+                    }
+                    if (current1YearTBill == null)
+                    {
+                        return BadRequest("One year Tbill for the current week starting from " + startOfCycle + " to " + endOfCycle + " does not exist. This is required to calculate the variance betwwen the current and previous One Year TBill");
+                    }
+
+                    foreach (var curentTbILL in currentTbills)
+                    {
+
+                        TBillImpliedYield _tbillImpliedYield = new TBillImpliedYield
+                        {
+                            Date = confirmImpliedYieldDTO.YieldDate,
+                            Yield = curentTbILL.Yield,
+                            TBillId = curentTbILL.Id,
+                            Tenor = curentTbILL.Tenor
+                        };
+                        db.TBillImpliedYields.Add(_tbillImpliedYield);
+                    }
+
                     foreach (var existingDraft in existingDraftImpliedYield)
                     {
                         var bondDetails = bondsNotMatured.Where(b => b.Id == existingDraft.BondId).FirstOrDefault();
@@ -833,14 +870,14 @@ namespace Quotations_Board_Backend.Controllers
                 var fXdBonds = _db.Bonds.Where(b => b.BondCategory == "FXD" && b.MaturityDate.Date > parsedDate.Date).ToList();
                 // var fXdBonds = _db.Bonds.Where(b => b.MaturityDate.Date > DateTime.Now.Date).ToList();
 
-                var currentOneYearTBill = _db.TBills
-                .Where(t => t.Tenor >= 364 && t.IssueDate.Date >= startOfCycle.Date && t.IssueDate.Date <= endOfCycle.Date)
-                .FirstOrDefault();
+                var currentOneYearTBill = _db.TBillImpliedYields
+                .Include(t => t.TBill)
+                .Where(t => t.Tenor >= 364 && t.Date.Date == parsedDate.Date).FirstOrDefault();
 
 
                 if (currentOneYearTBill == null)
                 {
-                    return BadRequest("Seems the 1 year TBill for the current week starting from " + startOfCycle + " to " + endOfCycle + " does not exist.");
+                    return BadRequest("Seems the implied yield for the 1 year TBill for the date " + parsedDate + " does not exist.");
                 }
 
                 var bondDates = fXdBonds
@@ -871,8 +908,8 @@ namespace Quotations_Board_Backend.Controllers
                 {
                     Yield = (double)Math.Round(currentOneYearTBill.Yield, 4, MidpointRounding.AwayFromZero),
                     BondUsed = "1 Year TBill",
-                    IssueDate = currentOneYearTBill.IssueDate,
-                    MaturityDate = currentOneYearTBill.MaturityDate,
+                    IssueDate = currentOneYearTBill.TBill.IssueDate,
+                    MaturityDate = currentOneYearTBill.TBill.MaturityDate,
                     Tenure = 1
                 });
                 tenuresThatDoNotRequireInterpolation.Add(1);
