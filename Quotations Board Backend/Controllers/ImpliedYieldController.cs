@@ -700,50 +700,42 @@ namespace Quotations_Board_Backend.Controllers
                                     && t.IssueDate.Date <= endOfCycle.Date)
                         .ToList();
 
-                    var current3MonthTBill = currentTbills.Where(t => t.Tenor >= 91).FirstOrDefault();
-                    var current6MonthTBill = currentTbills.Where(t => t.Tenor >= 182).FirstOrDefault();
-                    var current1YearTBill = currentTbills.Where(t => t.Tenor >= 364).FirstOrDefault();
-                    if (current3MonthTBill == null)
+                    var TbillTenors = new Dictionary<int, string>
+                                {
+                                    { 91, "3 month" },
+                                    { 182, "6 month" },
+                                    { 364, "1 year" }
+                                };
+
+                    foreach (var tbillTenure in TbillTenors)
                     {
-                        return BadRequest("3 month Tbill for the current week starting from " + startOfCycle + " to " + endOfCycle + " does not exist. This is required to calculate the variance betwwen the current and previous 3 Month TBill");
+                        var currentTBill = currentTbills.Where(t => t.Tenor == tbillTenure.Key).FirstOrDefault();
+                        if (currentTBill == null)
+                        {
+                            return BadRequest($"{tbillTenure.Value} Tbill for the current week starting from {startOfCycle} to {endOfCycle} does not exist. This is required to calculate the variance betwwen the current and previous {tbillTenure.Value} TBill");
+                        }
+
+                        var TbillImpliedYield = db.TBillImpliedYields
+                          .FirstOrDefault(y => y.TBillId == currentTBill.Id && y.Date == confirmImpliedYieldDTO.YieldDate);
+
+                        if (TbillImpliedYield == null)
+                        {
+                            var TBillImpliedYieldToSave = new TBillImpliedYield
+                            {
+                                Date = confirmImpliedYieldDTO.YieldDate,
+                                Yield = currentTBill.Yield,
+                                TBillId = currentTBill.Id,
+                                Tenor = currentTBill.Tenor,
+                            };
+                            db.TBillImpliedYields.Add(TBillImpliedYieldToSave);
+                        }
+                        else
+                        {
+                            TbillImpliedYield.Yield = currentTBill.Yield;
+                            db.Entry(TbillImpliedYield).State = EntityState.Modified;
+                        }
+
                     }
-                    if (current6MonthTBill == null)
-                    {
-                        return BadRequest("6 month Tbill for the current week starting from " + startOfCycle + " to " + endOfCycle + " does not exist. This is required to calculate the variance betwwen the current and previous 6 Month TBill");
-                    }
-                    if (current1YearTBill == null)
-                    {
-                        return BadRequest("One year Tbill for the current week starting from " + startOfCycle + " to " + endOfCycle + " does not exist. This is required to calculate the variance betwwen the current and previous One Year TBill");
-                    }
-
-                    var _3MonthtbillImpliedYield = new TBillImpliedYield
-                    {
-                        Date = confirmImpliedYieldDTO.YieldDate,
-                        Yield = current3MonthTBill.Yield,
-                        TBillId = current3MonthTBill.Id,
-                        Tenor = current3MonthTBill.Tenor,
-                    };
-
-                    db.TBillImpliedYields.Add(_3MonthtbillImpliedYield);
-
-                    var _1YearTbillImpliedYield = new TBillImpliedYield
-                    {
-                        Date = confirmImpliedYieldDTO.YieldDate,
-                        Yield = current1YearTBill.Yield,
-                        TBillId = current1YearTBill.Id,
-                        Tenor = current1YearTBill.Tenor,
-                    };
-                    db.TBillImpliedYields.Add(_1YearTbillImpliedYield);
-
-                    var _6MonthTbillImpliedYield = new TBillImpliedYield
-                    {
-                        Date = confirmImpliedYieldDTO.YieldDate,
-                        Yield = current6MonthTBill.Yield,
-                        TBillId = current6MonthTBill.Id,
-                        Tenor = current6MonthTBill.Tenor,
-                    };
-                    db.TBillImpliedYields.Add(_6MonthTbillImpliedYield);
-                    //db.SaveChanges();
 
                     foreach (var existingDraft in existingDraftImpliedYield)
                     {
