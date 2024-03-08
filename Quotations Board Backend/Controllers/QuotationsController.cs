@@ -1844,8 +1844,30 @@ namespace Quotations_Board_Backend.Controllers
                     yieldCurveCalculations.Add(tBillYieldCurve);
                     tenuresThatDoNotRequireInterpolation.Add(1);
 
-                    var quotations = await context.Quotations.Include(x => x.Institution).Where(q => q.CreatedAt.Date == fromDate.Date).ToListAsync();
-                    var groupedQuotations = quotations.GroupBy(x => x.BondId);
+                    var quotationsForSelectedDate = await context.Quotations.Include(x => x.Institution).Where(q => q.CreatedAt.Date == fromDate.Date).ToListAsync();
+                    // check if there are any quotations for the selected date
+                    if (quotationsForSelectedDate.Count == 0)
+                    {
+                        // Find the most recent date with quotations before today
+                        var mostRecentDateWithQuotations = await context.Quotations
+                                                                        .Where(q => q.CreatedAt.Date < fromDate.Date)
+                                                                        .OrderByDescending(q => q.CreatedAt)
+                                                                        .Select(q => q.CreatedAt.Date)
+                                                                        .FirstOrDefaultAsync();
+                        if (mostRecentDateWithQuotations == default(DateTime))
+                        {
+                            return BadRequest("There are no quotations available.");
+                        }
+
+                        // Fetch the quotations for the most recent date
+                        var quotationsForMostRecentDate = await context.Quotations
+                                                                        .Include(x => x.Institution)
+                                                                        .Where(q => q.CreatedAt.Date == mostRecentDateWithQuotations)
+                                                                        .ToListAsync();
+
+                        quotationsForSelectedDate = quotationsForMostRecentDate;
+                    }
+                    var groupedQuotations = quotationsForSelectedDate.GroupBy(x => x.BondId);
 
                     foreach (var bondQuotes in groupedQuotations)
                     {
