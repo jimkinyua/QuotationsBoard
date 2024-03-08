@@ -1,3 +1,4 @@
+using System.Collections.ObjectModel;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
@@ -13,4 +14,5 @@ public class TBill
     public string CreatedBy { get; set; } = null!;
     public DateTime CreatedOn { get; set; }
     public double Yield { get; set; }
+    public virtual Collection<TBillImpliedYield> BillImpliedYields { get; set; }
 }
