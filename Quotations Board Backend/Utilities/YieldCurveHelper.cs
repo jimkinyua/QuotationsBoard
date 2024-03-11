@@ -33,6 +33,34 @@ public static class YieldCurveHelper
         return yieldCurveDataList;
     }
 
+    public static YieldCurveCalculation? GetCurrentTBillYield(DateTime fromDate)
+    {
+        var (startofCycle, endOfCycle) = TBillHelper.GetCurrentTBillCycle(fromDate);
+        using (var context = new QuotationsBoardContext())
+        {
+            var currentOneYearTBill = context.TBills
+                                .Where(t => t.IssueDate.Date >= startofCycle.Date && t.IssueDate.Date <= endOfCycle.Date && t.Tenor == 364)
+                                .OrderByDescending(t => t.IssueDate)
+                                .FirstOrDefault();
+            if (currentOneYearTBill != null)
+            {
+                YieldCurveCalculation tBillYieldCurve = new YieldCurveCalculation
+                {
+                    Tenure = 1,
+                    Yield = currentOneYearTBill.Yield,
+                    IssueDate = currentOneYearTBill.IssueDate,
+                    MaturityDate = currentOneYearTBill.MaturityDate,
+                    BondUsed = "1 Year TBill"
+                };
+                return tBillYieldCurve;
+            }
+
+            return null;
+        }
+    }
+
+
+
     public static IEnumerable<Bond> GetBondsInTenorRange(IEnumerable<Bond> bonds, KeyValuePair<int, (double, double)> benchmark, HashSet<string> usedBondIds, DateTime dateInQuestion)
     {
         // Define the benchmark range
@@ -42,7 +70,7 @@ public static class YieldCurveHelper
         // Filter bonds within the tenor range
         return bonds.Where(bond => IsBondInTenorRange(bond, dateInQuestion, lowerBound, upperBound)).ToList();
     }
-    
+
     // This separate method calculates if a bond is within the tenor range
     private static bool IsBondInTenorRange(Bond bond, DateTime dateInQuestion, double lowerBound, double upperBound)
     {
@@ -51,9 +79,9 @@ public static class YieldCurveHelper
         double truncatedYearsToMaturity = Math.Floor(yearsToMaturity);
         if (truncatedYearsToMaturity >= lowerBound && truncatedYearsToMaturity <= upperBound)
         {
-            return true; 
+            return true;
         }
-         return false;
+        return false;
     }
 
     // This method calculates the years to maturity for a bond
