@@ -1992,7 +1992,7 @@ namespace Quotations_Board_Backend.Controllers
 
         }
 
-        private async Task<List<YieldCurveCalculation>> InterpolateValuesForLastQuotedDayAsync(DateTime LastDateWithQuotes, List<Quotation> Quotes)
+        private async Task<List<YieldCurve>> InterpolateValuesForLastQuotedDayAsync(DateTime LastDateWithQuotes, List<Quotation> Quotes)
         {
             List<BondAndAverageQuotedYield> bondAndAverageQuotedYields = new List<BondAndAverageQuotedYield>();
             Dictionary<int, (double, double)> benchmarkRanges = YieldCurveHelper.GetBenchmarkRanges(LastDateWithQuotes);
@@ -2138,7 +2138,7 @@ namespace Quotations_Board_Backend.Controllers
                     }
                 }
 
-                return yieldCurveCalculations;
+                return yieldCurves;
             }
 
 
