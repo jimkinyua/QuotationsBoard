@@ -1,6 +1,6 @@
 public static class YieldCurveHelper
 {
-    public static List<YieldCurveCalculation> InterpolateWhereNecessary(List<YieldCurveCalculation> yieldCurveDataList, HashSet<double> tenuresThatRequireInterPolation)
+    public static List<YieldCurveDataSet> InterpolateWhereNecessary(List<YieldCurveDataSet> yieldCurveDataList, HashSet<double> tenuresThatRequireInterPolation)
     {
         yieldCurveDataList.Sort((x, y) => x.Tenure.CompareTo(y.Tenure));
         foreach (var tenureToInterpolate in tenuresThatRequireInterPolation)
@@ -14,7 +14,7 @@ public static class YieldCurveHelper
                 double interpolatedYield = PerformLinearInterpolation(previousData, nextData, tenureToInterpolate);
 
                 // Create a new YieldCurve object for the interpolated yield
-                var interpolatedYieldCurve = new YieldCurveCalculation
+                var interpolatedYieldCurve = new YieldCurveDataSet
                 {
                     Yield = interpolatedYield,
                     BondUsed = "Interpolated",
@@ -33,7 +33,7 @@ public static class YieldCurveHelper
         return yieldCurveDataList;
     }
 
-    public static YieldCurveCalculation? GetCurrentTBillYield(DateTime fromDate)
+    public static YieldCurveDataSet? GetCurrentTBillYield(DateTime fromDate)
     {
         var (startofCycle, endOfCycle) = TBillHelper.GetCurrentTBillCycle(fromDate);
         using (var context = new QuotationsBoardContext())
@@ -44,7 +44,7 @@ public static class YieldCurveHelper
                                 .FirstOrDefault();
             if (currentOneYearTBill != null)
             {
-                YieldCurveCalculation tBillYieldCurve = new YieldCurveCalculation
+                YieldCurveDataSet tBillYieldCurve = new YieldCurveDataSet
                 {
                     Tenure = 1,
                     Yield = currentOneYearTBill.Yield,
@@ -112,7 +112,7 @@ public static class YieldCurveHelper
         }
         return null;
     }
-    private static bool IsYieldMissing(YieldCurveCalculation data)
+    private static bool IsYieldMissing(YieldCurveDataSet data)
     {
         return data.Yield == 0 || string.IsNullOrEmpty(data.BondUsed);
     }
@@ -135,7 +135,7 @@ public static class YieldCurveHelper
 
 
 
-    private static YieldCurveCalculation FindPreviousDataWithYield(List<YieldCurveCalculation> dataList, int currentIndex)
+    private static YieldCurveDataSet FindPreviousDataWithYield(List<YieldCurveDataSet> dataList, int currentIndex)
     {
         for (int i = currentIndex - 1; i >= 0; i--)
         {
@@ -146,9 +146,9 @@ public static class YieldCurveHelper
         }
         return null; // No previous data found
     }
-    public static YieldCurveCalculation FindPreviousDataWithYield(List<YieldCurveCalculation> yieldCurveDataList, double tenureToInterpolate)
+    public static YieldCurveDataSet FindPreviousDataWithYield(List<YieldCurveDataSet> yieldCurveDataList, double tenureToInterpolate)
     {
-        YieldCurveCalculation previousData = null;
+        YieldCurveDataSet previousData = null;
 
         // Loop backwards through the sorted list to find the previous data point with a yield
         for (int i = yieldCurveDataList.Count - 1; i >= 0; i--)
@@ -165,9 +165,9 @@ public static class YieldCurveHelper
         return previousData;
     }
 
-    public static YieldCurveCalculation FindNextDataWithYield(List<YieldCurveCalculation> yieldCurveDataList, double tenureToInterpolate)
+    public static YieldCurveDataSet FindNextDataWithYield(List<YieldCurveDataSet> yieldCurveDataList, double tenureToInterpolate)
     {
-        YieldCurveCalculation nextData = null;
+        YieldCurveDataSet nextData = null;
 
         // Loop through the sorted list to find the next data point with a yield
         foreach (var yieldCurve in yieldCurveDataList)
@@ -185,7 +185,7 @@ public static class YieldCurveHelper
     }
 
 
-    private static YieldCurveCalculation FindNextDataWithYield(List<YieldCurveCalculation> dataList, int currentIndex)
+    private static YieldCurveDataSet FindNextDataWithYield(List<YieldCurveDataSet> dataList, int currentIndex)
     {
         for (int i = currentIndex + 1; i < dataList.Count; i++)
         {
@@ -205,7 +205,7 @@ public static class YieldCurveHelper
     /// <param name="nextData">The data point after the target tenor.</param>
     /// <param name="targetTenor">The target tenor for which the yield is to be interpolated.</param>
     /// <returns>The interpolated yield at the target tenor.</returns>
-    private static double PerformLinearInterpolation(YieldCurveCalculation previousData, YieldCurveCalculation nextData, double targetTenor)
+    private static double PerformLinearInterpolation(YieldCurveDataSet previousData, YieldCurveDataSet nextData, double targetTenor)
     {
         // tenorDifference represents (x2 - x1), the difference in tenor between the next and previous data points.
         var tenorDifference = nextData.Tenure - previousData.Tenure;

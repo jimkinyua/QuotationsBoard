@@ -475,7 +475,7 @@ namespace Quotations_Board_Backend.Controllers
         [Route("GetPreliminaryYieldCurve")]
         [Authorize(Roles = CustomRoles.SuperAdmin, AuthenticationSchemes = "Bearer")]
 
-        public ActionResult<IEnumerable<YieldCurve>> CalculatePreliminaryYieldCurve(string? For = "default")
+        public ActionResult<IEnumerable<FinalYieldCurveData>> CalculatePreliminaryYieldCurve(string? For = "default")
         {
             var m = DateTime.Now;
             var parsedDate = DateTime.Now;
@@ -534,10 +534,10 @@ namespace Quotations_Board_Backend.Controllers
                 HashSet<string> usedBondIds = new HashSet<string>();
 
                 // for each benchmark range, fetch the bond that is closest to the benchmark range
-                List<YieldCurve> yieldCurves = new List<YieldCurve>();
-                List<YieldCurveCalculation> yieldCurveCalculations = new List<YieldCurveCalculation>();
+                List<FinalYieldCurveData> yieldCurves = new List<FinalYieldCurveData>();
+                List<YieldCurveDataSet> yieldCurveCalculations = new List<YieldCurveDataSet>();
                 // tadd the 1 year TBill to the yield curve
-                yieldCurveCalculations.Add(new YieldCurveCalculation
+                yieldCurveCalculations.Add(new YieldCurveDataSet
                 {
                     Yield = (double)Math.Round(currentOneYearTBill.Yield, 4, MidpointRounding.AwayFromZero),
                     BondUsed = "1 Year TBill",
@@ -573,7 +573,7 @@ namespace Quotations_Board_Backend.Controllers
                             return BadRequest($"The Bond {BondWithExactTenure.IssueNumber} seems not to have an Implied Yield.");
                         }
                         var BondTenure = Math.Round((BondWithExactTenure.MaturityDate.Date - parsedDate.Date).TotalDays / 364, 4, MidpointRounding.AwayFromZero);
-                        yieldCurveCalculations.Add(new YieldCurveCalculation
+                        yieldCurveCalculations.Add(new YieldCurveDataSet
                         {
                             Yield = (double)Math.Round(draftImpliedYield.Yield, 4, MidpointRounding.AwayFromZero),
                             BondUsed = BondWithExactTenure.IssueNumber,
@@ -600,7 +600,7 @@ namespace Quotations_Board_Backend.Controllers
                                 return BadRequest($"The Bond {bond.IssueNumber} seems not to have an Implied Yield for the date {parsedDate}");
                             }
                             var BondTenure = Math.Round((bond.MaturityDate.Date - parsedDate.Date).TotalDays / 364, 4, MidpointRounding.AwayFromZero);
-                            yieldCurveCalculations.Add(new YieldCurveCalculation
+                            yieldCurveCalculations.Add(new YieldCurveDataSet
                             {
                                 Yield = (double)Math.Round(_Possible_impliedYield.Yield, 4, MidpointRounding.AwayFromZero),
                                 BondUsed = bond.IssueNumber,
@@ -640,7 +640,7 @@ namespace Quotations_Board_Backend.Controllers
 
                         if (yieldCurveCalculation.Tenure == tenureToPlot)
                         {
-                            yieldCurves.Add(new YieldCurve
+                            yieldCurves.Add(new FinalYieldCurveData
                             {
                                 Tenure = tenureToPlot,
                                 Yield = yieldCurveCalculation.Yield,
@@ -850,7 +850,7 @@ namespace Quotations_Board_Backend.Controllers
         [HttpGet]
         [Route("GetYieldCurve")]
         [Authorize(AuthenticationSchemes = "Bearer")]
-        public ActionResult<IEnumerable<YieldCurve>> GetYieldCurve(string? For = "default")
+        public ActionResult<IEnumerable<FinalYieldCurveData>> GetYieldCurve(string? For = "default")
         {
             var m = DateTime.Now;
             var parsedDate = DateTime.Now;
@@ -909,10 +909,10 @@ namespace Quotations_Board_Backend.Controllers
                 HashSet<string> usedBondIds = new HashSet<string>();
 
                 // for each benchmark range, fetch the bond that is closest to the benchmark range
-                List<YieldCurve> yieldCurves = new List<YieldCurve>();
-                List<YieldCurveCalculation> yieldCurveCalculations = new List<YieldCurveCalculation>();
+                List<FinalYieldCurveData> yieldCurves = new List<FinalYieldCurveData>();
+                List<YieldCurveDataSet> yieldCurveCalculations = new List<YieldCurveDataSet>();
                 // tadd the 1 year TBill to the yield curve
-                yieldCurveCalculations.Add(new YieldCurveCalculation
+                yieldCurveCalculations.Add(new YieldCurveDataSet
                 {
                     Yield = (double)Math.Round(currentOneYearTBill.Yield, 4, MidpointRounding.AwayFromZero),
                     BondUsed = "1 Year TBill",
@@ -948,7 +948,7 @@ namespace Quotations_Board_Backend.Controllers
                             return BadRequest($"The Bond {BondWithExactTenure.IssueNumber} seems not to have an Implied Yield.");
                         }
                         var BondTenure = Math.Round((BondWithExactTenure.MaturityDate.Date - parsedDate.Date).TotalDays / 364, 4, MidpointRounding.AwayFromZero);
-                        yieldCurveCalculations.Add(new YieldCurveCalculation
+                        yieldCurveCalculations.Add(new YieldCurveDataSet
                         {
                             Yield = (double)Math.Round(impliedYield.Yield, 4, MidpointRounding.AwayFromZero),
                             BondUsed = BondWithExactTenure.IssueNumber,
@@ -975,7 +975,7 @@ namespace Quotations_Board_Backend.Controllers
                                 return BadRequest($"The Bond {bond.IssueNumber} seems not to have an Implied Yield for the date {parsedDate}");
                             }
                             var BondTenure = Math.Round((bond.MaturityDate.Date - parsedDate.Date).TotalDays / 364, 4, MidpointRounding.AwayFromZero);
-                            yieldCurveCalculations.Add(new YieldCurveCalculation
+                            yieldCurveCalculations.Add(new YieldCurveDataSet
                             {
                                 Yield = (double)Math.Round(impliedYield.Yield, 4, MidpointRounding.AwayFromZero),
                                 BondUsed = bond.IssueNumber,
@@ -1015,7 +1015,7 @@ namespace Quotations_Board_Backend.Controllers
 
                         if (yieldCurveCalculation.Tenure == tenureToPlot)
                         {
-                            yieldCurves.Add(new YieldCurve
+                            yieldCurves.Add(new FinalYieldCurveData
                             {
                                 Tenure = tenureToPlot,
                                 Yield = yieldCurveCalculation.Yield,

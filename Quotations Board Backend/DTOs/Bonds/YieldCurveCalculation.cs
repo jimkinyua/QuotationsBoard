@@ -1,4 +1,4 @@
-public class YieldCurveCalculation
+public class YieldCurveDataSet
 {
     public double Yield { get; set; }
     public DateTime IssueDate { get; set; }

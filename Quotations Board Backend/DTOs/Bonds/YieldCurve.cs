@@ -1,4 +1,4 @@
-public class YieldCurve
+public class FinalYieldCurveData
 {
     public double BenchMarkTenor { get; set; }
     public double Yield { get; set; }
