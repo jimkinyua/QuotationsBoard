@@ -1823,7 +1823,7 @@ namespace Quotations_Board_Backend.Controllers
 
 
                     var currentOneYearTBill = context.TBills
-                    .Where(t => t.IssueDate >= startofCycle && t.IssueDate <= endOfCycle)
+                    .Where(t => t.IssueDate.Date >= startofCycle.Date && t.IssueDate.Date <= endOfCycle.Date && t.Tenor ==364)
                     .OrderByDescending(t => t.IssueDate)
                     .FirstOrDefault();
 
