@@ -2,6 +2,16 @@ using Microsoft.EntityFrameworkCore;
 
 public static class QuotationsHelper
 {
+
+    public static async Task<List<Quotation>> GetQuotationsForDate(DateTime date)
+    {
+        using (var context = new QuotationsBoardContext())
+        {
+            var quotations = await context.Quotations.Where(q => q.CreatedAt.Date == date.Date).ToListAsync();
+            return quotations;
+        }
+    }
+
     public static decimal CalculateRemainingTenor(DateTime maturityDate, DateTime createdAt)
     {
         var remainingTenorInYears = Math.Round((maturityDate.Date - createdAt.Date).TotalDays / 364, 4, MidpointRounding.AwayFromZero);
@@ -148,7 +158,7 @@ public static class QuotationsHelper
     public static bool IsWithinMargin(double possibleImpliedYield, double previousYiedld, double maxAllowwdDiffrence)
     {
         double epsilon = 1e-10;
-        double difference =Math.Round( Math.Abs(possibleImpliedYield - previousYiedld),4,MidpointRounding.AwayFromZero);
+        double difference = Math.Round(Math.Abs(possibleImpliedYield - previousYiedld), 4, MidpointRounding.AwayFromZero);
 
         if (difference <= maxAllowwdDiffrence)
         {
@@ -328,7 +338,17 @@ public static class QuotationsHelper
         return count > 0 ? total / count : 0;
     }
 
+    internal static async Task<DateTime> GetMostRecentDateWithQuotationsBeforeDateInQuestion(DateTime fromDate)
+    {
+        using (var context = new QuotationsBoardContext())
+        {
+            var date = await context.Quotations
+                .Where(q => q.CreatedAt.Date < fromDate.Date)
+                .OrderByDescending(q => q.CreatedAt)
+                .Select(q => q.CreatedAt)
+                .FirstOrDefaultAsync();
 
-
-
+            return date;
+        }
+    }
 }
