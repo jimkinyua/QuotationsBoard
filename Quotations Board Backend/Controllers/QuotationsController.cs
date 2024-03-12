@@ -1787,7 +1787,7 @@ namespace Quotations_Board_Backend.Controllers
                 DateTime fromDate = DateTime.Now;
                 if (From == "default" || From == null || string.IsNullOrWhiteSpace(From))
                 {
-                    fromDate = DateTime.Now;
+                    fromDate = DateTime.Now.AddDays(-1);
                 }
                 else
                 {

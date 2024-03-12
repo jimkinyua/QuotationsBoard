@@ -163,7 +163,7 @@ public static class YieldCurveHelper
 
         // If no previous data is found, previousData remains null
         //We will not get it from the previous yield curve
-        if (previousData == null)
+        if (previousData == null && PreviousYieldCurve!=null && tenureToInterpolate !=1)
         {
             var _previousYieldCurve = PreviousYieldCurve.OrderByDescending(y => y.Tenure).ToList();
             foreach (var yieldCurve in _previousYieldCurve)
