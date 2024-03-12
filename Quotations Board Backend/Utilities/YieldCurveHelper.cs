@@ -1,13 +1,13 @@
 public static class YieldCurveHelper
 {
-    public static List<YieldCurveDataSet> InterpolateWhereNecessary(List<YieldCurveDataSet> yieldCurveDataList, HashSet<double> tenuresThatRequireInterPolation)
+    public static List<YieldCurveDataSet> InterpolateWhereNecessary(List<YieldCurveDataSet> yieldCurveDataList, HashSet<double> tenuresThatRequireInterPolation, List<FinalYieldCurveData> PreviousYieldCurve = null)
     {
         yieldCurveDataList.Sort((x, y) => x.Tenure.CompareTo(y.Tenure));
         foreach (var tenureToInterpolate in tenuresThatRequireInterPolation)
         {
             // Find the closest tenures before and after the tenure we want to interpolate
-            var previousData = FindPreviousDataWithYield(yieldCurveDataList, tenureToInterpolate);
-            var nextData = FindNextDataWithYield(yieldCurveDataList, tenureToInterpolate);
+            var previousData = FindPreviousDataWithYield(yieldCurveDataList, tenureToInterpolate, PreviousYieldCurve);
+            var nextData = FindNextDataWithYield(yieldCurveDataList, tenureToInterpolate, PreviousYieldCurve);
             if (previousData != null && nextData != null)
             {
                 // Perform the interpolation
@@ -146,7 +146,7 @@ public static class YieldCurveHelper
         }
         return null; // No previous data found
     }
-    public static YieldCurveDataSet FindPreviousDataWithYield(List<YieldCurveDataSet> yieldCurveDataList, double tenureToInterpolate)
+    public static YieldCurveDataSet FindPreviousDataWithYield(List<YieldCurveDataSet> yieldCurveDataList, double tenureToInterpolate, List<FinalYieldCurveData> PreviousYieldCurve)
     {
         YieldCurveDataSet previousData = null;
 
@@ -162,10 +162,33 @@ public static class YieldCurveHelper
         }
 
         // If no previous data is found, previousData remains null
+        //We will not get it from the previous yield curve
+        if (previousData == null)
+        {
+            var _previousYieldCurve = PreviousYieldCurve.OrderByDescending(y => y.Tenure).ToList();
+            foreach (var yieldCurve in _previousYieldCurve)
+            {
+                if (yieldCurve.Tenure < tenureToInterpolate)
+                {
+                    previousData = new YieldCurveDataSet
+                    {
+                        Tenure = yieldCurve.Tenure,
+                        Yield = yieldCurve.Yield,
+                        BondUsed = yieldCurve.BondUsed
+                    };
+                    break;
+                }
+            }
+        }
+        // is it still null? Give up
+        if (previousData == null)
+        {
+            return null;
+        }
         return previousData;
     }
 
-    public static YieldCurveDataSet FindNextDataWithYield(List<YieldCurveDataSet> yieldCurveDataList, double tenureToInterpolate)
+    public static YieldCurveDataSet FindNextDataWithYield(List<YieldCurveDataSet> yieldCurveDataList, double tenureToInterpolate, List<FinalYieldCurveData> PreviousYieldCurve)
     {
         YieldCurveDataSet nextData = null;
 
@@ -181,11 +204,33 @@ public static class YieldCurveHelper
         }
 
         // If no next data is found, nextData remains null
+        // go back to the previous yield curve
+        if (nextData == null)
+        {
+            var _previousYieldCurve = PreviousYieldCurve.OrderBy(y => y.Tenure).ToList();
+            foreach (var yieldCurve in _previousYieldCurve)
+            {
+                if (yieldCurve.Tenure > tenureToInterpolate)
+                {
+                    nextData = new YieldCurveDataSet
+                    {
+                        Tenure = yieldCurve.Tenure,
+                        Yield = yieldCurve.Yield,
+                        BondUsed = yieldCurve.BondUsed
+                    };
+                    break;
+                }
+            }
+        }
+        if (nextData == null)
+        {
+            return null;
+        }
         return nextData;
     }
 
 
-    private static YieldCurveDataSet FindNextDataWithYield(List<YieldCurveDataSet> dataList, int currentIndex)
+    private static YieldCurveDataSet FindNextDataWithYield(List<YieldCurveDataSet> dataList, int currentIndex, List<FinalYieldCurveData> PreviousYieldCurve)
     {
         for (int i = currentIndex + 1; i < dataList.Count; i++)
         {

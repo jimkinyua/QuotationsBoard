@@ -1972,7 +1972,7 @@ namespace Quotations_Board_Backend.Controllers
                     }
 
                     // interpolate the yield curve
-                    var interpolatedYieldCurve = YieldCurveHelper.InterpolateWhereNecessary(yieldCurveCalculations, tenuresThatRequireInterPolation);
+                    var interpolatedYieldCurve = YieldCurveHelper.InterpolateWhereNecessary(yieldCurveCalculations, tenuresThatRequireInterPolation, previousYieldCurveData);
                     HashSet<double> tenuresToPlot = new HashSet<double>();
                     foreach (var interpolatedTenure in tenuresThatRequireInterPolation)
                     {
