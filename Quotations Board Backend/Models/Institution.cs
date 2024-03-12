@@ -15,6 +15,7 @@ public class Institution
     public string Status { get; set; } = InstitutionStatus.Active;
     public DateTime DeactivatedAt { get; set; }
     public DateTime ModifiedAt { get; set; }
+    public Boolean IsApiAccessEnabled { get; set; }
     // can have many PortalUsers
     public ICollection<PortalUser> PortalUsers { get; set; } = null!;
     // can have many quotations

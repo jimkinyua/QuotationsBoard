@@ -155,6 +155,119 @@ namespace Quotations_Board_Backend.Controllers
 
         }
 
+        // Enable/Diable API Access
+        [HttpPost("EnableApiAccess")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [SwaggerOperation(Summary = "Enable/Disable API Access", Description = "Enables or disables API access for an institution", OperationId = "EnableApiAccess")]
+        [Authorize(AuthenticationSchemes = "Bearer", Roles = CustomRoles.SuperAdmin)]
+        public async Task<IActionResult> EnableApiAccessAsync(EnableApiAccess enableApiAccess)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+            try
+            {
+                using (var context = new QuotationsBoardContext())
+                {
+                    var institution = await context.Institutions.FirstOrDefaultAsync(x => x.Id == enableApiAccess.InstitutionId);
+                    if (institution == null)
+                    {
+                        return NotFound();
+                    }
+                    institution.IsApiAccessEnabled = enableApiAccess.IsApiAccessEnabled;
+                    context.Institutions.Update(institution);
+                    await context.SaveChangesAsync();
+                    // Was the API access enabled or disabled
+                    if (enableApiAccess.IsApiAccessEnabled)
+                    {
+                        var apiUserRole = await context.Roles.FirstOrDefaultAsync(r => r.Name == CustomRoles.APIUser);
+                        if (apiUserRole == null)
+                        {
+                            // we can create the role
+                            apiUserRole = new IdentityRole { Name = CustomRoles.APIUser, NormalizedName = "APIUSER" };
+                            context.Roles.Add(apiUserRole);
+                            await context.SaveChangesAsync();
+                        }
+
+                        var apiUser = await context.UserRoles
+                                    .Join(context.Users, ur => ur.UserId, u => u.Id, (ur, u) => new { ur, u })
+                                    .Where(x => x.u.InstitutionId == enableApiAccess.InstitutionId && x.ur.RoleId == apiUserRole.Id)
+                                    .Select(x => x.u)
+                                    .FirstOrDefaultAsync();
+
+                        if (apiUser == null)
+                        {
+                            var domainOfInstitution = institution.OrganizationEmail.Split('@')[1];
+                            var apiUserEmail = $"api@{domainOfInstitution}";
+                            var ApiKey = Guid.NewGuid().ToString();
+                            var ApiSecret = Guid.NewGuid().ToString();
+                            // create a new user
+                            var newUser = new PortalUser
+                            {
+                                Email = apiUserEmail,
+                                UserName = ApiKey,
+                                NormalizedEmail = apiUserEmail.ToUpper(),
+                                FirstName = "API",
+                                LastName = "User",
+                                EmailConfirmed = true,
+                                PhoneNumberConfirmed = true,
+                                InstitutionId = institution.Id,
+                                TwoFactorEnabled = false
+                            };
+                            var result = await _userManager.CreateAsync(newUser, ApiSecret);
+                            if (!result.Succeeded)
+                            {
+                                // Fetch the error details
+                                string errorDetails = "";
+                                foreach (var error in result.Errors)
+                                {
+                                    errorDetails += error.Description + "\n";
+                                }
+                                return BadRequest(errorDetails);
+                            }
+                            // add user to role of APIUser
+                            var userRole = new IdentityUserRole<string>
+                            {
+                                RoleId = apiUserRole.Id,
+                                UserId = newUser.Id
+                            };
+                            context.UserRoles.Add(userRole);
+                            await context.SaveChangesAsync();
+                            // send the API Key and Secret to the institution
+                            var adminSubject = "API Access Granted";
+                            var adminMessage = $"Hello,\n\n" +
+                                                "Your institution has been granted API access to the Quotations Board Platform.\n\n" +
+                                                "Here are your API credentials:\n\n" +
+                                                $"API Key: {ApiKey}\n" +
+                                                $"API Secret: {ApiSecret}\n\n" +
+                                                "Please keep these credentials safe and do not share them with unauthorized persons.\n\n" +
+                                                "Best regards,\n" +
+                                                "Nairobi Stock Exchange";
+                            await UtilityService.SendEmailAsync(institution.OrganizationEmail, adminSubject, adminMessage);
+
+                            return Ok("API Access Granted");
+
+                        }
+                        else
+                        {
+                            return Ok("API Access Updated");
+                        }
+
+                    }
+
+                    return Ok("API Access Updated");
+                }
+            }
+            catch (Exception Ex)
+            {
+                UtilityService.LogException(Ex);
+                return StatusCode(500, UtilityService.HandleException(Ex));
+            }
+        }
+
+
         // Istitution InstitutionTypes
         [HttpGet("InstitutionTypes")]
         [ProducesResponseType(StatusCodes.Status200OK)]
