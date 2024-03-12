@@ -880,12 +880,12 @@ namespace Quotations_Board_Backend.Controllers
 
                 var currentOneYearTBill = _db.TBillImpliedYields
                 .Include(t => t.TBill)
-                .Where(t => t.Tenor >= 364 && t.Date.Date == parsedDate.Date).FirstOrDefault();
+                .Where(t => t.Tenor == 364 && t.Date.Date == parsedDate.Date).FirstOrDefault();
 
 
                 if (currentOneYearTBill == null)
                 {
-                    return BadRequest("Seems the implied yield for the 1 year TBill for the date " + parsedDate + " does not exist.");
+                    return BadRequest("Seems the implied yield for the 1 year TBill for the date " + parsedDate.Date + " does not exist.");
                 }
 
                 var bondDates = fXdBonds
