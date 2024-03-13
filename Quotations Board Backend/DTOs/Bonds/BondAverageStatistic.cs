@@ -18,5 +18,6 @@ public class BondAverageStatistic
     public double PreviousImpliedYield { get; set; }
     public string ISIN { get; set; } = null!;
     public double DaysImpliedYield { get; set; }
+    public DateTime IssueDate { get; set; }
 
 }
