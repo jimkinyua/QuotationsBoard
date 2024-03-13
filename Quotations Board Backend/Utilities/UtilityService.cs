@@ -20,7 +20,7 @@ public static class UtilityService
         Configuration = configuration;
     }
 
-    public static async Task SendEmailAsync(string recipient, string subject, string body)
+    public static async Task SendEmailAsync(string recipient, string subject, string body, List<string> ccRecipients = null)
     {
         try
         {
@@ -36,6 +36,15 @@ public static class UtilityService
             {
                 IsBodyHtml = true
             };
+
+            // Add CC recipients if any
+            if (ccRecipients != null)
+            {
+                foreach (var ccRecipient in ccRecipients)
+                {
+                    message.CC.Add(ccRecipient);
+                }
+            }
 
             // Send the email
             await smtpClient.SendMailAsync(message);
