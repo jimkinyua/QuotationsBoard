@@ -901,6 +901,7 @@ namespace Quotations_Board_Backend.Controllers
                 {
                     return BadRequest(processBenchmarkResult.ErrorMessage);
                 }
+                yieldCurveCalculations.AddRange(processBenchmarkResult.YieldCurveCalculations);
                 // interpolate the yield curve
                 var interpolatedYieldCurve = YieldCurveHelper.InterpolateWhereNecessary(yieldCurveCalculations, tenuresThatRequireInterPolation);
 
