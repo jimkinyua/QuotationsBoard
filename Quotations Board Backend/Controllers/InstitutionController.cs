@@ -197,6 +197,22 @@ namespace Quotations_Board_Backend.Controllers
                                     .Select(x => x.u)
                                     .FirstOrDefaultAsync();
 
+                        var InstitutionAdmins = await context.UserRoles
+                        .Join(context.Users, ur => ur.UserId, u => u.Id, (ur, u) => new { ur, u })
+                        .Where(x => x.u.InstitutionId == enableApiAccess.InstitutionId && x.ur.RoleId == CustomRoles.InstitutionAdmin)
+                        .Select(x => x.u)
+                        .ToListAsync();
+
+                        if (InstitutionAdmins.Count == 0)
+                        {
+                            return BadRequest("Institution Admin not found. The institution must have at least one admin to enable API access");
+                        }
+
+                        var ccEmails = new List<string>();
+                        foreach (var admin in InstitutionAdmins)
+                        {
+                            ccEmails.Add(admin.Email);
+                        }
                         if (apiUser == null)
                         {
                             var domainOfInstitution = institution.OrganizationEmail.Split('@')[1];
@@ -245,7 +261,7 @@ namespace Quotations_Board_Backend.Controllers
                                                 "Please keep these credentials safe and do not share them with unauthorized persons.\n\n" +
                                                 "Best regards,\n" +
                                                 "Nairobi Stock Exchange";
-                            await UtilityService.SendEmailAsync(institution.OrganizationEmail, adminSubject, adminMessage);
+                            await UtilityService.SendEmailAsync(institution.OrganizationEmail, adminSubject, adminMessage, ccEmails);
 
                             return Ok("API Access Granted");
 
