@@ -742,7 +742,8 @@ namespace Quotations_Board_Backend.Controllers
                             BondType = bond.BondType,
                             PreviousImpliedYield = previousImpliedYield != null ? previousImpliedYield.Yield : 0,
                             ISIN = bond.Isin,
-                            DaysImpliedYield = currentImplied
+                            DaysImpliedYield = currentImplied,
+                            IssueDate = bond.IssueDate,
                         };
 
 
@@ -825,8 +826,6 @@ namespace Quotations_Board_Backend.Controllers
                                 bondStatistic.NumberofTrades = totalTradeCount;
                                 bondStatistic.WeightedTradeBuyYield = Math.Round(averageWeightedBuyYield, 4, MidpointRounding.AwayFromZero);
                                 bondStatistic.WeightedTradeSellYield = 0;
-                                bondStatistic.IssueDate = bond.IssueDate;
-
                             }
                         }
                     }
