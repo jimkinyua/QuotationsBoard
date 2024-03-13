@@ -423,6 +423,7 @@ public static class YieldCurveHelper
                 }
             }
         }
+        result.Success = true;
         return result;
     }
 
