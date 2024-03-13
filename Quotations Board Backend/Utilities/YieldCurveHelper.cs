@@ -151,7 +151,7 @@ public static class YieldCurveHelper
     }
     public static YieldCurveDataSet FindPreviousDataWithYield(List<YieldCurveDataSet> yieldCurveDataList, double tenureToInterpolate, List<FinalYieldCurveData> PreviousYieldCurve)
     {
-        YieldCurveDataSet previousData = null;
+        YieldCurveDataSet previousData = new YieldCurveDataSet();
 
         // Loop backwards through the sorted list to find the previous data point with a yield
         for (int i = yieldCurveDataList.Count - 1; i >= 0; i--)
@@ -193,7 +193,7 @@ public static class YieldCurveHelper
 
     public static YieldCurveDataSet FindNextDataWithYield(List<YieldCurveDataSet> yieldCurveDataList, double tenureToInterpolate, List<FinalYieldCurveData> PreviousYieldCurve)
     {
-        YieldCurveDataSet nextData = null;
+        YieldCurveDataSet nextData = new YieldCurveDataSet();
 
         // Loop through the sorted list to find the next data point with a yield
         foreach (var yieldCurve in yieldCurveDataList)
