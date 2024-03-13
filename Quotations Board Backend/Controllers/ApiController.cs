@@ -95,6 +95,59 @@ namespace Quotations_Board_Backend.Controllers
             return BadRequest("Could not authenticate user");
         }
 
+        // get Yield Curve for a specific date
+        [HttpPost("yieldcurve")]
+        [Authorize(Roles = CustomRoles.APIUser, AuthenticationSchemes = "Bearer")]
+        public async Task<ActionResult<IEnumerable<FinalYieldCurveData>>> GetYieldCurve([FromBody] APIYieldCurveRequest ApiRequest)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest("Invalid client request. The date provided is not valid");
+            }
+
+            try
+            {
+                // var user = await GetCurrentUserAsync();
+                var userId = UtilityService.GetUserIdFromToken(Request);
+                var user = await _userManager.FindByIdAsync(userId);
+                if (user == null)
+                {
+                    return BadRequest("User not found");
+                }
+                DateTime parsedDate = new DateTime(ApiRequest.Date.Year, ApiRequest.Date.Month, ApiRequest.Date.Day);
+                if (parsedDate == DateTime.MinValue)
+                {
+                    return BadRequest($"Invalid date provided: {ApiRequest.Date}");
+                }
+
+                using (var context = new QuotationsBoardContext())
+                {
+                    Dictionary<int, (double, double)> benchmarkRanges = YieldCurveHelper.GetBenchmarkRanges(parsedDate);
+                    HashSet<double> tenuresThatRequireInterPolation = new HashSet<double>();
+                    HashSet<double> tenuresThatDoNotRequireInterpolation = new HashSet<double>();
+                    HashSet<string> usedBondIds = new HashSet<string>();
+                    List<FinalYieldCurveData> YieldCurveToPlot = new List<FinalYieldCurveData>();
+                    List<YieldCurveDataSet> yieldCurveCalculations = new List<YieldCurveDataSet>();
+                    YieldCurveHelper.AddOneYearTBillToYieldCurve(parsedDate, tenuresThatDoNotRequireInterpolation, yieldCurveCalculations);
+                    ProcessBenchmarkResult Mnaoes = YieldCurveHelper.ProcessYieldCurve(parsedDate, context, yieldCurveCalculations, benchmarkRanges, tenuresThatRequireInterPolation, tenuresThatDoNotRequireInterpolation, usedBondIds);
+                    if (Mnaoes.Success == false)
+                    {
+                        return BadRequest(Mnaoes.ErrorMessage);
+                    }
+                    yieldCurveCalculations.AddRange(Mnaoes.YieldCurveCalculations);
+                    YieldCurveHelper.InterpolateWhereNecessary(yieldCurveCalculations, tenuresThatRequireInterPolation);
+                    YieldCurveToPlot = YieldCurveHelper.GenerateYieldCurves(tenuresThatRequireInterPolation, tenuresThatDoNotRequireInterpolation, yieldCurveCalculations);
+                    return Ok(YieldCurveToPlot);
+
+                }
+            }
+            catch (Exception Ex)
+            {
+                UtilityService.LogException(Ex);
+                return StatusCode(500, UtilityService.HandleException(Ex));
+            }
+        }
+
 
 
     }

@@ -168,6 +168,67 @@ namespace Quotations_Board_Backend.Controllers
             }
         }
 
+        [HttpPost("GetInstitutionApiKey")]
+        [Authorize(Roles = CustomRoles.InstitutionAdmin, AuthenticationSchemes = "Bearer")]
+        public async Task<ActionResult> GetInstitutionApiKey()
+        {
+            LoginTokenDTO TokenContents = UtilityService.GetUserIdFromCurrentRequest(Request);
+            if (TokenContents == null)
+            {
+                return Unauthorized();
+            }
+
+            using (var context = new QuotationsBoardContext())
+            {
+                Institution? institution = await context.Institutions
+                    .Include(i => i.PortalUsers)
+                    .FirstOrDefaultAsync(i => i.Id == TokenContents.InstitutionId);
+                if (institution == null)
+                {
+                    return NotFound();
+                }
+
+                // is the api api access active?
+                if (!institution.IsApiAccessEnabled)
+                {
+                    return BadRequest("API access is inactive");
+                }
+
+                // get hold of a user with the APIUser role
+                var apiUser = await _userManager.GetUsersInRoleAsync(CustomRoles.APIUser);
+                var existingApiUser = apiUser.FirstOrDefault(u => u.InstitutionId == institution.Id);
+                if (existingApiUser == null)
+                {
+                    return BadRequest("Seems like the API user does not exist");
+                }
+
+                // generate a new API key
+                var apiKey = Guid.NewGuid().ToString();
+
+                // API KEY ACTS AS THE PASSWORD SO UPDATE THE USER PASSWORD
+                var result = await _userManager.RemovePasswordAsync(existingApiUser);
+                if (!result.Succeeded)
+                {
+                    return BadRequest(result.Errors);
+                }
+                result = await _userManager.AddPasswordAsync(existingApiUser, apiKey);
+                if (!result.Succeeded)
+                {
+                    return BadRequest(result.Errors);
+                }
+
+                // send email to user with the new API key
+                string emailBody = $"<p>Hello,</p>" +
+                    "<p>Your API key has been reset. " +
+                    "Your new API key is: " + apiKey;
+
+                await UtilityService.SendEmailAsync(existingApiUser.Email, "Quotations Board Portal API Key Reset", emailBody);
+
+                return Ok(apiKey);
+            }
+        }
+
+
         [HttpPut("UpdateInstitutionUser")]
         public async Task<ActionResult> UpdateInstitutionUser(EditPortalUser portalUserDTO)
         {
