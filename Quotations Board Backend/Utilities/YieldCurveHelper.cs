@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore;
 
 public static class YieldCurveHelper
 {
-    public static List<YieldCurveDataSet> InterpolateWhereNecessary(List<YieldCurveDataSet> yieldCurveDataList, HashSet<double> tenuresThatRequireInterPolation, List<FinalYieldCurveData> PreviousYieldCurve = null)
+    public static List<YieldCurveDataSet> InterpolateWhereNecessary(List<YieldCurveDataSet> yieldCurveDataList, HashSet<double> tenuresThatRequireInterPolation, List<FinalYieldCurveData> PreviousYieldCurve)
     {
         yieldCurveDataList.Sort((x, y) => x.Tenure.CompareTo(y.Tenure));
         foreach (var tenureToInterpolate in tenuresThatRequireInterPolation)
@@ -151,7 +151,7 @@ public static class YieldCurveHelper
     }
     public static YieldCurveDataSet FindPreviousDataWithYield(List<YieldCurveDataSet> yieldCurveDataList, double tenureToInterpolate, List<FinalYieldCurveData> PreviousYieldCurve)
     {
-        YieldCurveDataSet previousData = new YieldCurveDataSet();
+        YieldCurveDataSet previousData = null;
 
         // Loop backwards through the sorted list to find the previous data point with a yield
         for (int i = yieldCurveDataList.Count - 1; i >= 0; i--)
@@ -193,7 +193,7 @@ public static class YieldCurveHelper
 
     public static YieldCurveDataSet FindNextDataWithYield(List<YieldCurveDataSet> yieldCurveDataList, double tenureToInterpolate, List<FinalYieldCurveData> PreviousYieldCurve)
     {
-        YieldCurveDataSet nextData = new YieldCurveDataSet();
+        YieldCurveDataSet nextData = null;
 
         // Loop through the sorted list to find the next data point with a yield
         foreach (var yieldCurve in yieldCurveDataList)
