@@ -119,11 +119,16 @@ public static class UtilityService
         Logger.LogError(ex, ex.Message);
     }
 
-    internal static JwtSecurityToken GenerateToken(List<Claim> claims)
+    internal static JwtSecurityToken GenerateToken(List<Claim> claims, Boolean isForAPIUser = false)
     {
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(Configuration["Jwt:Key"]));
         var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
         var expires = DateTime.Now.AddHours(Convert.ToDouble(Configuration["Jwt:ExpireDays"]));
+
+        if (isForAPIUser)
+        {
+            expires = DateTime.Now.AddHours(1);
+        }
 
         var token = new JwtSecurityToken(
             issuer: Configuration["Jwt:Issuer"],
