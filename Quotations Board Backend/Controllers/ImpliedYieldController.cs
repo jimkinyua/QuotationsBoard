@@ -477,181 +477,34 @@ namespace Quotations_Board_Backend.Controllers
 
         public ActionResult<IEnumerable<FinalYieldCurveData>> CalculatePreliminaryYieldCurve(string? For = "default")
         {
-            var m = DateTime.Now;
-            var parsedDate = DateTime.Now;
-
             using (var _db = new QuotationsBoardContext())
             {
-                if (For == "default" || For == null || string.IsNullOrWhiteSpace(For))
+
+                var parsedDate = QuotationsHelper.ParseDate(For);
+                // IS PARSED DATE VALID?
+                if (parsedDate == DateTime.MinValue)
                 {
-                    // parsedDate = DateTime.Now;
-                }
-                else
-                {
-                    string[] formats = { "dd/MM/yyyy", "yyyy-MM-dd", "MM/dd/yyyy", "dd-MM-yyyy", "dd/MM/yyyy HH:mm:ss", "yyyy-MM-dd HH:mm:ss", "MM/dd/yyyy HH:mm:ss", "dd-MM-yyyy HH:mm:ss" };
-                    DateTime targetTradeDate;
-                    bool success = DateTime.TryParseExact(For, formats, CultureInfo.InvariantCulture, DateTimeStyles.None, out targetTradeDate);
-                    if (!success)
-                    {
-                        return BadRequest("The date format is invalid");
-                    }
-                    parsedDate = targetTradeDate.Date;
-                }
-                var (startOfCycle, endOfCycle) = TBillHelper.GetCurrentTBillCycle(parsedDate);
-
-                // Fetch all Bonds  under FXD Category that are not matured
-                var fXdBonds = _db.Bonds.Where(b => b.BondCategory == "FXD" && b.MaturityDate.Date > parsedDate.Date).ToList();
-                // var fXdBonds = _db.Bonds.Where(b => b.MaturityDate.Date > DateTime.Now.Date).ToList();
-
-                var currentOneYearTBill = _db.TBills
-                .Where(t => t.Tenor >= 364 && t.IssueDate.Date >= startOfCycle.Date && t.IssueDate.Date <= endOfCycle.Date)
-                .FirstOrDefault();
-
-
-                if (currentOneYearTBill == null)
-                {
-                    return BadRequest("Seems the 1 year TBill for the current week starting from " + startOfCycle + " to " + endOfCycle + " does not exist.");
+                    return BadRequest("The date format is invalid");
                 }
 
-                var bondDates = fXdBonds
-                .Select(b => new { b.MaturityDate, b.IssueDate })
-                .ToList();
-
-                var maxTenure = bondDates.Max(b => (b.MaturityDate.Date - parsedDate.Date).TotalDays / 364);
-                // var _roundedMaxTenure = Math.Floor(maxTenure);
-                var _floorMaxTenure = Math.Floor(maxTenure);
-                var _ceilMaxTenure = Math.Ceiling(maxTenure);
-
-
-                // Generate benchmark ranges dynamically
                 Dictionary<int, (double, double)> benchmarkRanges = YieldCurveHelper.GetBenchmarkRanges(parsedDate);
-
-                Dictionary<int, bool> benchmarksFound = new Dictionary<int, bool>();
-
-                List<int> benchMarkTenorsForYiedCurve = new List<int> { 2, 5, 10, 15, 20, 25 };
                 HashSet<double> tenuresThatRequireInterPolation = new HashSet<double>();
                 HashSet<double> tenuresThatDoNotRequireInterpolation = new HashSet<double>();
                 HashSet<string> usedBondIds = new HashSet<string>();
-
-                // for each benchmark range, fetch the bond that is closest to the benchmark range
-                List<FinalYieldCurveData> yieldCurves = new List<FinalYieldCurveData>();
+                List<FinalYieldCurveData> YieldCurveToPlot = new List<FinalYieldCurveData>();
                 List<YieldCurveDataSet> yieldCurveCalculations = new List<YieldCurveDataSet>();
-                // tadd the 1 year TBill to the yield curve
-                yieldCurveCalculations.Add(new YieldCurveDataSet
+
+                YieldCurveHelper.AddOneYearTBillToYieldCurve(parsedDate, tenuresThatDoNotRequireInterpolation, yieldCurveCalculations, true);
+                ProcessBenchmarkResult Mnaoes = YieldCurveHelper.ProcessYieldCurve(parsedDate, _db, yieldCurveCalculations, benchmarkRanges, tenuresThatRequireInterPolation, tenuresThatDoNotRequireInterpolation, usedBondIds);
+                if (Mnaoes.Success == false)
                 {
-                    Yield = (double)Math.Round(currentOneYearTBill.Yield, 4, MidpointRounding.AwayFromZero),
-                    BondUsed = "1 Year TBill",
-                    IssueDate = currentOneYearTBill.IssueDate,
-                    MaturityDate = currentOneYearTBill.MaturityDate,
-                    Tenure = 1
-                });
-                tenuresThatDoNotRequireInterpolation.Add(1);
-
-                foreach (var benchmark in benchmarkRanges)
-                {
-                    Bond? BondWithExactTenure = null;
-                    //var closestBond = GetClosestBond(fXdBonds, benchmark, usedBondIds, parsedDate);
-                    var bondsWithinThisTenure = YieldCurveHelper.GetBondsInTenorRange(fXdBonds, benchmark, usedBondIds, parsedDate);
-
-                    if (bondsWithinThisTenure.Count() == 0 && benchmark.Key != 1)
-                    {
-                        tenuresThatRequireInterPolation.Add(benchmark.Key);
-                        continue;
-                    }
-                    else
-                    {
-                        BondWithExactTenure = YieldCurveHelper.GetBondWithExactTenure(bondsWithinThisTenure, benchmark.Value.Item1, parsedDate);
-
-                    }
-
-                    if (BondWithExactTenure != null)
-                    {
-                        // get implied yield of this Bond
-                        var draftImpliedYield = _db.DraftImpliedYields.Where(i => i.BondId == BondWithExactTenure.Id && i.YieldDate.Date == parsedDate.Date).FirstOrDefault();
-                        if (draftImpliedYield == null)
-                        {
-                            return BadRequest($"The Bond {BondWithExactTenure.IssueNumber} seems not to have an Implied Yield.");
-                        }
-                        var BondTenure = Math.Round((BondWithExactTenure.MaturityDate.Date - parsedDate.Date).TotalDays / 364, 4, MidpointRounding.AwayFromZero);
-                        yieldCurveCalculations.Add(new YieldCurveDataSet
-                        {
-                            Yield = (double)Math.Round(draftImpliedYield.Yield, 4, MidpointRounding.AwayFromZero),
-                            BondUsed = BondWithExactTenure.IssueNumber,
-                            IssueDate = BondWithExactTenure.IssueDate,
-                            MaturityDate = BondWithExactTenure.MaturityDate,
-                            Tenure = BondTenure
-                        });
-                        usedBondIds.Add(BondWithExactTenure.Id);
-                        tenuresThatDoNotRequireInterpolation.Add(BondTenure);
-                    }
-                    else
-                    {
-                        tenuresThatRequireInterPolation.Add(benchmark.Key);
-                        // FOR EACH OF THE BONDS WITHIN THE TENURE, Create a Yield Curve (We will interpolate the missing ones later)
-                        foreach (var bond in bondsWithinThisTenure)
-                        {
-                            if (usedBondIds.Contains(bond.Id))
-                            {
-                                continue; // Skip bonds that have already been used
-                            }
-                            var _Possible_impliedYield = _db.DraftImpliedYields.Where(i => i.BondId == bond.Id && i.YieldDate.Date == parsedDate.Date).FirstOrDefault();
-                            if (_Possible_impliedYield == null)
-                            {
-                                return BadRequest($"The Bond {bond.IssueNumber} seems not to have an Implied Yield for the date {parsedDate}");
-                            }
-                            var BondTenure = Math.Round((bond.MaturityDate.Date - parsedDate.Date).TotalDays / 364, 4, MidpointRounding.AwayFromZero);
-                            yieldCurveCalculations.Add(new YieldCurveDataSet
-                            {
-                                Yield = (double)Math.Round(_Possible_impliedYield.Yield, 4, MidpointRounding.AwayFromZero),
-                                BondUsed = bond.IssueNumber,
-                                IssueDate = bond.IssueDate,
-                                MaturityDate = bond.MaturityDate,
-                                Tenure = BondTenure
-                            });
-                            usedBondIds.Add(bond.Id);
-                        }
-                    }
-
+                    return BadRequest(Mnaoes.ErrorMessage);
                 }
 
-
-                // interpolate the yield curve
-                var interpolatedYieldCurve = YieldCurveHelper.InterpolateWhereNecessary(yieldCurveCalculations, tenuresThatRequireInterPolation);
-
-                HashSet<double> tenuresToPlot = new HashSet<double>();
-                foreach (var interpolatedTenure in tenuresThatRequireInterPolation)
-                {
-                    tenuresToPlot.Add(interpolatedTenure);
-                }
-                foreach (var notInterpolated in tenuresThatDoNotRequireInterpolation)
-                {
-                    tenuresToPlot.Add(notInterpolated);
-                }
-
-                foreach (var tenureToPlot in tenuresToPlot)
-                {
-                    foreach (var yieldCurveCalculation in yieldCurveCalculations)
-                    {
-                        var _BondUsed = "Interpolated";
-                        if (tenuresThatDoNotRequireInterpolation.Contains(yieldCurveCalculation.Tenure))
-                        {
-                            _BondUsed = yieldCurveCalculation.BondUsed;
-                        }
-
-                        if (yieldCurveCalculation.Tenure == tenureToPlot)
-                        {
-                            yieldCurves.Add(new FinalYieldCurveData
-                            {
-                                Tenure = tenureToPlot,
-                                Yield = yieldCurveCalculation.Yield,
-                                BondUsed = _BondUsed,
-                                BenchMarkTenor = tenureToPlot,
-                            });
-                        }
-                    }
-                }
-
-                return Ok(yieldCurves);
+                yieldCurveCalculations.AddRange(Mnaoes.YieldCurveCalculations);
+                YieldCurveHelper.InterpolateWhereNecessary(yieldCurveCalculations, tenuresThatRequireInterPolation);
+                YieldCurveToPlot = YieldCurveHelper.GenerateYieldCurves(tenuresThatRequireInterPolation, tenuresThatDoNotRequireInterpolation, yieldCurveCalculations);
+                return Ok(YieldCurveToPlot);
 
             }
         }
@@ -864,18 +717,22 @@ namespace Quotations_Board_Backend.Controllers
                 }
 
                 Dictionary<int, (double, double)> benchmarkRanges = YieldCurveHelper.GetBenchmarkRanges(parsedDate);
-                Dictionary<int, bool> benchmarksFound = new Dictionary<int, bool>();
-                List<int> benchMarkTenorsForYiedCurve = new List<int> { 2, 5, 10, 15, 20, 25 };
                 HashSet<double> tenuresThatRequireInterPolation = new HashSet<double>();
                 HashSet<double> tenuresThatDoNotRequireInterpolation = new HashSet<double>();
                 HashSet<string> usedBondIds = new HashSet<string>();
                 List<FinalYieldCurveData> YieldCurveToPlot = new List<FinalYieldCurveData>();
                 List<YieldCurveDataSet> yieldCurveCalculations = new List<YieldCurveDataSet>();
 
-
                 YieldCurveHelper.AddOneYearTBillToYieldCurve(parsedDate, tenuresThatDoNotRequireInterpolation, yieldCurveCalculations);
+                ProcessBenchmarkResult Mnaoes = YieldCurveHelper.ProcessYieldCurve(parsedDate, _db, yieldCurveCalculations, benchmarkRanges, tenuresThatRequireInterPolation, tenuresThatDoNotRequireInterpolation, usedBondIds);
+                if (Mnaoes.Success == false)
+                {
+                    return BadRequest(Mnaoes.ErrorMessage);
+                }
 
-                YieldCurveToPlot = YieldCurveHelper.ProcessYieldCurve(parsedDate, _db, yieldCurveCalculations, benchmarkRanges, tenuresThatRequireInterPolation, tenuresThatDoNotRequireInterpolation, usedBondIds);
+                yieldCurveCalculations.AddRange(Mnaoes.YieldCurveCalculations);
+                YieldCurveHelper.InterpolateWhereNecessary(yieldCurveCalculations, tenuresThatRequireInterPolation);
+                YieldCurveToPlot = YieldCurveHelper.GenerateYieldCurves(tenuresThatRequireInterPolation, tenuresThatDoNotRequireInterpolation, yieldCurveCalculations);
                 return Ok(YieldCurveToPlot);
 
             }

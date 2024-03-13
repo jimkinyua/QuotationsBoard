@@ -329,7 +329,7 @@ public static class YieldCurveHelper
         }
     }
 
-    public static TBillImpliedYield? GetCurrentOneYearTBill(DateTime parsedDate)
+    public static TBillImpliedYield? GetCurrentOneYearTBillImpliedYield(DateTime parsedDate)
     {
         using (var _db = new QuotationsBoardContext())
         {
@@ -338,6 +338,18 @@ public static class YieldCurveHelper
                       .Where(t => t.Tenor == 364 && t.Date.Date == parsedDate.Date).FirstOrDefault();
         }
     }
+
+    public static TBill? GetCurrentOneYearTBill(DateTime startOfCycle, DateTime endOfCycle)
+    {
+        using (var _db = new QuotationsBoardContext())
+        {
+            return _db.TBills
+                      .Where(t => t.IssueDate.Date >= startOfCycle.Date && t.IssueDate.Date <= endOfCycle.Date && t.Tenor == 364)
+                      .OrderByDescending(t => t.IssueDate)
+                      .FirstOrDefault();
+        }
+    }
+
 
     public static (double, double) CalculateTenureExtremes(IEnumerable<Bond> bonds, DateTime parsedDate)
     {
@@ -469,38 +481,56 @@ public static class YieldCurveHelper
     }
 
 
-    public static void AddOneYearTBillToYieldCurve(DateTime parsedDate, HashSet<double> tenuresThatDoNotRequireInterpolation, List<YieldCurveDataSet> yieldCurveCalculations)
+    public static void AddOneYearTBillToYieldCurve(DateTime parsedDate, HashSet<double> tenuresThatDoNotRequireInterpolation, List<YieldCurveDataSet> yieldCurveCalculations, Boolean PreviewYieldCurve = false)
     {
-        var currentOneYearTBill = GetCurrentOneYearTBill(parsedDate);
-
-        if (currentOneYearTBill == null)
+        if (PreviewYieldCurve)
         {
-            throw new Exception("Seems the implied yield for the 1 year TBill for the date " + parsedDate.Date + " does not exist.");
+            var (startOfCycle, endOfCycle) = TBillHelper.GetCurrentTBillCycle(parsedDate);
+            var m = GetCurrentOneYearTBill(startOfCycle, endOfCycle);
+
+            if (m == null)
+            {
+                throw new Exception("Seems the 1 year TBill for the date " + parsedDate.Date + " does not exist.");
+            }
+
+            yieldCurveCalculations.Add(new YieldCurveDataSet
+            {
+                Yield = (double)Math.Round(m.Yield, 4, MidpointRounding.AwayFromZero),
+                BondUsed = "1 Year TBill",
+                IssueDate = m.IssueDate,
+                MaturityDate = m.MaturityDate,
+                Tenure = 1
+            });
+            tenuresThatDoNotRequireInterpolation.Add(1);
+        }
+        else
+        {
+            var currentOneYearTBill = GetCurrentOneYearTBillImpliedYield(parsedDate);
+
+            if (currentOneYearTBill == null)
+            {
+                throw new Exception("Seems the implied yield for the 1 year TBill for the date " + parsedDate.Date + " does not exist.");
+            }
+
+            // tadd the 1 year TBill to the yield curve
+            yieldCurveCalculations.Add(new YieldCurveDataSet
+            {
+                Yield = (double)Math.Round(currentOneYearTBill.Yield, 4, MidpointRounding.AwayFromZero),
+                BondUsed = "1 Year TBill",
+                IssueDate = currentOneYearTBill.TBill.IssueDate,
+                MaturityDate = currentOneYearTBill.TBill.MaturityDate,
+                Tenure = 1
+            });
+            tenuresThatDoNotRequireInterpolation.Add(1);
         }
 
-        // tadd the 1 year TBill to the yield curve
-        yieldCurveCalculations.Add(new YieldCurveDataSet
-        {
-            Yield = (double)Math.Round(currentOneYearTBill.Yield, 4, MidpointRounding.AwayFromZero),
-            BondUsed = "1 Year TBill",
-            IssueDate = currentOneYearTBill.TBill.IssueDate,
-            MaturityDate = currentOneYearTBill.TBill.MaturityDate,
-            Tenure = 1
-        });
-        tenuresThatDoNotRequireInterpolation.Add(1);
+
     }
 
-    public static List<FinalYieldCurveData> ProcessYieldCurve(DateTime parsedDate, QuotationsBoardContext _db, List<YieldCurveDataSet> yieldCurveCalculations, Dictionary<int, (double, double)> benchmarkRanges, HashSet<double> tenuresThatRequireInterPolation, HashSet<double> tenuresThatDoNotRequireInterpolation, HashSet<string> usedBondIds)
+    public static ProcessBenchmarkResult ProcessYieldCurve(DateTime parsedDate, QuotationsBoardContext _db, List<YieldCurveDataSet> yieldCurveCalculations, Dictionary<int, (double, double)> benchmarkRanges, HashSet<double> tenuresThatRequireInterPolation, HashSet<double> tenuresThatDoNotRequireInterpolation, HashSet<string> usedBondIds)
     {
         var fXdBonds = YieldCurveHelper.GetFXDBonds(parsedDate);
-        ProcessBenchmarkResult processBenchmarkResult = YieldCurveHelper.ProcessBenchmarkRanges(benchmarkRanges, tenuresThatRequireInterPolation, tenuresThatDoNotRequireInterpolation, usedBondIds, parsedDate, _db, fXdBonds);
-        if (!processBenchmarkResult.Success)
-        {
-            throw new Exception(processBenchmarkResult.ErrorMessage);
-        }
-        yieldCurveCalculations.AddRange(processBenchmarkResult.YieldCurveCalculations);
-        var interpolatedYieldCurve = YieldCurveHelper.InterpolateWhereNecessary(yieldCurveCalculations, tenuresThatRequireInterPolation);
-        return YieldCurveHelper.GenerateYieldCurves(tenuresThatRequireInterPolation, tenuresThatDoNotRequireInterpolation, yieldCurveCalculations);
+        return ProcessBenchmarkRanges(benchmarkRanges, tenuresThatRequireInterPolation, tenuresThatDoNotRequireInterpolation, usedBondIds, parsedDate, _db, fXdBonds);
     }
 
 
