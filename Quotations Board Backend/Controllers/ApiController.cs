@@ -128,6 +128,8 @@ namespace Quotations_Board_Backend.Controllers
                     HashSet<string> usedBondIds = new HashSet<string>();
                     List<FinalYieldCurveData> YieldCurveToPlot = new List<FinalYieldCurveData>();
                     List<YieldCurveDataSet> yieldCurveCalculations = new List<YieldCurveDataSet>();
+                    List<FinalYieldCurveData> previousCurve = new List<FinalYieldCurveData>();
+
                     YieldCurveHelper.AddOneYearTBillToYieldCurve(parsedDate, tenuresThatDoNotRequireInterpolation, yieldCurveCalculations);
                     ProcessBenchmarkResult Mnaoes = YieldCurveHelper.ProcessYieldCurve(parsedDate, context, yieldCurveCalculations, benchmarkRanges, tenuresThatRequireInterPolation, tenuresThatDoNotRequireInterpolation, usedBondIds);
                     if (Mnaoes.Success == false)
@@ -135,7 +137,7 @@ namespace Quotations_Board_Backend.Controllers
                         return BadRequest(Mnaoes.ErrorMessage);
                     }
                     yieldCurveCalculations.AddRange(Mnaoes.YieldCurveCalculations);
-                    YieldCurveHelper.InterpolateWhereNecessary(yieldCurveCalculations, tenuresThatRequireInterPolation);
+                    YieldCurveHelper.InterpolateWhereNecessary(yieldCurveCalculations, tenuresThatRequireInterPolation, previousCurve);
                     YieldCurveToPlot = YieldCurveHelper.GenerateYieldCurves(tenuresThatRequireInterPolation, tenuresThatDoNotRequireInterpolation, yieldCurveCalculations);
                     return Ok(YieldCurveToPlot);
 

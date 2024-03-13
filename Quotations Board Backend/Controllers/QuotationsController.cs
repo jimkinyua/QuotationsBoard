@@ -2026,6 +2026,7 @@ namespace Quotations_Board_Backend.Controllers
             HashSet<string> usedBondIds = new HashSet<string>();
             List<YieldCurveDataSet> yieldCurveCalculations = new List<YieldCurveDataSet>();
             List<FinalYieldCurveData> yieldCurves = new List<FinalYieldCurveData>();
+            List<FinalYieldCurveData> previousYieldCurveData = new List<FinalYieldCurveData>();
 
             using (var context = new QuotationsBoardContext())
             {
@@ -2128,7 +2129,7 @@ namespace Quotations_Board_Backend.Controllers
                 }
 
                 // interpolate the yield curve
-                var interpolatedYieldCurve = YieldCurveHelper.InterpolateWhereNecessary(yieldCurveCalculations, tenuresThatRequireInterPolation);
+                var interpolatedYieldCurve = YieldCurveHelper.InterpolateWhereNecessary(yieldCurveCalculations, tenuresThatRequireInterPolation, previousYieldCurveData);
                 HashSet<double> tenuresToPlot = new HashSet<double>();
                 foreach (var interpolatedTenure in tenuresThatRequireInterPolation)
                 {

@@ -492,6 +492,7 @@ namespace Quotations_Board_Backend.Controllers
                 HashSet<double> tenuresThatDoNotRequireInterpolation = new HashSet<double>();
                 HashSet<string> usedBondIds = new HashSet<string>();
                 List<FinalYieldCurveData> YieldCurveToPlot = new List<FinalYieldCurveData>();
+                List<FinalYieldCurveData> previousCurcve = new List<FinalYieldCurveData>();
                 List<YieldCurveDataSet> yieldCurveCalculations = new List<YieldCurveDataSet>();
 
                 YieldCurveHelper.AddOneYearTBillToYieldCurve(parsedDate, tenuresThatDoNotRequireInterpolation, yieldCurveCalculations, true);
@@ -502,7 +503,7 @@ namespace Quotations_Board_Backend.Controllers
                 }
 
                 yieldCurveCalculations.AddRange(Mnaoes.YieldCurveCalculations);
-                YieldCurveHelper.InterpolateWhereNecessary(yieldCurveCalculations, tenuresThatRequireInterPolation);
+                YieldCurveHelper.InterpolateWhereNecessary(yieldCurveCalculations, tenuresThatRequireInterPolation, previousCurcve);
                 YieldCurveToPlot = YieldCurveHelper.GenerateYieldCurves(tenuresThatRequireInterPolation, tenuresThatDoNotRequireInterpolation, yieldCurveCalculations);
                 return Ok(YieldCurveToPlot);
 
@@ -721,6 +722,7 @@ namespace Quotations_Board_Backend.Controllers
                 HashSet<double> tenuresThatDoNotRequireInterpolation = new HashSet<double>();
                 HashSet<string> usedBondIds = new HashSet<string>();
                 List<FinalYieldCurveData> YieldCurveToPlot = new List<FinalYieldCurveData>();
+                List<FinalYieldCurveData> PreviousCurve = new List<FinalYieldCurveData>();
                 List<YieldCurveDataSet> yieldCurveCalculations = new List<YieldCurveDataSet>();
 
                 YieldCurveHelper.AddOneYearTBillToYieldCurve(parsedDate, tenuresThatDoNotRequireInterpolation, yieldCurveCalculations);
@@ -731,7 +733,7 @@ namespace Quotations_Board_Backend.Controllers
                 }
 
                 yieldCurveCalculations.AddRange(Mnaoes.YieldCurveCalculations);
-                YieldCurveHelper.InterpolateWhereNecessary(yieldCurveCalculations, tenuresThatRequireInterPolation);
+                YieldCurveHelper.InterpolateWhereNecessary(yieldCurveCalculations, tenuresThatRequireInterPolation, PreviousCurve);
                 YieldCurveToPlot = YieldCurveHelper.GenerateYieldCurves(tenuresThatRequireInterPolation, tenuresThatDoNotRequireInterpolation, yieldCurveCalculations);
                 return Ok(YieldCurveToPlot);
 
