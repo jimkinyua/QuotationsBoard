@@ -1999,7 +1999,7 @@ namespace Quotations_Board_Backend.Controllers
                                 {
                                     Tenure = tenureToPlot,
                                     Yield = yieldCurveCalculation.Yield,
-                                    CanBeUsedForYieldCurve = true,
+                                    // CanBeUsedForYieldCurve = true,
                                     BondUsed = _BondUsed,
                                     BenchMarkTenor = tenureToPlot,
                                 });
@@ -2155,7 +2155,7 @@ namespace Quotations_Board_Backend.Controllers
                             {
                                 Tenure = tenureToPlot,
                                 Yield = yieldCurveCalculation.Yield,
-                                CanBeUsedForYieldCurve = true,
+                                // CanBeUsedForYieldCurve = true,
                                 BondUsed = _BondUsed,
                                 BenchMarkTenor = tenureToPlot,
                             });

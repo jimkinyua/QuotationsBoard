@@ -1,3 +1,4 @@
+using System.Globalization;
 using Microsoft.EntityFrameworkCore;
 
 public static class QuotationsHelper
@@ -351,4 +352,25 @@ public static class QuotationsHelper
             return date;
         }
     }
+
+    public static DateTime ParseDate(string dateInput)
+    {
+        if (string.IsNullOrWhiteSpace(dateInput) || dateInput == "default")
+        {
+            return DateTime.Now;
+        }
+        else
+        {
+            string[] formats = { "dd/MM/yyyy", "yyyy-MM-dd", "MM/dd/yyyy", "dd-MM-yyyy", "dd/MM/yyyy HH:mm:ss", "yyyy-MM-dd HH:mm:ss", "MM/dd/yyyy HH:mm:ss", "dd-MM-yyyy HH:mm:ss" };
+            DateTime targetTradeDate;
+            bool success = DateTime.TryParseExact(dateInput, formats, CultureInfo.InvariantCulture, DateTimeStyles.None, out targetTradeDate);
+            if (!success)
+            {
+                // return default date
+                return DateTime.MinValue;
+            }
+            return targetTradeDate.Date;
+        }
+    }
+
 }

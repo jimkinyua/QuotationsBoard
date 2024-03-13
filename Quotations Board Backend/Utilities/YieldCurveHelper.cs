@@ -1,3 +1,5 @@
+using Microsoft.EntityFrameworkCore;
+
 public static class YieldCurveHelper
 {
     public static List<YieldCurveDataSet> InterpolateWhereNecessary(List<YieldCurveDataSet> yieldCurveDataList, HashSet<double> tenuresThatRequireInterPolation, List<FinalYieldCurveData> PreviousYieldCurve = null)
@@ -163,7 +165,7 @@ public static class YieldCurveHelper
 
         // If no previous data is found, previousData remains null
         //We will not get it from the previous yield curve
-        if (previousData == null && PreviousYieldCurve!=null && tenureToInterpolate !=1)
+        if (previousData == null && PreviousYieldCurve != null && tenureToInterpolate != 1)
         {
             var _previousYieldCurve = PreviousYieldCurve.OrderByDescending(y => y.Tenure).ToList();
             foreach (var yieldCurve in _previousYieldCurve)
@@ -317,11 +319,125 @@ public static class YieldCurveHelper
         }
     }
 
+    public static List<Bond> GetFXDBonds(DateTime parsedDate)
+    {
+        using (var _db = new QuotationsBoardContext())
+        {
+            var fXdBonds = _db.Bonds.Where(b => b.BondCategory == "FXD" && b.MaturityDate.Date > parsedDate.Date).ToList();
+            return fXdBonds;
+        }
+    }
+
+    public static TBillImpliedYield? GetCurrentOneYearTBill(DateTime parsedDate)
+    {
+        using (var _db = new QuotationsBoardContext())
+        {
+            return _db.TBillImpliedYields
+                      .Include(t => t.TBill)
+                      .Where(t => t.Tenor == 364 && t.Date.Date == parsedDate.Date).FirstOrDefault();
+        }
+    }
+
+    public static (double, double) CalculateTenureExtremes(IEnumerable<Bond> bonds, DateTime parsedDate)
+    {
+        var bondDates = bonds
+            .Select(b => new { b.MaturityDate, b.IssueDate })
+            .ToList();
+
+        var maxTenure = bondDates.Max(b => (b.MaturityDate.Date - parsedDate.Date).TotalDays / 364);
+        var _floorMaxTenure = Math.Floor(maxTenure);
+        var _ceilMaxTenure = Math.Ceiling(maxTenure);
+
+        return (_floorMaxTenure, _ceilMaxTenure);
+    }
 
 
+    public static ProcessBenchmarkResult ProcessBenchmarkRanges(Dictionary<int, (double, double)> benchmarkRanges, HashSet<double> tenuresThatRequireInterPolation, HashSet<double> tenuresThatDoNotRequireInterpolation, HashSet<string> usedBondIds, DateTime parsedDate, QuotationsBoardContext _db, List<Bond> fXdBonds)
+    {
+        ProcessBenchmarkResult result = new ProcessBenchmarkResult();
+        foreach (var benchmark in benchmarkRanges)
+        {
+            Bond? BondWithExactTenure = null;
+            var bondsWithinThisTenure = YieldCurveHelper.GetBondsInTenorRange(fXdBonds, benchmark, usedBondIds, parsedDate);
+
+            if (bondsWithinThisTenure.Count() == 0 && benchmark.Key != 1)
+            {
+                tenuresThatRequireInterPolation.Add(benchmark.Key);
+                continue;
+            }
+            else
+            {
+                BondWithExactTenure = YieldCurveHelper.GetBondWithExactTenure(bondsWithinThisTenure, benchmark.Value.Item1, parsedDate);
+            }
+
+            if (BondWithExactTenure != null)
+            {
+                // get implied yield of this Bond
+                var impliedYield = _db.ImpliedYields.Where(i => i.BondId == BondWithExactTenure.Id && i.YieldDate.Date == parsedDate.Date).FirstOrDefault();
+                if (impliedYield == null)
+                {
+                    result.Success = false;
+                    result.ErrorMessage = $"The Bond {BondWithExactTenure.IssueNumber} seems not to have an Implied Yield for the date {parsedDate}";
+                    return result;
+                }
+                var BondTenure = Math.Round((BondWithExactTenure.MaturityDate.Date - parsedDate.Date).TotalDays / 364, 4, MidpointRounding.AwayFromZero);
+                result.YieldCurveCalculations.Add(new YieldCurveDataSet
+                {
+                    Yield = (double)Math.Round(impliedYield.Yield, 4, MidpointRounding.AwayFromZero),
+                    BondUsed = BondWithExactTenure.IssueNumber,
+                    IssueDate = BondWithExactTenure.IssueDate,
+                    MaturityDate = BondWithExactTenure.MaturityDate,
+                    Tenure = BondTenure
+                });
+
+                usedBondIds.Add(BondWithExactTenure.Id);
+                tenuresThatDoNotRequireInterpolation.Add(BondTenure);
+            }
+            else
+            {
+                tenuresThatRequireInterPolation.Add(benchmark.Key);
+                // FOR EACH OF THE BONDS WITHIN THE TENURE, Create a Yield Curve (We will interpolate the missing ones later)
+                foreach (var bond in bondsWithinThisTenure)
+                {
+                    if (usedBondIds.Contains(bond.Id))
+                    {
+                        continue; // Skip bonds that have already been used
+                    }
+                    var impliedYield = _db.ImpliedYields.Where(i => i.BondId == bond.Id && i.YieldDate.Date == parsedDate.Date).FirstOrDefault();
+                    if (impliedYield == null)
+                    {
+                        result.Success = false;
+                        result.ErrorMessage = $"The Bond {bond.IssueNumber} seems not to have an Implied Yield for the date {parsedDate}";
+                        return result;
+                    }
+                    var BondTenure = Math.Round((bond.MaturityDate.Date - parsedDate.Date).TotalDays / 364, 4, MidpointRounding.AwayFromZero);
+                    result.YieldCurveCalculations.Add(new YieldCurveDataSet
+                    {
+                        Yield = (double)Math.Round(impliedYield.Yield, 4, MidpointRounding.AwayFromZero),
+                        BondUsed = bond.IssueNumber,
+                        IssueDate = bond.IssueDate,
+                        MaturityDate = bond.MaturityDate,
+                        Tenure = BondTenure
+                    });
+                    usedBondIds.Add(bond.Id);
+                }
+            }
+        }
+        return result;
+    }
 
 
 
 
 
 }
+
+
+
+
+
+
+
+
+
+
