@@ -495,7 +495,13 @@ namespace Quotations_Board_Backend.Controllers
                 List<FinalYieldCurveData> previousCurcve = new List<FinalYieldCurveData>();
                 List<YieldCurveDataSet> yieldCurveCalculations = new List<YieldCurveDataSet>();
 
-                YieldCurveHelper.AddOneYearTBillToYieldCurve(parsedDate, tenuresThatDoNotRequireInterpolation, yieldCurveCalculations, true);
+                var res = YieldCurveHelper.AddOneYearTBillToYieldCurve(parsedDate, tenuresThatDoNotRequireInterpolation, yieldCurveCalculations, true);
+
+                if (res.Success == false)
+                {
+                    return BadRequest(res.ErrorMessage);
+                }
+
                 ProcessBenchmarkResult Mnaoes = YieldCurveHelper.ProcessYieldCurve(parsedDate, _db, yieldCurveCalculations, benchmarkRanges, tenuresThatRequireInterPolation, tenuresThatDoNotRequireInterpolation, usedBondIds);
                 if (Mnaoes.Success == false)
                 {
@@ -725,7 +731,13 @@ namespace Quotations_Board_Backend.Controllers
                 List<FinalYieldCurveData> PreviousCurve = new List<FinalYieldCurveData>();
                 List<YieldCurveDataSet> yieldCurveCalculations = new List<YieldCurveDataSet>();
 
-                YieldCurveHelper.AddOneYearTBillToYieldCurve(parsedDate, tenuresThatDoNotRequireInterpolation, yieldCurveCalculations);
+                var res = YieldCurveHelper.AddOneYearTBillToYieldCurve(parsedDate, tenuresThatDoNotRequireInterpolation, yieldCurveCalculations);
+
+                if (res.Success == false)
+                {
+                    return BadRequest(res.ErrorMessage);
+                }
+
                 ProcessBenchmarkResult Mnaoes = YieldCurveHelper.ProcessYieldCurve(parsedDate, _db, yieldCurveCalculations, benchmarkRanges, tenuresThatRequireInterPolation, tenuresThatDoNotRequireInterpolation, usedBondIds);
                 if (Mnaoes.Success == false)
                 {

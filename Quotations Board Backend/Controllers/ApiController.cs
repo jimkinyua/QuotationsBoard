@@ -102,7 +102,7 @@ namespace Quotations_Board_Backend.Controllers
         {
             if (!ModelState.IsValid)
             {
-                return BadRequest("Invalid client request. The date provided is not valid");
+                return BadRequest("Invalid client request. The date provided is not valid. The date should be in the format: yyyy-MM-dd");
             }
 
             try
@@ -130,7 +130,11 @@ namespace Quotations_Board_Backend.Controllers
                     List<YieldCurveDataSet> yieldCurveCalculations = new List<YieldCurveDataSet>();
                     List<FinalYieldCurveData> previousCurve = new List<FinalYieldCurveData>();
 
-                    YieldCurveHelper.AddOneYearTBillToYieldCurve(parsedDate, tenuresThatDoNotRequireInterpolation, yieldCurveCalculations);
+                    AddOneYearTBillResult addResult = YieldCurveHelper.AddOneYearTBillToYieldCurve(parsedDate, tenuresThatDoNotRequireInterpolation, yieldCurveCalculations);
+                    if (addResult.Success == false)
+                    {
+                        return BadRequest(addResult.ErrorMessage);
+                    }
                     ProcessBenchmarkResult Mnaoes = YieldCurveHelper.ProcessYieldCurve(parsedDate, context, yieldCurveCalculations, benchmarkRanges, tenuresThatRequireInterPolation, tenuresThatDoNotRequireInterpolation, usedBondIds);
                     if (Mnaoes.Success == false)
                     {

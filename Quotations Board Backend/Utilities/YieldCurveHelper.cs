@@ -481,7 +481,7 @@ public static class YieldCurveHelper
     }
 
 
-    public static void AddOneYearTBillToYieldCurve(DateTime parsedDate, HashSet<double> tenuresThatDoNotRequireInterpolation, List<YieldCurveDataSet> yieldCurveCalculations, Boolean PreviewYieldCurve = false)
+    public static AddOneYearTBillResult AddOneYearTBillToYieldCurve(DateTime parsedDate, HashSet<double> tenuresThatDoNotRequireInterpolation, List<YieldCurveDataSet> yieldCurveCalculations, Boolean PreviewYieldCurve = false)
     {
         if (PreviewYieldCurve)
         {
@@ -490,7 +490,11 @@ public static class YieldCurveHelper
 
             if (m == null)
             {
-                throw new Exception("Seems the 1 year TBill for the date " + parsedDate.Date + " does not exist.");
+                return new AddOneYearTBillResult
+                {
+                    Success = false,
+                    ErrorMessage = "The 1 year TBill for the date " + parsedDate.Date + " is not available."
+                };
             }
 
             yieldCurveCalculations.Add(new YieldCurveDataSet
@@ -509,7 +513,11 @@ public static class YieldCurveHelper
 
             if (currentOneYearTBill == null)
             {
-                throw new Exception("Seems the implied yield for the 1 year TBill for the date " + parsedDate.Date + " does not exist.");
+                return new AddOneYearTBillResult
+                {
+                    Success = false,
+                    ErrorMessage = "The 1 year TBill for the date " + parsedDate.Date + " is not available."
+                };
             }
 
             // tadd the 1 year TBill to the yield curve
@@ -524,6 +532,10 @@ public static class YieldCurveHelper
             tenuresThatDoNotRequireInterpolation.Add(1);
         }
 
+        return new AddOneYearTBillResult
+        {
+            Success = true
+        };
 
     }
 

@@ -1834,6 +1834,13 @@ namespace Quotations_Board_Backend.Controllers
                     var quotationsForSelectedDate = await QuotationsHelper.GetQuotationsForDate(fromDate);
                     var mostRecentDateWithQuotations = await QuotationsHelper.GetMostRecentDateWithQuotationsBeforeDateInQuestion(fromDate);
                     var quotationsForMostRecentDate = await QuotationsHelper.GetQuotationsForDate(mostRecentDateWithQuotations);
+                    var res = YieldCurveHelper.AddOneYearTBillToYieldCurve(mostRecentDateWithQuotations, tenuresThatDoNotRequireInterpolation, yieldCurveCalculations);
+                    if (res.Success == false)
+                    {
+                        return BadRequest(res.ErrorMessage);
+                    }
+
+
                     var previousYieldCurveData = await InterpolateValuesForLastQuotedDayAsync(mostRecentDateWithQuotations, quotationsForMostRecentDate);
 
                     // check if there are any quotations for the selected date
@@ -2030,7 +2037,6 @@ namespace Quotations_Board_Backend.Controllers
 
             using (var context = new QuotationsBoardContext())
             {
-                YieldCurveHelper.AddOneYearTBillToYieldCurve(LastDateWithQuotes, tenuresThatDoNotRequireInterpolation, yieldCurveCalculations);
                 var bondsNotMatured = context.Bonds.Where(b => b.BondCategory == "FXD" && b.MaturityDate.Date > LastDateWithQuotes.Date).ToList();
                 var groupedQuotations = Quotes.GroupBy(x => x.BondId);
                 foreach (var bondQuotes in groupedQuotations)
