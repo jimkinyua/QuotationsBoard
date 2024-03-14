@@ -2030,6 +2030,7 @@ namespace Quotations_Board_Backend.Controllers
 
             using (var context = new QuotationsBoardContext())
             {
+                YieldCurveHelper.AddOneYearTBillToYieldCurve(LastDateWithQuotes, tenuresThatDoNotRequireInterpolation, yieldCurveCalculations);
                 var bondsNotMatured = context.Bonds.Where(b => b.BondCategory == "FXD" && b.MaturityDate.Date > LastDateWithQuotes.Date).ToList();
                 var groupedQuotations = Quotes.GroupBy(x => x.BondId);
                 foreach (var bondQuotes in groupedQuotations)
