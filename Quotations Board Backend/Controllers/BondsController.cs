@@ -31,6 +31,15 @@ namespace Quotations_Board_Backend.Controllers
             List<BondDTO> bondDTOs = new List<BondDTO>();
             foreach (var bond in bonds)
             {
+                var Rate = " ";
+                if (bond.CouponType == "Variable")
+                {
+                    Rate = bond.VariableCouponRate;
+                }
+                else
+                {
+                    Rate = bond.CouponRate.ToString();
+                }
                 BondDTO bondDTO = new BondDTO
                 {
                     Id = bond.Id,
@@ -39,7 +48,7 @@ namespace Quotations_Board_Backend.Controllers
                     MaturityDate = bond.MaturityDate,
                     OutstandingValue = bond.OutstandingValue,
                     CouponType = bond.CouponType,
-                    CouponRate = bond.CouponRate,
+                    CouponRate = Rate,
                     BondType = bond.BondType,
                     IssueNumber = bond.IssueNumber,
                     BondCategory = bond.BondCategory,
@@ -177,6 +186,17 @@ namespace Quotations_Board_Backend.Controllers
             List<BondDTO> bondDTOs = new List<BondDTO>();
             foreach (var bond in bonds)
             {
+                var Rate = " ";
+                if (bond.CouponType == "Variable")
+                {
+                    Rate = bond.VariableCouponRate;
+                }
+                else
+                {
+                    Rate = bond.CouponRate.ToString();
+                }
+
+
                 BondDTO bondDTO = new BondDTO
                 {
                     Id = bond.Id,
@@ -185,7 +205,7 @@ namespace Quotations_Board_Backend.Controllers
                     MaturityDate = bond.MaturityDate,
                     OutstandingValue = bond.OutstandingValue,
                     CouponType = bond.CouponType,
-                    CouponRate = bond.CouponRate,
+                    CouponRate = Rate,
                     BondType = bond.BondType,
                     IssueNumber = bond.IssueNumber,
                     BondCategory = bond.BondCategory,
@@ -204,6 +224,16 @@ namespace Quotations_Board_Backend.Controllers
             List<BondDTO> bondDTOs = new List<BondDTO>();
             foreach (var bond in bonds)
             {
+                var Rate = " ";
+                if (bond.CouponType == "Variable")
+                {
+                    Rate = bond.VariableCouponRate;
+                }
+                else
+                {
+                    Rate = bond.CouponRate.ToString();
+                }
+
                 BondDTO bondDTO = new BondDTO
                 {
                     Id = bond.Id,
@@ -212,7 +242,7 @@ namespace Quotations_Board_Backend.Controllers
                     MaturityDate = bond.MaturityDate,
                     OutstandingValue = bond.OutstandingValue,
                     CouponType = bond.CouponType,
-                    CouponRate = bond.CouponRate,
+                    CouponRate = Rate,
                     BondType = bond.BondType,
                     IssueNumber = bond.IssueNumber,
                     BondCategory = bond.BondCategory,
