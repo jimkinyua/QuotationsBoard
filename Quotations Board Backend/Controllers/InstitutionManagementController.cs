@@ -10,7 +10,7 @@ namespace Quotations_Board_Backend.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    [Authorize(Roles = $"{CustomRoles.SuperAdmin}", AuthenticationSchemes = "Bearer")]
+    // [Authorize(Roles = $"{CustomRoles.SuperAdmin}", AuthenticationSchemes = "Bearer")]
     public class InstitutionManagementController : ControllerBase
     {
         private readonly IMapper _mapper;
