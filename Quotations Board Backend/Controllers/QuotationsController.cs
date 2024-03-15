@@ -1901,14 +1901,14 @@ namespace Quotations_Board_Backend.Controllers
                     var (startofCycle, endOfCycle) = TBillHelper.GetCurrentTBillCycle(fromDate);
                     var bondsNotMatured = context.Bonds.Where(b => b.BondCategory == "FXD" && b.MaturityDate.Date > fromDate.Date).ToList();
 
-                    YieldCurveDataSet? oneYearTbillYeild = YieldCurveHelper.AddOneYearTBillToCalculation(startofCycle, endOfCycle);
-                    if (oneYearTbillYeild == null)
-                    {
-                        return BadRequest("It Seems there is no 1 Year TBill for the cycle beggining from " + startofCycle + " to " + endOfCycle);
-                    }
+                    // YieldCurveDataSet? oneYearTbillYeild = YieldCurveHelper.AddOneYearTBillToCalculation(startofCycle, endOfCycle);
+                    // if (oneYearTbillYeild == null)
+                    // {
+                    //     return BadRequest("It Seems there is no 1 Year TBill for the cycle beggining from " + startofCycle + " to " + endOfCycle);
+                    // }
 
-                    yieldCurveCalculations.Add(oneYearTbillYeild);
-                    tenuresThatDoNotRequireInterpolation.Add(1);
+                    // yieldCurveCalculations.Add(oneYearTbillYeild);
+                    // tenuresThatDoNotRequireInterpolation.Add(1);
 
                     var quotationsForSelectedDate = await QuotationsHelper.GetQuotationsForDate(fromDate);
                     var mostRecentDateWithQuotations = await QuotationsHelper.GetMostRecentDateWithQuotationsBeforeDateInQuestion(fromDate);
