@@ -230,7 +230,8 @@ namespace Quotations_Board_Backend.Controllers
                                 EmailConfirmed = true,
                                 PhoneNumberConfirmed = true,
                                 InstitutionId = institution.Id,
-                                TwoFactorEnabled = false
+                                TwoFactorEnabled = false,
+                                LockoutEnabled = false,
                             };
                             var result = await _userManager.CreateAsync(newUser, ApiSecret);
                             if (!result.Succeeded)
