@@ -312,6 +312,8 @@ namespace Quotations_Board_Backend.Controllers
 
                             return Ok("API Access Granted");
                         }
+                        // can only have one User for API   
+                        return BadRequest("Organizations are only limited to one API User");
                     }
 
                     // api acees was disabled
@@ -474,7 +476,8 @@ namespace Quotations_Board_Backend.Controllers
                             InstitutionName = institutionApplication.InstitutionName,
                             InstitutionType = _type,
                             InstitutionId = institution.Id,
-                            IsActive = isActive
+                            IsActive = isActive,
+                            IsAPIAcessEnabled = institution.IsApiAccessEnabled
                         });
                     }
                     return Ok(institutionApplicationsDTO);
