@@ -62,6 +62,25 @@ public static class YieldCurveHelper
         }
     }
 
+    public static YieldCurveDataSet? AddOneYearTBillToCalculation(DateTime StartofCycle, DateTime EndOfCycle)
+    {
+        var currentTbill = GetCurrentOneYearTBill(StartofCycle, EndOfCycle);
+        if (currentTbill != null)
+        {
+            YieldCurveDataSet tBillYieldCurve = new YieldCurveDataSet
+            {
+                Tenure = 1,
+                Yield = currentTbill.Yield,
+                IssueDate = currentTbill.IssueDate,
+                MaturityDate = currentTbill.MaturityDate,
+                BondUsed = "1 Year TBill"
+            };
+            return tBillYieldCurve;
+        }
+        return null;
+
+    }
+
 
 
     public static IEnumerable<Bond> GetBondsInTenorRange(IEnumerable<Bond> bonds, KeyValuePair<int, (double, double)> benchmark, HashSet<string> usedBondIds, DateTime dateInQuestion)
