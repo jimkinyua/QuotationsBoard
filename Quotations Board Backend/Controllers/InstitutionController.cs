@@ -244,15 +244,21 @@ namespace Quotations_Board_Backend.Controllers
                                 PhoneNumberConfirmed = true,
                                 InstitutionId = institution.Id,
                                 TwoFactorEnabled = false,
-                                LockoutEnabled = false,
                             };
-                            context.Users.Add(newUser);
-                            // set the password
-                            var passwordHasher = new PasswordHasher<PortalUser>();
-                            newUser.PasswordHash = passwordHasher.HashPassword(newUser, ApiSecret);
-
-                            // UPDATE THE USER
-                            context.Users.Update(newUser);
+                            var result = await _userManager.CreateAsync(newUser, ApiSecret);
+                            if (!result.Succeeded)
+                            {
+                                // Fetch the error details
+                                string errorDetails = "";
+                                foreach (var error in result.Errors)
+                                {
+                                    errorDetails += error.Description + "\n";
+                                }
+                                return BadRequest(errorDetails);
+                            }
+                            // set the LockoutEnabled   
+                            newUser.LockoutEnabled = false;
+                            await _userManager.UpdateAsync(newUser);
 
                             // add user to role of APIUser
                             var userRole = new IdentityUserRole<string>
