@@ -232,7 +232,7 @@ public static class YieldCurveHelper
             var _previousYieldCurve = PreviousYieldCurve.OrderBy(y => y.Tenure).ToList();
             foreach (var yieldCurve in _previousYieldCurve)
             {
-                if (yieldCurve.Tenure > tenureToInterpolate)
+                if (yieldCurve.Tenure >= tenureToInterpolate)
                 {
                     nextData = new YieldCurveDataSet
                     {
