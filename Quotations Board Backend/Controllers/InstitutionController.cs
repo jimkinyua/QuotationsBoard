@@ -182,18 +182,18 @@ namespace Quotations_Board_Backend.Controllers
                     // Was the API access enabled or disabled
                     if (enableApiAccess.IsApiAccessEnabled)
                     {
-                        var apiUserRole = await context.Roles.FirstOrDefaultAsync(r => r.Name == CustomRoles.APIUser);
-                        if (apiUserRole == null)
+                        var apiRole = await context.Roles.FirstOrDefaultAsync(r => r.Name == CustomRoles.APIUser);
+                        if (apiRole == null)
                         {
                             // we can create the role
-                            apiUserRole = new IdentityRole { Name = CustomRoles.APIUser, NormalizedName = "APIUSER" };
-                            context.Roles.Add(apiUserRole);
+                            apiRole = new IdentityRole { Name = CustomRoles.APIUser, NormalizedName = "APIUSER" };
+                            context.Roles.Add(apiRole);
                             await context.SaveChangesAsync();
                         }
 
-                        var apiUser = await context.UserRoles
+                        var apiMUser = await context.UserRoles
                                     .Join(context.Users, ur => ur.UserId, u => u.Id, (ur, u) => new { ur, u })
-                                    .Where(x => x.u.InstitutionId == enableApiAccess.InstitutionId && x.ur.RoleId == apiUserRole.Id)
+                                    .Where(x => x.u.InstitutionId == enableApiAccess.InstitutionId && x.ur.RoleId == apiRole.Id)
                                     .Select(x => x.u)
                                     .FirstOrDefaultAsync();
 
@@ -213,7 +213,7 @@ namespace Quotations_Board_Backend.Controllers
                         {
                             ccEmails.Add(admin.Email);
                         }
-                        if (apiUser == null)
+                        if (apiMUser == null)
                         {
                             var domainOfInstitution = institution.OrganizationEmail.Split('@')[1];
                             var apiUserEmail = $"api@{domainOfInstitution}";
@@ -246,21 +246,54 @@ namespace Quotations_Board_Backend.Controllers
                             // add user to role of APIUser
                             var userRole = new IdentityUserRole<string>
                             {
-                                RoleId = apiUserRole.Id,
+                                RoleId = apiRole.Id,
                                 UserId = newUser.Id
                             };
                             context.UserRoles.Add(userRole);
                             await context.SaveChangesAsync();
                             // send the API Key and Secret to the institution
                             var adminSubject = "API Access Granted";
-                            var adminMessage = $"Hello,\n\n" +
-                                                "Your institution has been granted API access to the Quotations Board Platform.\n\n" +
-                                                "Here are your API credentials:\n\n" +
-                                                $"API Key: {ApiKey}\n" +
-                                                $"API Secret: {ApiSecret}\n\n" +
-                                                "Please keep these credentials safe and do not share them with unauthorized persons.\n\n" +
-                                                "Best regards,\n" +
-                                                "Nairobi Stock Exchange";
+
+                            var adminMessage = $@"
+                                                <html>
+                                                    <head>
+                                                        <style>
+                                                            body {{
+                                                                font-family: Arial, sans-serif;
+                                                                background-color: #f4f4f4;
+                                                                padding: 20px;
+                                                            }}
+                                                            .container {{
+                                                                background-color: #ffffff;
+                                                                padding: 20px;
+                                                                border-radius: 5px;
+                                                                box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+                                                            }}
+                                                            .credentials {{
+                                                                background-color: #f0f0f0;
+                                                                padding: 10px;
+                                                                border-radius: 5px;
+                                                                font-family: monospace;
+                                                            }}
+                                                        </style>
+                                                    </head>
+                                                    <body>
+                                                        <div class='container'>
+                                                            <h2>API Access Granted</h2>
+                                                            <p>Hello,</p>
+                                                            <p>Your institution has been granted API access to the Quotations Board Platform.</p>
+                                                            <p>Here are your API credentials:</p>
+                                                            <div class='credentials'>
+                                                                <p>Client Id: {ApiKey}</p>
+                                                                <p>Client Secret: {ApiSecret}</p>
+                                                            </div>
+                                                            <p>Please keep these credentials safe and do not share them with unauthorized persons.</p>
+                                                            <p>Best regards,</p>
+                                                            <p>Nairobi Stock Exchange</p>
+                                                        </div>
+                                                    </body>
+                                                </html>";
+
                             await UtilityService.SendEmailAsync(institution.OrganizationEmail, adminSubject, adminMessage, ccEmails);
 
                             return Ok("API Access Granted");
@@ -271,6 +304,54 @@ namespace Quotations_Board_Backend.Controllers
                             return Ok("API Access Updated");
                         }
 
+                    }
+
+                    // api acees was disabled
+                    var apiUserRole = await context.Roles.FirstOrDefaultAsync(r => r.Name == CustomRoles.APIUser);
+                    if (apiUserRole == null)
+                    {
+                        return BadRequest("API User Role does not exist");
+                    }
+                    var apiUser = await context.UserRoles
+                                .Join(context.Users, ur => ur.UserId, u => u.Id, (ur, u) => new { ur, u })
+                                .Where(x => x.u.InstitutionId == enableApiAccess.InstitutionId && x.ur.RoleId == apiUserRole.Id)
+                                .Select(x => x.u)
+                                .FirstOrDefaultAsync();
+                    if (apiUser != null)
+                    {
+                        context.Users.Remove(apiUser);
+                        await context.SaveChangesAsync();
+                        // email to notify the institution that API access has been disabled
+                        var adminSubject = "API Access Disabled";
+                        var adminMessage = $@"
+                                            <html>
+                                                <head>
+                                                    <style>
+                                                        body {{
+                                                            font-family: Arial, sans-serif;
+                                                            background-color: #f4f4f4;
+                                                            padding: 20px;
+                                                        }}
+                                                        .container {{
+                                                            background-color: #ffffff;
+                                                            padding: 20px;
+                                                            border-radius: 5px;
+                                                            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+                                                        }}
+                                                    </style>
+                                                </head>
+                                                <body>
+                                                    <div class='container'>
+                                                        <h2>API Access Disabled</h2>
+                                                        <p>Hello,</p>
+                                                        <p>Your institution's API access to the Quotations Board Platform has been disabled.</p>
+                                                        <p>If you have any questions or need assistance, please contact our support team.</p>
+                                                        <p>Best regards,</p>
+                                                        <p>Nairobi Stock Exchange</p>
+                                                    </div>
+                                                </body>
+                                            </html>";
+                        await UtilityService.SendEmailAsync(institution.OrganizationEmail, adminSubject, adminMessage);
                     }
 
                     return Ok("API Access Updated");
@@ -506,60 +587,51 @@ namespace Quotations_Board_Backend.Controllers
                     var adminSubject = "Institution Application Approved";
                     var adminMessage = "";
 
-                    var emailHtml = "<html><head><style>" +
-                                        "body { font-family: Arial, sans-serif; background-color: #f5f5f5; margin: 0; padding: 0; }" +
-                                        ".container { max-width: 600px; margin: 0 auto; background-color: #ffffff; padding: 20px; }" +
-                                        "h1 { color: #0052CC; }" + /* Blue color similar to the website's theme */
-                                        "p { font-size: 16px; color: #555; }" +
-                                        "a.button { " +
-                                        "text-decoration: none; " +
-                                        "color: #ffffff; " +
-                                        "background-color: #0052CC; " + /* Blue button */
-                                        "padding: 10px 20px; " +
-                                        "border-radius: 5px; " +
-                                        "display: inline-block; " +
-                                        "}" +
-                                        "a.button:hover { background-color: #003E7E; }" + /* Darker blue on hover */
-                                        ".logo { text-align: center; margin-bottom: 20px; }" +
-                                        ".footer { background-color: #0052CC; color: #ffffff; text-align: center; padding: 10px; font-size: 12px; }" +
-                                        "</style></head><body>" +
-                                        "<div class='container'>" +
-                                        "<div class=\"logo\">" +
-                                        "<img src=\\\"Images\\nselogo.png\\\" alt=\\\"Nairobi Stock Exchange Logo\\\" width=\\\"200px\\\" />" + /* Make sure to replace with actual path */
-                                        "</div>" +
-                                        "<h1>Application Approved</h1>" +
-                                        "<html><head><style>" +
-                                         "body { font-family: Arial, sans-serif; background-color: #f5f5f5; margin: 0; padding: 0; }" +
-                                        ".container { max-width: 600px; margin: 0 auto; background-color: #ffffff; padding: 20px; }" +
-                                        "h1 { color: #333; }" +
-                                        "p { font-size: 16px; color: #555; }" +
-                                        "a { text-decoration: none; color: #007BFF; font-weight: bold; }" +
-                                        "a:hover { text-decoration: underline; }" +
-                                        "</style></head><body>" +
-                                        "<div class='container'>" +
-                                        "<h1> Application Approved</h1>" +
-                                        $"Hello {institutionApplication.AdministratorName}," +
-                                        "<p>We are delighted to announce that your institution's application has been approved, granting you access to the Quotation Board. Your role as the authorized representative of the institution is crucial for the successful use of our platform.</p>" +
-                                        "<p>Here's what to expect as you embark on this journey:</p>" +
-                                        "<ol>" +
-                                        $"<li><strong>Login Credentials:</strong> You will use your  email address, {institutionApplication.AdministratorEmail}, for logging in to the Quotations Board Platform.</li>" +
-                                        "<li><strong>Managing Institution Users:</strong> As the designated representative, you will have the responsibility to manage users on behalf of the institution. This includes handling account management, and ensuring a safe experience for your institutions's participants.</li>" +
-                                        "</ol>" +
-                                        "<p>To complete the setup of your account and set your password, please click the link below:</p>" +
-                                        $"<p><a href='{callbackUrl}'>Set Up Your Password</a> (You will be redirected to a page where you can create your new password)</p>" +
-                                        "<p>If you encounter any issues or have questions, our support team is ready to assist you. Simply reply to this email</p>" +
-                                        "<p>Thank you for choosing us as your partner. We're excited to see your institution thrive on our platform!</p>" +
-                                        "<p>Best regards,</p>" +
-                                        "<p>Nairobi Stock Exchange </p>" +
-                                        "</div></body></html>" +
-                                        "<a href='{{callbackUrl}}' class='button'>Set Up Your Password</a>" + /* Use the handlebars or templating language as needed */
-                                        "<!-- More email content here -->" +
-                                        "<div class=\"footer\">" +
-                                        "Nairobi Stock Exchange<br>" +
-                                        "Follow us on [social media links] | Contact us at [email address]" +
-                                        "</div>" +
-                                        "</div>" +
-                                        "</body></html>";
+                    var emailHtml = $@"
+                                        <html>
+                                        <head>
+                                            <style>
+                                                body {{ font-family: Arial, sans-serif; background-color: #f5f5f5; margin: 0; padding: 0; }}
+                                                .container {{ max-width: 600px; margin: 0 auto; background-color: #ffffff; padding: 20px; }}
+                                                h1 {{ color: #0052CC; }}
+                                                p {{ font-size: 16px; color: #555; }}
+                                                a.button {{ 
+                                                    text-decoration: none; 
+                                                    color: #ffffff; 
+                                                    background-color: #0052CC; 
+                                                    padding: 10px 20px; 
+                                                    border-radius: 5px; 
+                                                    display: inline-block; 
+                                                }}
+                                                a.button:hover {{ background-color: #003E7E; }}
+                                                .logo {{ text-align: center; margin-bottom: 20px; }}
+                                                .footer {{ background-color: #0052CC; color: #ffffff; text-align: center; padding: 10px; font-size: 12px; }}
+                                            </style>
+                                        </head>
+                                        <body>
+                                            <div class='container'>
+                                                <div class='logo'>
+                                                    <img src='Images/nselogo.png' alt='Nairobi Stock Exchange Logo' width='200px' />
+                                                </div>
+                                                <h1>Application Approval Notification</h1>
+                                                <p>Dear {institutionApplication.AdministratorName},</p>
+                                                <p>We are pleased to inform you that your application for access to the Quotation Board has been approved. As the authorized representative of your institution, you play a vital role in leveraging our platform for your institution's success.</p>
+                                                <p>Key Information:</p>
+                                                <ul>
+                                                    <li><strong>Login Credentials:</strong> Please use your email address, {institutionApplication.AdministratorEmail}, to log in to the Quotations Board Platform.</li>
+                                                    <li><strong>User Management:</strong> As the primary contact, you are responsible for managing user accounts and ensuring a secure experience for your institution's members.</li>
+                                                </ul>
+                                                <p>To set up your password and complete your account setup, please click the link below:</p>
+                                                <a href='{callbackUrl}' class='button'>Set Up Your Password</a>
+                                                <p>Should you require any assistance or have any queries, do not hesitate to reach out to our support team by replying to this email.</p>
+                                                <p>We look forward to your institution's active participation on our platform.</p>
+                                                <p>Warm regards,</p>
+                                                <p> Nairobi Stock Exchange</p>
+                                               
+                                            </div>
+                                        </body>
+                                        </html>";
+
 
                     await UtilityService.SendEmailAsync(institutionApplication.AdministratorEmail, adminSubject, emailHtml);
 

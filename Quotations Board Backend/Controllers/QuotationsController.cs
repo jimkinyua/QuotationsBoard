@@ -503,23 +503,66 @@ namespace Quotations_Board_Backend.Controllers
                     var superAdmins = await _userManager.GetUsersInRoleAsync(CustomRoles.SuperAdmin);
                     foreach (var superAdmin in superAdmins)
                     {
-                        // send email to super admin about the quotation edit  that has been made and notify them to approve or reject
-                        var emailBody = $"A quotation edit has been made by {userDetails.FirstName} {userDetails.LastName} of {institution.OrganizationName} on {DateTime.Today} for bond {bond.IssueNumber} with the following details: <br/>" +
-                            $"Buying Yield: {existingQuotation.BuyingYield} <br/>" +
-                            $"Selling Yield: {existingQuotation.SellingYield} <br/>" +
-                            $"Buy Volume: {existingQuotation.BuyVolume} <br/>" +
-                            $"Sell Volume: {existingQuotation.SellVolume} <br/>" +
 
-                            // new proposed quotation
-                            $"The new proposed quotation is as follows: <br/>" +
-                            $"Buying Yield: {editQuotation.BuyYield} <br/>" +
-                            $"Selling Yield: {editQuotation.SellYield} <br/>" +
-                            $"Buy Volume: {editQuotation.BuyVolume} <br/>" +
-                            $"Sell Volume: {editQuotation.SellVolume} <br/>" +
-                            $"Comment: {editQuotation.Comment} <br/>" +
+                        var emailBody = $@"
+                                        <html>
+                                            <head>
+                                                <style>
+                                                    body {{
+                                                        font-family: Arial, sans-serif;
+                                                        background-color: #f4f4f4;
+                                                        padding: 20px;
+                                                    }}
+                                                    .container {{
+                                                        background-color: #ffffff;
+                                                        padding: 20px;
+                                                        border-radius: 5px;
+                                                        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+                                                    }}
+                                                    .button {{
+                                                        display: inline-block;
+                                                        padding: 10px 20px;
+                                                        background-color: #007bff;
+                                                        color: #ffffff;
+                                                        text-decoration: none;
+                                                        border-radius: 5px;
+                                                    }}
+                                                    .button:hover {{
+                                                        background-color: #0056b3;
+                                                    }}
+                                                    .quotation-details {{
+                                                        margin-bottom: 20px;
+                                                    }}
+                                                    .quotation-details h3 {{
+                                                        margin-top: 0;
+                                                    }}
+                                                </style>
+                                            </head>
+                                            <body>
+                                                <div class='container'>
+                                                    <h2>Quotation Edit Notification</h2>
+                                                    <p>A quotation edit has been made by {userDetails.FirstName} {userDetails.LastName} of {institution.OrganizationName} on {DateTime.Today} for bond {bond.IssueNumber} with the following details:</p>
+                                                    <div class='quotation-details'>
+                                                        <h3>Existing Quotation:</h3>
+                                                        <p>Buying Yield: {existingQuotation.BuyingYield}</p>
+                                                        <p>Selling Yield: {existingQuotation.SellingYield}</p>
+                                                        <p>Buy Volume: {existingQuotation.BuyVolume}</p>
+                                                        <p>Sell Volume: {existingQuotation.SellVolume}</p>
+                                                    </div>
+                                                    <div class='quotation-details'>
+                                                        <h3>New Proposed Quotation:</h3>
+                                                        <p>Buying Yield: {editQuotation.BuyYield}</p>
+                                                        <p>Selling Yield: {editQuotation.SellYield}</p>
+                                                        <p>Buy Volume: {editQuotation.BuyVolume}</p>
+                                                        <p>Sell Volume: {editQuotation.SellVolume}</p>
+                                                        <p>Comment: {editQuotation.Comment}</p>
+                                                    </div>
+                                                    <p>Please approve or reject the quotation by clicking the button below.</p>
+                                                    <a href='{callbackUrl}' class='button'>Approve or Reject</a>
+                                                </div>
+                                            </body>
+                                        </html>";
 
-                            $"Please approve or reject the quotation  <br/>" +
-                            $"Click <a href='{callbackUrl}'>here</a> to approve or reject the quotation edit <br/>";
 
                         var emailSubject = "Quotation Edit";
                         await UtilityService.SendEmailAsync(
@@ -734,15 +777,7 @@ namespace Quotations_Board_Backend.Controllers
                         return BadRequest("Invalid user");
                     }
 
-                    // notify the user that the quotation edit has been rejected
-                    var emailBody = $"Your quotation edit has been rejected  for bond {bond.IssueNumber} with the following details: <br/>" +
-                        $"Buying Yield: {existingQuotationEdit.BuyingYield} <br/>" +
-                        $"Selling Yield: {existingQuotationEdit.SellingYield} <br/>" +
-                        $"Buy Volume: {existingQuotationEdit.BuyVolume} <br/>" +
-                        $"Sell Volume: {existingQuotationEdit.SellVolume} <br/>" +
-                        $"Because of the following reason: <br/>" +
-                        $"Comment: {rejectQuotationEdit.RejectionReason} <br/>" +
-                        $"Please make the necessary changes and re-submit the quotation edit  <br/>";
+
 
 
                     // Update the quotation edit
@@ -751,6 +786,50 @@ namespace Quotations_Board_Backend.Controllers
                     await context.SaveChangesAsync();
 
                     var emailSubject = "Quotation Edit Rejected";
+
+
+                    var emailBody = $@"
+                                    <html>
+                                        <head>
+                                            <style>
+                                                body {{
+                                                    font-family: Arial, sans-serif;
+                                                    background-color: #f4f4f4;
+                                                    padding: 20px;
+                                                }}
+                                                .container {{
+                                                    background-color: #ffffff;
+                                                    padding: 20px;
+                                                    border-radius: 5px;
+                                                    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+                                                }}
+                                                .quotation-details {{
+                                                    margin-bottom: 20px;
+                                                }}
+                                                .quotation-details h3 {{
+                                                    margin-top: 0;
+                                                }}
+                                            </style>
+                                        </head>
+                                        <body>
+                                            <div class='container'>
+                                                <h2>Quotation Edit Rejected</h2>
+                                                <p>Your quotation edit has been rejected for bond {bond.IssueNumber} with the following details:</p>
+                                                <div class='quotation-details'>
+                                                    <p>Buying Yield: {existingQuotationEdit.BuyingYield}</p>
+                                                    <p>Selling Yield: {existingQuotationEdit.SellingYield}</p>
+                                                    <p>Buy Volume: {existingQuotationEdit.BuyVolume}</p>
+                                                    <p>Sell Volume: {existingQuotationEdit.SellVolume}</p>
+                                                </div>
+                                                <p>Because of the following reason:</p>
+                                                <p>Comment: {rejectQuotationEdit.RejectionReason}</p>
+                                                <p>Please make the necessary changes and re-submit the quotation edit.</p>
+                                            </div>
+                                        </body>
+                                    </html>";
+
+
+
                     await UtilityService.SendEmailAsync(
                         userDetails.Email,
                         emailSubject,
@@ -1021,7 +1100,7 @@ namespace Quotations_Board_Backend.Controllers
                             TotalSellVolume = quotation.SellVolume,
                             Id = quotation.Id,
                             AverageVolume = (quotation.BuyVolume + quotation.SellVolume) / 2,
-                            AverageYield = (quotation.BuyingYield + quotation.SellingYield) / 2
+                            AverageYield = (quotation.BuyingYield + quotation.SellingYield) / 2,
                         };
                         quoteinfos.Add(quotationDTO);
                     }

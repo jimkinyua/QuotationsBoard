@@ -66,8 +66,47 @@ namespace Quotations_Board_Backend.Controllers
                         var encodedUserId = HttpUtility.UrlEncode(user.Id);
                         var encodedCode = HttpUtility.UrlEncode(token1);
                         var callbackUrl = $"{_configuration["FrontEndUrl"]}/complete-institution-setup?userId={encodedUserId}&code={encodedCode}";
+
                         var adminSubject = "Confirm your email (Resend)";
-                        var adminBody = $"Please confirm your account by <a href='{HtmlEncoder.Default.Encode(callbackUrl)}'>clicking here</a>.";
+
+                        var adminBody = $@"
+                                        <html>
+                                            <head>
+                                                <style>
+                                                    body {{
+                                                        font-family: Arial, sans-serif;
+                                                        background-color: #f4f4f4;
+                                                        padding: 20px;
+                                                    }}
+                                                    .container {{
+                                                        background-color: #ffffff;
+                                                        padding: 20px;
+                                                        border-radius: 5px;
+                                                        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+                                                    }}
+                                                    .button {{
+                                                        display: inline-block;
+                                                        padding: 10px 20px;
+                                                        background-color: #007bff;
+                                                        color: #ffffff;
+                                                        text-decoration: none;
+                                                        border-radius: 5px;
+                                                    }}
+                                                    .button:hover {{
+                                                        background-color: #0056b3;
+                                                    }}
+                                                </style>
+                                            </head>
+                                            <body>
+                                                <div class='container'>
+                                                    <h2>Confirm Your Email</h2>
+                                                    <p>Please confirm your account by clicking the button below.</p>
+                                                    <a href='{HtmlEncoder.Default.Encode(callbackUrl)}' class='button'>Confirm Email</a>
+                                                </div>
+                                            </body>
+                                        </html>";
+
+
                         await UtilityService.SendEmailAsync(user.Email, adminSubject, adminBody);
                         return BadRequest("Email not confirmed. Please check your email for a confirmation link.");
                     }
@@ -91,7 +130,42 @@ namespace Quotations_Board_Backend.Controllers
                     {
                         var token = await _userManager.GenerateTwoFactorTokenAsync(user, "Email");
                         var subject = "Your Login Code";
-                        var body = $"Your Login Code is: {token}";
+                        var body = $@"
+                                    <html>
+                                        <head>
+                                            <style>
+                                                body {{
+                                                    font-family: Arial, sans-serif;
+                                                    background-color: #f4f4f4;
+                                                    padding: 20px;
+                                                }}
+                                                .container {{
+                                                    background-color: #ffffff;
+                                                    padding: 20px;
+                                                    border-radius: 5px;
+                                                    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+                                                }}
+                                                .code {{
+                                                    display: inline-block;
+                                                    padding: 10px 20px;
+                                                    background-color: #007bff;
+                                                    color: #ffffff;
+                                                    font-weight: bold;
+                                                    border-radius: 5px;
+                                                }}
+                                            </style>
+                                        </head>
+                                        <body>
+                                            <div class='container'>
+                                                <h2>Your Login Code</h2>
+                                                <p>Your login code is:</p>
+                                                <span class='code'>{token}</span>
+                                                <p>Please use this code to complete your login process.</p>
+                                            </div>
+                                        </body>
+                                    </html>";
+
+
                         await UtilityService.SendEmailAsync(user.Email, subject, body);
                         return Ok("Please check your email for a two factor login code.");
                     }
@@ -185,7 +259,45 @@ namespace Quotations_Board_Backend.Controllers
                     var encodedCode = HttpUtility.UrlEncode(token);
                     var callbackUrl = $"{_configuration["FrontEndUrl"]}/reset-password?userId={encodedUserId}&code={encodedCode}";
                     var adminSubject = "Reset Password";
-                    var adminBody = $"Please reset your password by <a href='{HtmlEncoder.Default.Encode(callbackUrl)}'>clicking here</a>.";
+                    // var adminBody = $"Please reset your password by <a href='{HtmlEncoder.Default.Encode(callbackUrl)}'>clicking here</a>.";
+
+                    var adminBody = $@"
+                                        <html>
+                                            <head>
+                                                <style>
+                                                    body {{
+                                                        font-family: Arial, sans-serif;
+                                                        background-color: #f4f4f4;
+                                                        padding: 20px;
+                                                    }}
+                                                    .container {{
+                                                        background-color: #ffffff;
+                                                        padding: 20px;
+                                                        border-radius: 5px;
+                                                        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+                                                    }}
+                                                    .button {{
+                                                        display: inline-block;
+                                                        padding: 10px 20px;
+                                                        background-color: #007bff;
+                                                        color: #ffffff;
+                                                        text-decoration: none;
+                                                        border-radius: 5px;
+                                                    }}
+                                                    .button:hover {{
+                                                        background-color: #0056b3;
+                                                    }}
+                                                </style>
+                                            </head>
+                                            <body>
+                                                <div class='container'>
+                                                    <h2>Reset Your Password</h2>
+                                                    <p>Please click the button below to reset your password.</p>
+                                                    <a href='{HtmlEncoder.Default.Encode(callbackUrl)}' class='button'>Reset Password</a>
+                                                </div>
+                                            </body>
+                                        </html>
+                                    ";
                     await UtilityService.SendEmailAsync(user.Email, adminSubject, adminBody);
                     return Ok("Please check your email for a password reset link.");
                 }

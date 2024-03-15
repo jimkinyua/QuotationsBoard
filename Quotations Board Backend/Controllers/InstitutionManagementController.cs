@@ -155,10 +155,46 @@ namespace Quotations_Board_Backend.Controllers
                 await context.SaveChangesAsync();
 
                 // send email to user
-                string emailBody = $"<p>Dear {portalUser.FirstName},</p>" +
-                    "<p>Your account has been created on the Quotations Board Portal. " +
-                    " Follow the link below to complete your account setup.</p>" +
-                    $"<a href='{callbackUrl}'>Complete Account Setup</a>";
+                string emailBody = $@"
+                                    <html>
+                                    <head>
+                                        <style>
+                                            body {{
+                                                font-family: Arial, sans-serif;
+                                                background-color: #f5f5f5;
+                                                padding: 20px;
+                                            }}
+                                            .container {{
+                                                max-width: 600px;
+                                                margin: 0 auto;
+                                                background-color: #ffffff;
+                                                padding: 20px;
+                                                border-radius: 5px;
+                                                box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+                                            }}
+                                            a.button {{
+                                                display: inline-block;
+                                                text-decoration: none;
+                                                background-color: #0052CC;
+                                                color: #ffffff;
+                                                padding: 10px 20px;
+                                                border-radius: 5px;
+                                                font-weight: bold;
+                                            }}
+                                            a.button:hover {{
+                                                background-color: #003E7E;
+                                            }}
+                                        </style>
+                                    </head>
+                                    <body>
+                                        <div class='container'>
+                                            <p>Dear {portalUser.FirstName},</p>
+                                            <p>Your account has been created on the Quotations Board Portal. Please follow the link below to complete your account setup:</p>
+                                            <a href='{callbackUrl}' class='button'>Complete Account Setup</a>
+                                        </div>
+                                    </body>
+                                    </html>";
+
 
                 await UtilityService.SendEmailAsync(portalUser.Email, "Quotations Board Portal Account Created", emailBody);
 
@@ -217,10 +253,40 @@ namespace Quotations_Board_Backend.Controllers
                     return BadRequest(result.Errors);
                 }
 
-                // send email to user with the new API key
-                string emailBody = $"<p>Hello,</p>" +
-                    "<p>Your API key has been reset. " +
-                    "Your new API key is: " + apiKey;
+                string emailBody = $@"
+                                    <html>
+                                    <head>
+                                        <style>
+                                            body {{
+                                                font-family: Arial, sans-serif;
+                                                background-color: #f5f5f5;
+                                                padding: 20px;
+                                            }}
+                                            .container {{
+                                                max-width: 600px;
+                                                margin: 0 auto;
+                                                background-color: #ffffff;
+                                                padding: 20px;
+                                                border-radius: 5px;
+                                                box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+                                            }}
+                                            .api-key {{
+                                                background-color: #f0f0f0;
+                                                padding: 10px;
+                                                border-radius: 5px;
+                                                font-family: monospace;
+                                            }}
+                                        </style>
+                                    </head>
+                                    <body>
+                                        <div class='container'>
+                                            <p>Hello,</p>
+                                            <p>Your Client  Secret has been reset. Your new API key is:</p>
+                                            <div class='api-key'>{apiKey}</div>
+                                        </div>
+                                    </body>
+                                    </html>";
+
 
                 await UtilityService.SendEmailAsync(existingApiUser.Email, "Quotations Board Portal API Key Reset", emailBody);
 
@@ -362,8 +428,37 @@ namespace Quotations_Board_Backend.Controllers
                 // await context.SaveChangesAsync();
 
                 // Send email to user notifying them that their account has been disabled
-                string emailBody = $"<p>Dear {existingUser.FirstName},</p>" +
-                    "<p>Your account has been disabled on the Quotations Board Portal. ";
+                string emailBody = $@"
+                                    <html>
+                                    <head>
+                                        <style>
+                                            body {{
+                                                font-family: Arial, sans-serif;
+                                                background-color: #f5f5f5;
+                                                padding: 20px;
+                                            }}
+                                            .container {{
+                                                max-width: 600px;
+                                                margin: 0 auto;
+                                                background-color: #ffffff;
+                                                padding: 20px;
+                                                border-radius: 5px;
+                                                box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+                                            }}
+                                            .warning {{
+                                                color: #D9534F; /* Bootstrap 'danger' color */
+                                                font-weight: bold;
+                                            }}
+                                        </style>
+                                    </head>
+                                    <body>
+                                        <div class='container'>
+                                            <p>Dear {existingUser.FirstName},</p>
+                                            <p class='warning'>Your account has been disabled on the Quotations Board Portal.</p>
+                                        </div>
+                                    </body>
+                                    </html>";
+
 
                 await UtilityService.SendEmailAsync(existingUser.Email, "Quotations Board Portal Account Disabled", emailBody);
 
@@ -405,10 +500,46 @@ namespace Quotations_Board_Backend.Controllers
                 await _userManager.UpdateAsync(existingUser);
                 await context.SaveChangesAsync();
                 // Send email to user notifying them that their account has been enabled
-                string emailBody = $"<p>Dear {existingUser.FirstName},</p>" +
-                    "<p>Your account has been enabled on the Quotations Board Portal. " +
-                    " Follow the link below to login to your account.</p>" +
-                    $"<a href='{_configuration["FrontEndUrl"]}'>Login</a>";
+                string emailBody = $@"
+                                    <html>
+                                    <head>
+                                        <style>
+                                            body {{
+                                                font-family: Arial, sans-serif;
+                                                background-color: #f5f5f5;
+                                                padding: 20px;
+                                            }}
+                                            .container {{
+                                                max-width: 600px;
+                                                margin: 0 auto;
+                                                background-color: #ffffff;
+                                                padding: 20px;
+                                                border-radius: 5px;
+                                                box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+                                            }}
+                                            a.button {{
+                                                display: inline-block;
+                                                text-decoration: none;
+                                                background-color: #0052CC;
+                                                color: #ffffff;
+                                                padding: 10px 20px;
+                                                border-radius: 5px;
+                                                font-weight: bold;
+                                            }}
+                                            a.button:hover {{
+                                                background-color: #003E7E;
+                                            }}
+                                        </style>
+                                    </head>
+                                    <body>
+                                        <div class='container'>
+                                            <p>Dear {existingUser.FirstName},</p>
+                                            <p>Your account has been enabled on the Quotations Board Portal. Please follow the link below to log in to your account:</p>
+                                            <a href='{_configuration["FrontEndUrl"]}' class='button'>Login</a>
+                                        </div>
+                                    </body>
+                                    </html>";
+
 
                 await UtilityService.SendEmailAsync(existingUser.Email, "Quotations Board Portal Account Enabled", emailBody);
 
@@ -468,8 +599,37 @@ namespace Quotations_Board_Backend.Controllers
                 }
 
                 // Send email notification
-                string emailBody = $"<p>Dear {institution.OrganizationName},</p>" +
-                                   "<p>Your account has been disabled on the Quotations Board Portal.</p>";
+                string emailBody = $@"
+                                    <html>
+                                    <head>
+                                        <style>
+                                            body {{
+                                                font-family: Arial, sans-serif;
+                                                background-color: #f5f5f5;
+                                                padding: 20px;
+                                            }}
+                                            .container {{
+                                                max-width: 600px;
+                                                margin: 0 auto;
+                                                background-color: #ffffff;
+                                                padding: 20px;
+                                                border-radius: 5px;
+                                                box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+                                            }}
+                                            .warning {{
+                                                color: #D9534F; /* Bootstrap 'danger' color */
+                                                font-weight: bold;
+                                            }}
+                                        </style>
+                                    </head>
+                                    <body>
+                                        <div class='container'>
+                                            <p>Dear {institution.OrganizationName},</p>
+                                            <p class='warning'>Your account has been disabled on the Quotations Board Portal.</p>
+                                        </div>
+                                    </body>
+                                    </html>";
+
                 await UtilityService.SendEmailAsync(institutionAdminInstitution.Email, "Quotations Board Portal Account Disabled", emailBody);
 
                 return Ok();
@@ -538,10 +698,46 @@ namespace Quotations_Board_Backend.Controllers
             }
 
             // Send email notification
-            string emailBody = $"<p>Dear {institutionAdminInstitution.LastName},</p>" +
-                               "<p>Your account has been enabled on the Quotations Board Portal. " +
-                               "Follow the link below to login to your account.</p>" +
-                               $"<a href='{_configuration["FrontEndUrl"]}'>Login</a>";
+            string emailBody = $@"
+                                <html>
+                                <head>
+                                    <style>
+                                        body {{
+                                            font-family: Arial, sans-serif;
+                                            background-color: #f5f5f5;
+                                            padding: 20px;
+                                        }}
+                                        .container {{
+                                            max-width: 600px;
+                                            margin: 0 auto;
+                                            background-color: #ffffff;
+                                            padding: 20px;
+                                            border-radius: 5px;
+                                            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+                                        }}
+                                        a.button {{
+                                            display: inline-block;
+                                            text-decoration: none;
+                                            background-color: #0052CC;
+                                            color: #ffffff;
+                                            padding: 10px 20px;
+                                            border-radius: 5px;
+                                            font-weight: bold;
+                                        }}
+                                        a.button:hover {{
+                                            background-color: #003E7E;
+                                        }}
+                                    </style>
+                                </head>
+                                <body>
+                                    <div class='container'>
+                                        <p>Dear {institutionAdminInstitution.LastName},</p>
+                                        <p>Your account has been enabled on the Quotations Board Portal. Please follow the link below to log in to your account:</p>
+                                        <a href='{_configuration["FrontEndUrl"]}' class='button'>Login</a>
+                                    </div>
+                                </body>
+                                </html>";
+
             await UtilityService.SendEmailAsync(institutionAdminInstitution.Email, "Quotations Board Portal Account Enabled", emailBody);
 
             return Ok();
