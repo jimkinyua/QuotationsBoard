@@ -1913,7 +1913,7 @@ namespace Quotations_Board_Backend.Controllers
                     var quotationsForSelectedDate = await QuotationsHelper.GetQuotationsForDate(fromDate);
                     var mostRecentDateWithQuotations = await QuotationsHelper.GetMostRecentDateWithQuotationsBeforeDateInQuestion(fromDate);
                     var quotationsForMostRecentDate = await QuotationsHelper.GetQuotationsForDate(mostRecentDateWithQuotations);
-                    var res = YieldCurveHelper.AddOneYearTBillToYieldCurve(mostRecentDateWithQuotations, tenuresThatDoNotRequireInterpolation, yieldCurveCalculations);
+                    var res = YieldCurveHelper.AddOneYearTBillToYieldCurve(mostRecentDateWithQuotations, tenuresThatDoNotRequireInterpolation, yieldCurveCalculations, true);
                     if (res.Success == false)
                     {
                         return BadRequest(res.ErrorMessage);
