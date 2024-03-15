@@ -176,6 +176,25 @@ namespace Quotations_Board_Backend.Controllers
                     {
                         return NotFound();
                     }
+                    var users = await context.Users.Where(x => x.InstitutionId == enableApiAccess.InstitutionId).ToListAsync();
+
+                    PortalUser? InstAdmin = null;
+
+                    foreach (var user in users)
+                    {
+                        var _hasApiUser = await _userManager.IsInRoleAsync(user, CustomRoles.InstitutionAdmin);
+                        if (_hasApiUser)
+                        {
+                            InstAdmin = user;
+                            break;
+                        }
+                    }
+
+                    if (InstAdmin == null)
+                    {
+                        return BadRequest("it is required to have an institution admin to enable API access. All communication will be sent to the institution admin");
+                    }
+
                     institution.IsApiAccessEnabled = enableApiAccess.IsApiAccessEnabled;
                     context.Institutions.Update(institution);
                     await context.SaveChangesAsync();
@@ -183,6 +202,7 @@ namespace Quotations_Board_Backend.Controllers
                     if (enableApiAccess.IsApiAccessEnabled)
                     {
                         var apiRole = await context.Roles.FirstOrDefaultAsync(r => r.Name == CustomRoles.APIUser);
+
                         if (apiRole == null)
                         {
                             // we can create the role
@@ -191,30 +211,23 @@ namespace Quotations_Board_Backend.Controllers
                             await context.SaveChangesAsync();
                         }
 
-                        var apiMUser = await context.UserRoles
-                                    .Join(context.Users, ur => ur.UserId, u => u.Id, (ur, u) => new { ur, u })
-                                    .Where(x => x.u.InstitutionId == enableApiAccess.InstitutionId && x.ur.RoleId == apiRole.Id)
-                                    .Select(x => x.u)
-                                    .FirstOrDefaultAsync();
+                        // get all users in the institution
 
-                        var InstitutionAdmins = await context.UserRoles
-                        .Join(context.Users, ur => ur.UserId, u => u.Id, (ur, u) => new { ur, u })
-                        .Where(x => x.u.InstitutionId == enableApiAccess.InstitutionId && x.ur.RoleId == CustomRoles.InstitutionAdmin)
-                        .Select(x => x.u)
-                        .ToListAsync();
-
-                        if (InstitutionAdmins.Count == 0)
+                        Boolean hasApiUser = false;
+                        foreach (var user in users)
                         {
-                            return BadRequest("Institution Admin not found. The institution must have at least one admin to enable API access");
+                            var _hasApiUser = await _userManager.IsInRoleAsync(user, CustomRoles.APIUser);
+                            if (_hasApiUser)
+                            {
+                                hasApiUser = true;
+                                break;
+                            }
                         }
 
-                        var ccEmails = new List<string>();
-                        foreach (var admin in InstitutionAdmins)
+                        if (!hasApiUser)
                         {
-                            ccEmails.Add(admin.Email);
-                        }
-                        if (apiMUser == null)
-                        {
+
+                            // time to create one and send the credentials
                             var domainOfInstitution = institution.OrganizationEmail.Split('@')[1];
                             var apiUserEmail = $"api@{domainOfInstitution}";
                             var ApiKey = Guid.NewGuid().ToString();
@@ -295,16 +308,10 @@ namespace Quotations_Board_Backend.Controllers
                                                     </body>
                                                 </html>";
 
-                            await UtilityService.SendEmailAsync(institution.OrganizationEmail, adminSubject, adminMessage, ccEmails);
+                            await UtilityService.SendEmailAsync(InstAdmin.Email, adminSubject, adminMessage);
 
                             return Ok("API Access Granted");
-
                         }
-                        else
-                        {
-                            return Ok("API Access Updated");
-                        }
-
                     }
 
                     // api acees was disabled
@@ -352,7 +359,7 @@ namespace Quotations_Board_Backend.Controllers
                                                     </div>
                                                 </body>
                                             </html>";
-                        await UtilityService.SendEmailAsync(institution.OrganizationEmail, adminSubject, adminMessage);
+                        await UtilityService.SendEmailAsync(InstAdmin.Email, adminSubject, adminMessage);
                     }
 
                     return Ok("API Access Updated");
