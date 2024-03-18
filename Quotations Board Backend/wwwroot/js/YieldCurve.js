@@ -9,7 +9,7 @@ var myChart = echarts.init(document.getElementById("yeild-curve-area"));
 
   xhr.open(
     "POST",
-    "https://quotations.agilebiz.co.ke/api/Widgets/QuotedYieldCurve",
+    "https://quotations.agilebiz.co.ke/api/Widgets/YieldCurve",
     true
   );
   xhr.setRequestHeader("Content-Type", "application/json");
@@ -44,7 +44,7 @@ var myChart = echarts.init(document.getElementById("yeild-curve-area"));
           "#8DC341",
         ],
         title: {
-          text: "Quoted Yield Curve as at " + DateOnly,
+          text: "Yield Curve as at " + DateOnly,
           textStyle: {
             fontWeight: "bold",
           },

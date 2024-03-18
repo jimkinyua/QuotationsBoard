@@ -1,4 +1,4 @@
-.quoted-loader-spinner {
+.loader-spinner {
     border: 5px solid #f3f3f3;
     /* Light grey */
     border-top: 5px solid #3498db;
@@ -8,15 +8,13 @@
     height: 50px;
     animation: spin 1s linear infinite;
 }
-
-#quoted-loader {
+#loader{
     display: flex;
     justify-content: center;
     align-items: center;
     height: 100%;
 }
-
-#quoted-yeild-curve-area {
+#yeild-curve-area{
     display: flex;
     justify-content: center;
     align-items: center;
