@@ -65,7 +65,7 @@ namespace Quotations_Board_Backend.Controllers
         {
             try
             {
-                DateTime fromDate = DateTime.Now;
+                DateTime fromDate = DateTime.Now.AddDays(-10);
                 using (var context = new QuotationsBoardContext())
                 {
 
