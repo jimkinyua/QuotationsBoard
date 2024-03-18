@@ -114,7 +114,7 @@ namespace Quotations_Board_Backend.Controllers
                 {
                     return BadRequest("User not found");
                 }
-                DateTime parsedDate = new DateTime(ApiRequest.Date.Year, ApiRequest.Date.Month, ApiRequest.Date.Day);
+                DateTime parsedDate = ApiRequest.Date;
                 if (parsedDate == DateTime.MinValue)
                 {
                     return BadRequest($"Invalid date provided: {ApiRequest.Date}");
