@@ -1,11 +1,13 @@
-var myChart = echarts.init(document.getElementById("yeild-curve-area"));
+var myChart = echarts.init(document.getElementById("quoted-yeild-curve-area"));
 
 // Make API call to get the data
 // widget-script.js
 (function () {
   var xhr = new XMLHttpRequest();
-  var loaderElement = document.getElementById("loader"); // Get the loader element
-  var myChart = echarts.init(document.getElementById("yeild-curve-area"));
+  var loaderElement = document.getElementById("quoted-loader"); // Get the loader element
+  var myChart = echarts.init(
+    document.getElementById("quoted-yeild-curve-area")
+  );
 
   xhr.open(
     "POST",
