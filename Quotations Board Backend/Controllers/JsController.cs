@@ -12,7 +12,11 @@ namespace Quotations_Board_Backend.Controllers
         {
             if (string.IsNullOrEmpty(accessCode))
             {
-                return Forbid();
+                return Unauthorized();
+            }
+            if (!IsValidAccessCode(accessCode))
+            {
+                return Unauthorized();
             }
             var jsFilePath = Path.Combine("wwwroot", "js", "QuotedYieldCurve.js");
             var jsFileContent = System.IO.File.ReadAllText(jsFilePath);
@@ -24,11 +28,24 @@ namespace Quotations_Board_Backend.Controllers
         {
             if (string.IsNullOrEmpty(accessCode))
             {
-                return Forbid();
+                return Unauthorized();
+            }
+            if (!IsValidAccessCode(accessCode))
+            {
+                return Unauthorized();
             }
             var jsFilePath = Path.Combine("wwwroot", "js", "YieldCurve.js");
             var jsFileContent = System.IO.File.ReadAllText(jsFilePath);
             return Content(jsFileContent, "application/javascript");
+        }
+
+        // ensures that the access code is valid.
+        private bool IsValidAccessCode(string accessCode)
+        {
+            using (var context = new QuotationsBoardContext())
+            {
+                return context.Institutions.Any(i => i.WidgetKey == accessCode);
+            }
         }
     }
 

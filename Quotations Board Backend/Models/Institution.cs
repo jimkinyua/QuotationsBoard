@@ -16,6 +16,7 @@ public class Institution
     public DateTime DeactivatedAt { get; set; }
     public DateTime ModifiedAt { get; set; }
     public Boolean IsApiAccessEnabled { get; set; }
+    public string? WidgetKey { get; set; }
     // can have many PortalUsers
     public ICollection<PortalUser> PortalUsers { get; set; } = null!;
     // can have many quotations

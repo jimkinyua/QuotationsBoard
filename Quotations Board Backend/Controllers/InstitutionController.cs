@@ -1,4 +1,5 @@
-﻿using System.Web;
+﻿using System.Text.RegularExpressions;
+using System.Web;
 using AutoMapper;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -368,6 +369,136 @@ namespace Quotations_Board_Backend.Controllers
                     }
 
                     return Ok("API Access Updated");
+                }
+            }
+            catch (Exception Ex)
+            {
+                UtilityService.LogException(Ex);
+                return StatusCode(500, UtilityService.HandleException(Ex));
+            }
+        }
+
+        // Enables Access to The Widget
+        [HttpPost("EnableWidgetAccess")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [SwaggerOperation(Summary = "Enable Widget Access", Description = "Enables access to the widget for an institution", OperationId = "EnableWidgetAccess")]
+        [Authorize(AuthenticationSchemes = "Bearer", Roles = CustomRoles.SuperAdmin)]
+        public async Task<IActionResult> EnableWidgetAccessAsync(EnableWidgetAccess enableWidgetAccess)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+            try
+            {
+                using (var context = new QuotationsBoardContext())
+                {
+                    var institution = await context.Institutions.FirstOrDefaultAsync(x => x.Id == enableWidgetAccess.InstitutionId);
+                    if (institution == null)
+                    {
+                        return NotFound();
+                    }
+                    var Uniqye7DigitWithNoSpecHarsOrSpaces = Guid.NewGuid().ToString().Substring(0, 7);
+                    // remove all special characters and spaces
+                    Uniqye7DigitWithNoSpecHarsOrSpaces = Regex.Replace(Uniqye7DigitWithNoSpecHarsOrSpaces, "[^a-zA-Z0-9_.]+", "", RegexOptions.Compiled);
+                    institution.WidgetKey = Uniqye7DigitWithNoSpecHarsOrSpaces;
+                    context.Institutions.Update(institution);
+
+                    // get the institution admin and send the widget key
+                    var users = await context.Users.Where(x => x.InstitutionId == enableWidgetAccess.InstitutionId).ToListAsync();
+                    PortalUser? InstAdmin = null;
+                    foreach (var user in users)
+                    {
+                        var _hasApiUser = await _userManager.IsInRoleAsync(user, CustomRoles.InstitutionAdmin);
+                        if (_hasApiUser)
+                        {
+                            InstAdmin = user;
+                            break;
+                        }
+                    }
+                    if (InstAdmin == null)
+                    {
+                        return BadRequest("it is required to have an institution admin to enable API access. All communication will be sent to the institution admin");
+                    }
+
+
+                    await context.SaveChangesAsync();
+
+                    // was it enabled or disabled
+
+                    if (enableWidgetAccess.IsApiAccessEnabled)
+                    {
+                        var adminSubject = "Widget Access Granted";
+                        var adminMessage = $@"
+                                            <html>
+                                                <head>
+                                                    <style>
+                                                        body {{
+                                                            font-family: Arial, sans-serif;
+                                                            background-color: #f4f4f4;
+                                                            padding: 20px;
+                                                        }}
+                                                        .container {{
+                                                            background-color: #ffffff;
+                                                            padding: 20px;
+                                                            border-radius: 5px;
+                                                            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+                                                        }}
+                                                    </style>
+                                                </head>
+                                                <body>
+                                                    <div class='container'>
+                                                        <h2>Widget Access Granted</h2>
+                                                        <p>Hello,</p>
+                                                        <p>Your institution has been granted access to the Quotations Board Widget.</p>
+                                                        <p>Here is your unique widget key:</p>
+                                                        <div class='credentials'>
+                                                            <p>Widget Key: {Uniqye7DigitWithNoSpecHarsOrSpaces}</p>
+                                                        </div>
+                                                        <p>Please keep this key safe and do not share it with unauthorized persons.</p>
+                                                        <p>Best regards,</p>
+                                                        <p>Nairobi Stock Exchange</p>
+                                                    </div>
+                                                </body>
+                                            </html>";
+                        await UtilityService.SendEmailAsync(InstAdmin.Email, adminSubject, adminMessage);
+                    }
+                    else
+                    {
+                        var adminSubject = "Widget Access Disabled";
+                        var adminMessage = $@"
+                                            <html>
+                                                <head>
+                                                    <style>
+                                                        body {{
+                                                            font-family: Arial, sans-serif;
+                                                            background-color: #f4f4f4;
+                                                            padding: 20px;
+                                                        }}
+                                                        .container {{
+                                                            background-color: #ffffff;
+                                                            padding: 20px;
+                                                            border-radius: 5px;
+                                                            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+                                                        }}
+                                                    </style>
+                                                </head>
+                                                <body>
+                                                    <div class='container'>
+                                                        <h2>Widget Access Disabled</h2>
+                                                        <p>Hello,</p>
+                                                        <p>Your institution's access to the Quotations Board Widget has been disabled.</p>
+                                                        <p>If you have any questions or need assistance, please contact our support team.</p>
+                                                        <p>Best regards,</p>
+                                                        <p>Nairobi Stock Exchange</p>
+                                                    </div>
+                                                </body>
+                                            </html>";
+                        await UtilityService.SendEmailAsync(InstAdmin.Email, adminSubject, adminMessage);
+                    }
+
+                    return Ok("Widget Access Updated");
                 }
             }
             catch (Exception Ex)
