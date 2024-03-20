@@ -463,6 +463,7 @@ namespace Quotations_Board_Backend.Controllers
                                                 </body>
                                             </html>";
                         await UtilityService.SendEmailAsync(InstAdmin.Email, adminSubject, adminMessage);
+                        return Ok(Uniqye7DigitWithNoSpecHarsOrSpaces);
                     }
                     else
                     {
@@ -496,9 +497,9 @@ namespace Quotations_Board_Backend.Controllers
                                                 </body>
                                             </html>";
                         await UtilityService.SendEmailAsync(InstAdmin.Email, adminSubject, adminMessage);
+                        return Ok("Widget Access Disabled");
                     }
 
-                    return Ok("Widget Access Updated");
                 }
             }
             catch (Exception Ex)
@@ -611,7 +612,8 @@ namespace Quotations_Board_Backend.Controllers
                             InstitutionType = _type,
                             InstitutionId = institution.Id,
                             IsActive = isActive,
-                            IsAPIAcessEnabled = institution.IsApiAccessEnabled
+                            IsAPIAccessEnabled = institution.IsApiAccessEnabled,
+                            IsWidgetAccessEnabled = institution.WidgetKey != null ? true : false
                         });
                     }
                     return Ok(institutionApplicationsDTO);

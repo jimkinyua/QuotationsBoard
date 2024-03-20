@@ -14,6 +14,7 @@ public class InstitutionApplicationDTO
     public string InstitutionEmail { get; set; } = null!;
     public string InstitutionId { get; set; } = null!;
     public Boolean IsActive { get; set; }
-    public Boolean IsAPIAcessEnabled { get; set; } = false;
+    public Boolean IsAPIAccessEnabled { get; set; } = false;
+    public Boolean IsWidgetAccessEnabled { get; set; } = false;
 
 }
