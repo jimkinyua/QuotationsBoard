@@ -509,7 +509,7 @@ namespace Quotations_Board_Backend.Controllers
                 }
 
                 yieldCurveCalculations.AddRange(Mnaoes.YieldCurveCalculations);
-                YieldCurveHelper.InterpolateWhereNecessary(yieldCurveCalculations, tenuresThatRequireInterPolation, previousCurcve);
+                YieldCurveHelper.InterpolateWhereNecessary(yieldCurveCalculations, tenuresThatRequireInterPolation);
                 YieldCurveToPlot = YieldCurveHelper.GenerateYieldCurves(tenuresThatRequireInterPolation, tenuresThatDoNotRequireInterpolation, yieldCurveCalculations);
                 return Ok(YieldCurveToPlot);
 
@@ -745,7 +745,7 @@ namespace Quotations_Board_Backend.Controllers
                 }
 
                 yieldCurveCalculations.AddRange(Mnaoes.YieldCurveCalculations);
-                YieldCurveHelper.InterpolateWhereNecessary(yieldCurveCalculations, tenuresThatRequireInterPolation, PreviousCurve);
+                YieldCurveHelper.InterpolateWhereNecessary(yieldCurveCalculations, tenuresThatRequireInterPolation);
                 YieldCurveToPlot = YieldCurveHelper.GenerateYieldCurves(tenuresThatRequireInterPolation, tenuresThatDoNotRequireInterpolation, yieldCurveCalculations);
                 return Ok(YieldCurveToPlot);
 

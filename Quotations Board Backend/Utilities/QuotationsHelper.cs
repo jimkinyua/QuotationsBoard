@@ -13,6 +13,55 @@ public static class QuotationsHelper
         }
     }
 
+    // get implied yields for a date
+    public static async Task<List<ImpliedYield>> GetImpliedYieldsForDate(DateTime date)
+    {
+        using (var context = new QuotationsBoardContext())
+        {
+            var impliedYields = await context.ImpliedYields.Where(q => q.YieldDate.Date == date.Date).ToListAsync();
+            return impliedYields;
+        }
+    }
+
+    public static List<BondAndYield> LoadBondCurrentValues(List<Quotation> quotations, List<ImpliedYield> impliedYields, List<Bond> bonds, DateTime dateInQuestion)
+    {
+        List<BondAndYield> bondAndYields = new List<BondAndYield>();
+        foreach (var bond in bonds)
+        {
+            // Does bond have implied yield?
+            var impliedYield = impliedYields.FirstOrDefault(i => i.BondId == bond.Id);
+            // Does Bond have quotations?
+            var bondQuotations = quotations.Where(q => q.BondId == bond.Id).ToList();
+
+            // quotes give priority if no quote use the implied yield else calculate the average quoted yield of quotes
+            if (bondQuotations.Any())
+            {
+                var averageQuotedYield = CalculateAverageWeightedQuotedYield(bondQuotations);
+                bondAndYields.Add(new BondAndYield
+                {
+                    BondId = bond.Id,
+                    BondTenor = CalculateRemainingTenor(bond.MaturityDate, dateInQuestion),
+                    YieldToUse = averageQuotedYield
+                });
+            }
+            else if (impliedYield != null)
+            {
+                bondAndYields.Add(new BondAndYield
+                {
+                    BondId = bond.Id,
+                    BondTenor = CalculateRemainingTenor(bond.MaturityDate, dateInQuestion),
+                    YieldToUse = impliedYield.Yield
+                });
+            }
+            else
+            {
+                continue; // if no quote or implied yield, skip this useleless bond
+            }
+
+        }
+        return bondAndYields;
+    }
+
     public static async Task<List<FinalYieldCurveData>> InterpolateValuesForLastQuotedDayAsync(DateTime LastDateWithQuotes, List<Quotation> Quotes)
     {
         List<BondAndAverageQuotedYield> bondAndAverageQuotedYields = new List<BondAndAverageQuotedYield>();
@@ -125,7 +174,7 @@ public static class QuotationsHelper
             }
 
             // interpolate the yield curve
-            var interpolatedYieldCurve = YieldCurveHelper.InterpolateWhereNecessary(yieldCurveCalculations, tenuresThatRequireInterPolation, previousYieldCurveData);
+            var interpolatedYieldCurve = YieldCurveHelper.InterpolateWhereNecessary(yieldCurveCalculations, tenuresThatRequireInterPolation);
             HashSet<double> tenuresToPlot = new HashSet<double>();
             foreach (var interpolatedTenure in tenuresThatRequireInterPolation)
             {
@@ -502,6 +551,20 @@ public static class QuotationsHelper
                 .Select(q => q.CreatedAt)
                 .FirstOrDefaultAsync();
 
+            return date;
+        }
+    }
+
+    // Gets most recent day with Implie Yields
+    internal static async Task<DateTime> GetMostRecentDateWithImpliedYieldsBeforeDateInQuestion(DateTime fromDate)
+    {
+        using (var context = new QuotationsBoardContext())
+        {
+            var date = await context.ImpliedYields
+                .Where(q => q.YieldDate.Date < fromDate.Date)
+                .OrderByDescending(q => q.YieldDate)
+                .Select(q => q.YieldDate)
+                .FirstOrDefaultAsync();
             return date;
         }
     }

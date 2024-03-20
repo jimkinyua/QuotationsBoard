@@ -1897,202 +1897,35 @@ namespace Quotations_Board_Backend.Controllers
                     HashSet<double> tenuresThatDoNotRequireInterpolation = new HashSet<double>();
                     HashSet<string> usedBondIds = new HashSet<string>();
                     List<YieldCurveDataSet> yieldCurveCalculations = new List<YieldCurveDataSet>();
+                    List<BondAndYield> bondCurrentValues = new List<BondAndYield>();
 
                     var (startofCycle, endOfCycle) = TBillHelper.GetCurrentTBillCycle(fromDate);
                     var bondsNotMatured = context.Bonds.Where(b => b.BondCategory == "FXD" && b.MaturityDate.Date > fromDate.Date).ToList();
 
-                    // YieldCurveDataSet? oneYearTbillYeild = YieldCurveHelper.AddOneYearTBillToCalculation(startofCycle, endOfCycle);
-                    // if (oneYearTbillYeild == null)
-                    // {
-                    //     return BadRequest("It Seems there is no 1 Year TBill for the cycle beggining from " + startofCycle + " to " + endOfCycle);
-                    // }
-
-                    // yieldCurveCalculations.Add(oneYearTbillYeild);
-                    // tenuresThatDoNotRequireInterpolation.Add(1);
-
                     var quotationsForSelectedDate = await QuotationsHelper.GetQuotationsForDate(fromDate);
-                    var mostRecentDateWithQuotations = await QuotationsHelper.GetMostRecentDateWithQuotationsBeforeDateInQuestion(fromDate);
-                    var quotationsForMostRecentDate = await QuotationsHelper.GetQuotationsForDate(mostRecentDateWithQuotations);
-                    var res = YieldCurveHelper.AddOneYearTBillToYieldCurve(mostRecentDateWithQuotations, tenuresThatDoNotRequireInterpolation, yieldCurveCalculations, true);
+                    var LastDateWithImpliedYields = await QuotationsHelper.GetMostRecentDateWithImpliedYieldsBeforeDateInQuestion(fromDate);
+
+                    if (LastDateWithImpliedYields == DateTime.MinValue)
+                    {
+                        return BadRequest("It seems there are are no implied yields keyed in the system");
+                    }
+
+                    var impliedYields = await QuotationsHelper.GetImpliedYieldsForDate(LastDateWithImpliedYields);
+                    var res = YieldCurveHelper.AddOneYearTBillToYieldCurve(LastDateWithImpliedYields, tenuresThatDoNotRequireInterpolation, yieldCurveCalculations, true);
                     if (res.Success == false)
                     {
                         return BadRequest(res.ErrorMessage);
                     }
-
-
-                    var previousYieldCurveData = await QuotationsHelper.InterpolateValuesForLastQuotedDayAsync(mostRecentDateWithQuotations, quotationsForMostRecentDate);
-
-                    // check if there are any quotations for the selected date
-                    if (quotationsForSelectedDate.Count == 0)
+                    bondCurrentValues = QuotationsHelper.LoadBondCurrentValues(quotationsForSelectedDate, impliedYields, bondsNotMatured, fromDate);
+                    ProcessBenchmarkResult Mnaoes = YieldCurveHelper.ProcessYieldCurveUsingQuotes(fromDate, context, yieldCurveCalculations, benchmarkRanges, tenuresThatRequireInterPolation, tenuresThatDoNotRequireInterpolation, usedBondIds, bondCurrentValues);
+                    if (Mnaoes.Success == false)
                     {
-                        if (mostRecentDateWithQuotations == default(DateTime))
-                        {
-                            return BadRequest("There are no quotations available.");
-                        }
-
-                        quotationsForSelectedDate = quotationsForMostRecentDate;
-                        yieldCurveToPlot = previousYieldCurveData;
-                        return StatusCode(200, yieldCurveToPlot);
+                        return BadRequest(Mnaoes.ErrorMessage);
                     }
-
-                    // Check if previousYieldCurveData exists (Wierd but Shit Happens). 
-                    if (previousYieldCurveData == null || previousYieldCurveData.Count == 0)
-                    {
-
-                    }
-
-                    var groupedQuotations = quotationsForSelectedDate.GroupBy(x => x.BondId);
-
-                    foreach (var bondQuotes in groupedQuotations)
-                    {
-
-                        var bondDetails = await context.Bonds.FirstOrDefaultAsync(b => b.Id == bondQuotes.Key);
-                        if (bondDetails == null)
-                        {
-                            continue;
-                        }
-                        var RemainingTenor = (bondDetails.MaturityDate - fromDate.Date).TotalDays / 364;
-
-                        var quotationsForBond = bondQuotes.ToList();
-                        double averageWeightedYield = QuotationsHelper.CalculateBondAndAverageQuotedYield(quotationsForBond);
-
-                        BondAndAverageQuotedYield bondAndAverageQuotedYield = new BondAndAverageQuotedYield
-                        {
-                            BondId = bondQuotes.Key,
-                            AverageQuotedYield = averageWeightedYield,
-                            BondTenor = RemainingTenor,
-                        };
-                        bondAndAverageQuotedYields.Add(bondAndAverageQuotedYield);
-
-
-                    }
-
-                    foreach (var benchmarkRange in benchmarkRanges)
-                    {
-                        Bond? BondWithExactTenure = null;
-
-                        var bondsWithinThisTenure = YieldCurveHelper.GetBondsInTenorRange(bondsNotMatured, benchmarkRange, usedBondIds, fromDate);
-
-                        // Find newly quoted bonds within the range
-                        var newlyQuotedBonds = bondsWithinThisTenure
-                            .Where(b => quotationsForSelectedDate.Any(q => q.BondId == b.Id))
-                            .ToList();
-
-                        // Select the bond closest to the benchmark tenure
-                        var newlyQuotedBond = newlyQuotedBonds
-                            .OrderBy(b => Math.Abs(benchmarkRange.Key - Math.Round((b.MaturityDate.Date - fromDate.Date).TotalDays / 364, 4, MidpointRounding.AwayFromZero)))
-                            .FirstOrDefault();
-
-                        // If a newly quoted bond is found, use it; otherwise, find the closest bond within the tenure range
-                        Bond? bondToUse = newlyQuotedBond?.Id != null ? context.Bonds.Find(newlyQuotedBond.Id) : YieldCurveHelper.GetBondWithExactTenure(bondsWithinThisTenure, benchmarkRange.Value.Item1, fromDate);
-
-                        if (bondsWithinThisTenure.Count() == 0 && benchmarkRange.Key != 1)
-                        {
-                            tenuresThatRequireInterPolation.Add(benchmarkRange.Key);
-                            continue;
-                        }
-                        else
-                        {
-                            BondWithExactTenure = YieldCurveHelper.GetBondWithExactTenure(bondsWithinThisTenure, benchmarkRange.Value.Item1, fromDate);
-                        }
-
-                        if (BondWithExactTenure != null)
-                        {
-                            // was this bond quoted? some may have excat tenure but not quoted
-                            var bondAndAverageQuotedYield = bondAndAverageQuotedYields.FirstOrDefault(b => b.BondId == BondWithExactTenure.Id);
-                            if (bondAndAverageQuotedYield != null)
-                            {
-                                var BondTenure = Math.Round((BondWithExactTenure.MaturityDate.Date - fromDate.Date).TotalDays / 364, 4, MidpointRounding.AwayFromZero);
-
-                                YieldCurveDataSet yieldCurve = new YieldCurveDataSet
-                                {
-                                    Tenure = BondTenure,
-                                    Yield = bondAndAverageQuotedYield.AverageQuotedYield,
-                                    IssueDate = BondWithExactTenure.IssueDate,
-                                    MaturityDate = BondWithExactTenure.MaturityDate,
-                                    BondUsed = BondWithExactTenure.Isin
-                                };
-                                yieldCurveCalculations.Add(yieldCurve);
-                                usedBondIds.Add(BondWithExactTenure.Id);
-                                tenuresThatDoNotRequireInterpolation.Add(BondTenure);
-                            }
-                            else
-                            {
-                                // we need to interpolate
-                                tenuresThatRequireInterPolation.Add(benchmarkRange.Key);
-                            }
-                        }
-
-                        // No bond with exact tenure was found
-                        else
-                        {
-                            tenuresThatRequireInterPolation.Add(benchmarkRange.Key);
-
-                            foreach (var bond in bondsWithinThisTenure)
-                            {
-                                if (usedBondIds.Contains(bond.Id))
-                                {
-                                    continue; // Skip bonds that have already been used
-                                }
-
-                                var bondAndAverageQuotedYield = bondAndAverageQuotedYields.FirstOrDefault(b => b.BondId == bond.Id);
-                                if (bondAndAverageQuotedYield != null)
-                                {
-                                    var BondTenure = Math.Round((bond.MaturityDate.Date - fromDate.Date).TotalDays / 364, 4, MidpointRounding.AwayFromZero);
-
-                                    YieldCurveDataSet yieldCurve = new YieldCurveDataSet
-                                    {
-                                        Tenure = BondTenure,
-                                        Yield = bondAndAverageQuotedYield.AverageQuotedYield,
-                                        IssueDate = bond.IssueDate,
-                                        MaturityDate = bond.MaturityDate,
-                                        BondUsed = bond.Isin
-                                    };
-                                    yieldCurveCalculations.Add(yieldCurve);
-                                    usedBondIds.Add(bond.Id);
-                                }
-                            }
-                        }
-
-
-                    }
-
-                    // interpolate the yield curve
-                    var interpolatedYieldCurve = YieldCurveHelper.InterpolateWhereNecessary(yieldCurveCalculations, tenuresThatRequireInterPolation, previousYieldCurveData);
-                    HashSet<double> tenuresToPlot = new HashSet<double>();
-                    foreach (var interpolatedTenure in tenuresThatRequireInterPolation)
-                    {
-                        tenuresToPlot.Add(interpolatedTenure);
-                    }
-                    foreach (var notInterpolated in tenuresThatDoNotRequireInterpolation)
-                    {
-                        tenuresToPlot.Add(notInterpolated);
-                    }
-
-                    foreach (var tenureToPlot in tenuresToPlot)
-                    {
-                        foreach (var yieldCurveCalculation in yieldCurveCalculations)
-                        {
-                            var _BondUsed = "Interpolated";
-                            if (tenuresThatDoNotRequireInterpolation.Contains(yieldCurveCalculation.Tenure))
-                            {
-                                _BondUsed = yieldCurveCalculation.BondUsed;
-                            }
-
-                            if (yieldCurveCalculation.Tenure == tenureToPlot)
-                            {
-                                yieldCurveToPlot.Add(new FinalYieldCurveData
-                                {
-                                    Tenure = tenureToPlot,
-                                    Yield = yieldCurveCalculation.Yield,
-                                    // CanBeUsedForYieldCurve = true,
-                                    BondUsed = _BondUsed,
-                                    BenchMarkTenor = tenureToPlot,
-                                });
-                            }
-                        }
-                    }
-                    return StatusCode(200, yieldCurveToPlot);
+                    yieldCurveCalculations.AddRange(Mnaoes.YieldCurveCalculations);
+                    YieldCurveHelper.InterpolateWhereNecessary(yieldCurveCalculations, tenuresThatRequireInterPolation);
+                    yieldCurveToPlot = YieldCurveHelper.GenerateYieldCurves(tenuresThatRequireInterPolation, tenuresThatDoNotRequireInterpolation, yieldCurveCalculations);
+                    return Ok(yieldCurveToPlot);
                 }
             }
             catch (Exception Ex)

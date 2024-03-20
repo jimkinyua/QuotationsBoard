@@ -3,14 +3,14 @@ using Microsoft.EntityFrameworkCore;
 
 public static class YieldCurveHelper
 {
-    public static List<YieldCurveDataSet> InterpolateWhereNecessary(List<YieldCurveDataSet> yieldCurveDataList, HashSet<double> tenuresThatRequireInterPolation, List<FinalYieldCurveData> PreviousYieldCurve)
+    public static List<YieldCurveDataSet> InterpolateWhereNecessary(List<YieldCurveDataSet> yieldCurveDataList, HashSet<double> tenuresThatRequireInterPolation)
     {
         yieldCurveDataList.Sort((x, y) => x.Tenure.CompareTo(y.Tenure));
         foreach (var tenureToInterpolate in tenuresThatRequireInterPolation)
         {
             // Find the closest tenures before and after the tenure we want to interpolate
-            var previousData = FindPreviousDataWithYield(yieldCurveDataList, tenureToInterpolate, PreviousYieldCurve);
-            var nextData = FindNextDataWithYield(yieldCurveDataList, tenureToInterpolate, PreviousYieldCurve);
+            var previousData = FindPreviousDataWithYield(yieldCurveDataList, tenureToInterpolate);
+            var nextData = FindNextDataWithYield(yieldCurveDataList, tenureToInterpolate);
             if (previousData != null && nextData != null)
             {
                 // Perform the interpolation
@@ -157,18 +157,18 @@ public static class YieldCurveHelper
 
 
 
-    private static YieldCurveDataSet FindPreviousDataWithYield(List<YieldCurveDataSet> dataList, int currentIndex)
-    {
-        for (int i = currentIndex - 1; i >= 0; i--)
-        {
-            if (!IsYieldMissing(dataList[i]))
-            {
-                return dataList[i];
-            }
-        }
-        return null; // No previous data found
-    }
-    public static YieldCurveDataSet FindPreviousDataWithYield(List<YieldCurveDataSet> yieldCurveDataList, double tenureToInterpolate, List<FinalYieldCurveData> PreviousYieldCurve)
+    // private static YieldCurveDataSet FindPreviousDataWithYield(List<YieldCurveDataSet> dataList, int currentIndex)
+    // {
+    //     for (int i = currentIndex - 1; i >= 0; i--)
+    //     {
+    //         if (!IsYieldMissing(dataList[i]))
+    //         {
+    //             return dataList[i];
+    //         }
+    //     }
+    //     return null; // No previous data found
+    // }
+    public static YieldCurveDataSet FindPreviousDataWithYield(List<YieldCurveDataSet> yieldCurveDataList, double tenureToInterpolate)
     {
         YieldCurveDataSet previousData = null;
 
@@ -183,25 +183,6 @@ public static class YieldCurveHelper
             }
         }
 
-        // If no previous data is found, previousData remains null
-        //We will not get it from the previous yield curve
-        if (previousData == null && PreviousYieldCurve != null && tenureToInterpolate != 1)
-        {
-            var _previousYieldCurve = PreviousYieldCurve.OrderByDescending(y => y.Tenure).ToList();
-            foreach (var yieldCurve in _previousYieldCurve)
-            {
-                if (yieldCurve.Tenure <= tenureToInterpolate)
-                {
-                    previousData = new YieldCurveDataSet
-                    {
-                        Tenure = yieldCurve.Tenure,
-                        Yield = yieldCurve.Yield,
-                        BondUsed = yieldCurve.BondUsed
-                    };
-                    break;
-                }
-            }
-        }
         // is it still null? Give up
         if (previousData == null)
         {
@@ -210,7 +191,7 @@ public static class YieldCurveHelper
         return previousData;
     }
 
-    public static YieldCurveDataSet FindNextDataWithYield(List<YieldCurveDataSet> yieldCurveDataList, double tenureToInterpolate, List<FinalYieldCurveData> PreviousYieldCurve)
+    public static YieldCurveDataSet FindNextDataWithYield(List<YieldCurveDataSet> yieldCurveDataList, double tenureToInterpolate)
     {
         YieldCurveDataSet nextData = null;
 
@@ -225,25 +206,6 @@ public static class YieldCurveHelper
             }
         }
 
-        // If no next data is found, nextData remains null
-        // go back to the previous yield curve
-        if (nextData == null)
-        {
-            var _previousYieldCurve = PreviousYieldCurve.OrderBy(y => y.Tenure).ToList();
-            foreach (var yieldCurve in _previousYieldCurve)
-            {
-                if (yieldCurve.Tenure >= tenureToInterpolate)
-                {
-                    nextData = new YieldCurveDataSet
-                    {
-                        Tenure = yieldCurve.Tenure,
-                        Yield = yieldCurve.Yield,
-                        BondUsed = yieldCurve.BondUsed
-                    };
-                    break;
-                }
-            }
-        }
         if (nextData == null)
         {
             return null;
@@ -459,6 +421,85 @@ public static class YieldCurveHelper
         return result;
     }
 
+    public static ProcessBenchmarkResult ProcessBenchmarkRangesUsingQuotesData(Dictionary<int, (double, double)> benchmarkRanges, HashSet<double> tenuresThatRequireInterPolation, HashSet<double> tenuresThatDoNotRequireInterpolation, HashSet<string> usedBondIds, DateTime parsedDate, QuotationsBoardContext _db, List<Bond> fXdBonds, List<BondAndYield> bondAndYields)
+    {
+        ProcessBenchmarkResult result = new ProcessBenchmarkResult();
+        foreach (var benchmark in benchmarkRanges)
+        {
+            Bond? BondWithExactTenure = null;
+            var bondsWithinThisTenure = YieldCurveHelper.GetBondsInTenorRange(fXdBonds, benchmark, usedBondIds, parsedDate);
+
+            if (bondsWithinThisTenure.Count() == 0 && benchmark.Key != 1)
+            {
+                tenuresThatRequireInterPolation.Add(benchmark.Key);
+                continue;
+            }
+            else
+            {
+                BondWithExactTenure = YieldCurveHelper.GetBondWithExactTenure(bondsWithinThisTenure, benchmark.Value.Item1, parsedDate);
+            }
+
+            if (BondWithExactTenure != null)
+            {
+                // get bondAndYield of this Bond
+                var bondAndYield = bondAndYields.Where(i => i.BondId == BondWithExactTenure.Id).FirstOrDefault();
+                if (bondAndYield == null)
+                {
+                    result.Success = false;
+                    result.ErrorMessage = $"The Bond {BondWithExactTenure.IssueNumber} seems not to have an Implied Yield  or Quote";
+                    return result;
+                }
+
+                var BondTenure = Math.Round((BondWithExactTenure.MaturityDate.Date - parsedDate.Date).TotalDays / 364, 4, MidpointRounding.AwayFromZero);
+                result.YieldCurveCalculations.Add(new YieldCurveDataSet
+                {
+                    Yield = (double)Math.Round(bondAndYield.YieldToUse, 4, MidpointRounding.AwayFromZero),
+                    BondUsed = BondWithExactTenure.IssueNumber,
+                    IssueDate = BondWithExactTenure.IssueDate,
+                    MaturityDate = BondWithExactTenure.MaturityDate,
+                    Tenure = BondTenure
+                });
+
+                usedBondIds.Add(BondWithExactTenure.Id);
+                tenuresThatDoNotRequireInterpolation.Add(BondTenure);
+            }
+            else
+            {
+                tenuresThatRequireInterPolation.Add(benchmark.Key);
+                // FOR EACH OF THE BONDS WITHIN THE TENURE, Create a Yield Curve (We will interpolate the missing ones later)
+                foreach (var bond in bondsWithinThisTenure)
+                {
+                    if (usedBondIds.Contains(bond.Id))
+                    {
+                        continue; // Skip bonds that have already been used
+                    }
+                    var bondAndYield = bondAndYields.Where(i => i.BondId == bond.Id).FirstOrDefault();
+                    if (bondAndYield == null)
+                    {
+                        result.Success = false;
+                        result.ErrorMessage = $"The Bond {bond.IssueNumber} seems not to have an Implied Yield or Quote";
+                        return result;
+                    }
+
+                    var BondTenure = Math.Round((bond.MaturityDate.Date - parsedDate.Date).TotalDays / 364, 4, MidpointRounding.AwayFromZero);
+
+                    result.YieldCurveCalculations.Add(new YieldCurveDataSet
+                    {
+                        Yield = (double)Math.Round(bondAndYield.YieldToUse, 4, MidpointRounding.AwayFromZero),
+                        BondUsed = bond.IssueNumber,
+                        IssueDate = bond.IssueDate,
+                        MaturityDate = bond.MaturityDate,
+                        Tenure = BondTenure
+                    });
+                    usedBondIds.Add(bond.Id);
+
+                }
+            }
+        }
+        result.Success = true;
+        return result;
+    }
+
     public static List<FinalYieldCurveData> GenerateYieldCurves(HashSet<double> tenuresThatRequireInterPolation, HashSet<double> tenuresThatDoNotRequireInterpolation, List<YieldCurveDataSet> yieldCurveCalculations)
     {
         HashSet<double> tenuresToPlot = new HashSet<double>();
@@ -498,7 +539,6 @@ public static class YieldCurveHelper
 
         return yieldCurves;
     }
-
 
     public static AddOneYearTBillResult AddOneYearTBillToYieldCurve(DateTime parsedDate, HashSet<double> tenuresThatDoNotRequireInterpolation, List<YieldCurveDataSet> yieldCurveCalculations, Boolean PreviewYieldCurve = false)
     {
@@ -563,6 +603,14 @@ public static class YieldCurveHelper
         var fXdBonds = YieldCurveHelper.GetFXDBonds(parsedDate);
         return ProcessBenchmarkRanges(benchmarkRanges, tenuresThatRequireInterPolation, tenuresThatDoNotRequireInterpolation, usedBondIds, parsedDate, _db, fXdBonds);
     }
+
+    public static ProcessBenchmarkResult ProcessYieldCurveUsingQuotes(DateTime parsedDate, QuotationsBoardContext _db, List<YieldCurveDataSet> ieldCurveCalculations, Dictionary<int, (double, double)> benchmarkRanges, HashSet<double> tenuresThatRequireInterPolation, HashSet<double> tenuresThatDoNotRequireInterpolation, HashSet<string> usedBondIds, List<BondAndYield> bondAndYields)
+    {
+        var fXdBonds = YieldCurveHelper.GetFXDBonds(parsedDate);
+        return ProcessBenchmarkRangesUsingQuotesData(benchmarkRanges, tenuresThatRequireInterPolation, tenuresThatDoNotRequireInterpolation, usedBondIds, parsedDate, _db, fXdBonds, bondAndYields);
+    }
+
+
 
 
 

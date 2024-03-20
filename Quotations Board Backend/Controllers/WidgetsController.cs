@@ -46,7 +46,7 @@ namespace Quotations_Board_Backend.Controllers
                         return BadRequest(Mnaoes.ErrorMessage);
                     }
                     yieldCurveCalculations.AddRange(Mnaoes.YieldCurveCalculations);
-                    YieldCurveHelper.InterpolateWhereNecessary(yieldCurveCalculations, tenuresThatRequireInterPolation, previousCurve);
+                    YieldCurveHelper.InterpolateWhereNecessary(yieldCurveCalculations, tenuresThatRequireInterPolation);
                     YieldCurveToPlot = YieldCurveHelper.GenerateYieldCurves(tenuresThatRequireInterPolation, tenuresThatDoNotRequireInterpolation, yieldCurveCalculations);
                     return Ok(YieldCurveToPlot);
 
@@ -225,7 +225,7 @@ namespace Quotations_Board_Backend.Controllers
                     }
 
                     // interpolate the yield curve
-                    var interpolatedYieldCurve = YieldCurveHelper.InterpolateWhereNecessary(yieldCurveCalculations, tenuresThatRequireInterPolation, previousYieldCurveData);
+                    var interpolatedYieldCurve = YieldCurveHelper.InterpolateWhereNecessary(yieldCurveCalculations, tenuresThatRequireInterPolation);
                     HashSet<double> tenuresToPlot = new HashSet<double>();
                     foreach (var interpolatedTenure in tenuresThatRequireInterPolation)
                     {
