@@ -619,7 +619,7 @@ namespace Quotations_Board_Backend.Controllers
                             var previous364 = PreviousTbillImpliedYields.Where(t => t.TBill.Tenor == 364).FirstOrDefault();
                             if (previous364 == null)
                             {
-                                continue;
+                                // continue;
                                 // return BadRequest("The previous implied yield for the 364 days T-Bill is not available");
                             }
                             var diffrenceBetweenSelectedDateAndMaturityDate = tBillYield.TBill.MaturityDate.Date - parsedDate.Date;
@@ -647,7 +647,7 @@ namespace Quotations_Board_Backend.Controllers
                             var previous182 = PreviousTbillImpliedYields.Where(t => t.TBill.Tenor == 182).FirstOrDefault();
                             if (previous182 == null)
                             {
-                                continue;
+                                // continue;
 
                                 // return BadRequest("The previous implied yield for the 182 days T-Bill is not available");
                             }
@@ -675,7 +675,7 @@ namespace Quotations_Board_Backend.Controllers
                             var previous91 = PreviousTbillImpliedYields.Where(t => t.TBill.Tenor == 91).FirstOrDefault();
                             if (previous91 == null)
                             {
-                                continue;
+                                // continue;
 
                                 // return BadRequest("The previous implied yield for the 91 days T-Bill is not available");
                             }
