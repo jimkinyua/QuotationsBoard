@@ -617,10 +617,10 @@ namespace Quotations_Board_Backend.Controllers
                         if (tBillYield.TBill.Tenor == 364)
                         {
                             var previous364 = PreviousTbillImpliedYields.Where(t => t.TBill.Tenor == 364).FirstOrDefault();
-                            if (previous364 == null)
+                            double Prev364Y = 0;
+                            if (previous364 != null)
                             {
-                                // continue;
-                                // return BadRequest("The previous implied yield for the 364 days T-Bill is not available");
+                                Prev364Y = previous364.Yield;
                             }
                             var diffrenceBetweenSelectedDateAndMaturityDate = tBillYield.TBill.MaturityDate.Date - parsedDate.Date;
                             var m = diffrenceBetweenSelectedDateAndMaturityDate.TotalDays / 364;
@@ -637,7 +637,7 @@ namespace Quotations_Board_Backend.Controllers
                                 AverageWeightedQuotedYield = 0,
                                 DaysImpliedYield = tBillYield.Yield,
                                 ISIN = "T-Bill",
-                                PreviousImpliedYield = previous364.Yield,
+                                PreviousImpliedYield = Prev364Y
                             };
 
                         }
@@ -645,11 +645,11 @@ namespace Quotations_Board_Backend.Controllers
                         if (tBillYield.TBill.Tenor == 182)
                         {
                             var previous182 = PreviousTbillImpliedYields.Where(t => t.TBill.Tenor == 182).FirstOrDefault();
-                            if (previous182 == null)
-                            {
-                                // continue;
+                            double Prev182Y = 0;
 
-                                // return BadRequest("The previous implied yield for the 182 days T-Bill is not available");
+                            if (previous182 != null)
+                            {
+                                Prev182Y = previous182.Yield;
                             }
                             var diffrenceBetweenSelectedDateAndMaturityDate = tBillYield.TBill.MaturityDate.Date - parsedDate.Date;
                             var m = diffrenceBetweenSelectedDateAndMaturityDate.TotalDays / 364;
@@ -666,18 +666,18 @@ namespace Quotations_Board_Backend.Controllers
                                 AverageWeightedQuotedYield = 0,
                                 DaysImpliedYield = tBillYield.Yield,
                                 ISIN = "T-Bill",
-                                PreviousImpliedYield = previous182.Yield,
+                                PreviousImpliedYield = Prev182Y
                             };
                         }
 
                         if (tBillYield.TBill.Tenor == 91)
                         {
                             var previous91 = PreviousTbillImpliedYields.Where(t => t.TBill.Tenor == 91).FirstOrDefault();
-                            if (previous91 == null)
-                            {
-                                // continue;
+                            double Prev91Y = 0;
 
-                                // return BadRequest("The previous implied yield for the 91 days T-Bill is not available");
+                            if (previous91 != null)
+                            {
+                                Prev91Y = previous91.Yield;
                             }
                             var diffrenceBetweenSelectedDateAndMaturityDate = tBillYield.TBill.MaturityDate.Date - parsedDate.Date;
                             var m = diffrenceBetweenSelectedDateAndMaturityDate.TotalDays / 364;
@@ -694,7 +694,7 @@ namespace Quotations_Board_Backend.Controllers
                                 AverageWeightedQuotedYield = 0,
                                 DaysImpliedYield = tBillYield.Yield,
                                 ISIN = "T-Bill",
-                                PreviousImpliedYield = previous91.Yield,
+                                PreviousImpliedYield = Prev91Y
                             };
                         }
 
