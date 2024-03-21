@@ -619,7 +619,8 @@ namespace Quotations_Board_Backend.Controllers
                             var previous364 = PreviousTbillImpliedYields.Where(t => t.TBill.Tenor == 364).FirstOrDefault();
                             if (previous364 == null)
                             {
-                                return BadRequest("The previous implied yield for the 364 days T-Bill is not available");
+                                continue;
+                                // return BadRequest("The previous implied yield for the 364 days T-Bill is not available");
                             }
                             var diffrenceBetweenSelectedDateAndMaturityDate = tBillYield.TBill.MaturityDate.Date - parsedDate.Date;
                             var m = diffrenceBetweenSelectedDateAndMaturityDate.TotalDays / 364;
