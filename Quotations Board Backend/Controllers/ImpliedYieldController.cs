@@ -494,6 +494,9 @@ namespace Quotations_Board_Backend.Controllers
                 List<FinalYieldCurveData> YieldCurveToPlot = new List<FinalYieldCurveData>();
                 List<FinalYieldCurveData> previousCurcve = new List<FinalYieldCurveData>();
                 List<YieldCurveDataSet> yieldCurveCalculations = new List<YieldCurveDataSet>();
+                List<DraftImpliedYield> draftImpliedYields = new List<DraftImpliedYield>();
+
+                draftImpliedYields = _db.DraftImpliedYields.Where(i => i.YieldDate.Date == parsedDate.Date).ToList();
 
                 var res = YieldCurveHelper.AddOneYearTBillToYieldCurve(parsedDate, tenuresThatDoNotRequireInterpolation, yieldCurveCalculations, true);
 
@@ -502,7 +505,7 @@ namespace Quotations_Board_Backend.Controllers
                     return BadRequest(res.ErrorMessage);
                 }
 
-                ProcessBenchmarkResult Mnaoes = YieldCurveHelper.ProcessYieldCurve(parsedDate, _db, yieldCurveCalculations, benchmarkRanges, tenuresThatRequireInterPolation, tenuresThatDoNotRequireInterpolation, usedBondIds);
+                ProcessBenchmarkResult Mnaoes = YieldCurveHelper.ProcessYieldCurvePreview(parsedDate, _db, yieldCurveCalculations, benchmarkRanges, tenuresThatRequireInterPolation, tenuresThatDoNotRequireInterpolation, usedBondIds, draftImpliedYields);
                 if (Mnaoes.Success == false)
                 {
                     return BadRequest(Mnaoes.ErrorMessage);

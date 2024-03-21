@@ -500,6 +500,85 @@ public static class YieldCurveHelper
         return result;
     }
 
+    public static ProcessBenchmarkResult ProcessBenchmarkRangesForPreview(Dictionary<int, (double, double)> benchmarkRanges, HashSet<double> tenuresThatRequireInterPolation, HashSet<double> tenuresThatDoNotRequireInterpolation, HashSet<string> usedBondIds, DateTime parsedDate, QuotationsBoardContext _db, List<Bond> fXdBonds, List<DraftImpliedYield> draftImpliedYields)
+    {
+        ProcessBenchmarkResult result = new ProcessBenchmarkResult();
+        foreach (var benchmark in benchmarkRanges)
+        {
+            Bond? BondWithExactTenure = null;
+            var bondsWithinThisTenure = YieldCurveHelper.GetBondsInTenorRange(fXdBonds, benchmark, usedBondIds, parsedDate);
+
+            if (bondsWithinThisTenure.Count() == 0 && benchmark.Key != 1)
+            {
+                tenuresThatRequireInterPolation.Add(benchmark.Key);
+                continue;
+            }
+            else
+            {
+                BondWithExactTenure = YieldCurveHelper.GetBondWithExactTenure(bondsWithinThisTenure, benchmark.Value.Item1, parsedDate);
+            }
+
+            if (BondWithExactTenure != null)
+            {
+                // get bondAndYield of this Bond
+                var bondDraftImliedYield = draftImpliedYields.Where(i => i.BondId == BondWithExactTenure.Id).FirstOrDefault();
+                if (bondDraftImliedYield == null)
+                {
+                    result.Success = false;
+                    result.ErrorMessage = $"The Bond {BondWithExactTenure.IssueNumber} has no Draft Implied Yield";
+                    return result;
+                }
+
+                var BondTenure = Math.Round((BondWithExactTenure.MaturityDate.Date - parsedDate.Date).TotalDays / 364, 4, MidpointRounding.AwayFromZero);
+                result.YieldCurveCalculations.Add(new YieldCurveDataSet
+                {
+                    Yield = (double)Math.Round(bondDraftImliedYield.Yield, 4, MidpointRounding.AwayFromZero),
+                    BondUsed = BondWithExactTenure.IssueNumber,
+                    IssueDate = BondWithExactTenure.IssueDate,
+                    MaturityDate = BondWithExactTenure.MaturityDate,
+                    Tenure = BondTenure
+                });
+
+                usedBondIds.Add(BondWithExactTenure.Id);
+                tenuresThatDoNotRequireInterpolation.Add(BondTenure);
+            }
+            else
+            {
+                tenuresThatRequireInterPolation.Add(benchmark.Key);
+                // FOR EACH OF THE BONDS WITHIN THE TENURE, Create a Yield Curve (We will interpolate the missing ones later)
+                foreach (var bond in bondsWithinThisTenure)
+                {
+                    if (usedBondIds.Contains(bond.Id))
+                    {
+                        continue; // Skip bonds that have already been used
+                    }
+                    var bondDraftImliedYield = draftImpliedYields.Where(i => i.BondId == bond.Id).FirstOrDefault();
+                    if (bondDraftImliedYield == null)
+                    {
+                        result.Success = false;
+                        result.ErrorMessage = $"The Bond {bond.IssueNumber} has no Draft Implied Yield";
+                        return result;
+                    }
+
+                    var BondTenure = Math.Round((bond.MaturityDate.Date - parsedDate.Date).TotalDays / 364, 4, MidpointRounding.AwayFromZero);
+
+                    result.YieldCurveCalculations.Add(new YieldCurveDataSet
+                    {
+                        Yield = (double)Math.Round(bondDraftImliedYield.Yield, 4, MidpointRounding.AwayFromZero),
+                        BondUsed = bond.IssueNumber,
+                        IssueDate = bond.IssueDate,
+                        MaturityDate = bond.MaturityDate,
+                        Tenure = BondTenure
+                    });
+                    usedBondIds.Add(bond.Id);
+
+                }
+            }
+        }
+        result.Success = true;
+        return result;
+    }
+
     public static List<FinalYieldCurveData> GenerateYieldCurves(HashSet<double> tenuresThatRequireInterPolation, HashSet<double> tenuresThatDoNotRequireInterpolation, List<YieldCurveDataSet> yieldCurveCalculations)
     {
         HashSet<double> tenuresToPlot = new HashSet<double>();
@@ -600,13 +679,20 @@ public static class YieldCurveHelper
 
     public static ProcessBenchmarkResult ProcessYieldCurve(DateTime parsedDate, QuotationsBoardContext _db, List<YieldCurveDataSet> yieldCurveCalculations, Dictionary<int, (double, double)> benchmarkRanges, HashSet<double> tenuresThatRequireInterPolation, HashSet<double> tenuresThatDoNotRequireInterpolation, HashSet<string> usedBondIds)
     {
-        var fXdBonds = YieldCurveHelper.GetFXDBonds(parsedDate);
+        var fXdBonds = GetFXDBonds(parsedDate);
         return ProcessBenchmarkRanges(benchmarkRanges, tenuresThatRequireInterPolation, tenuresThatDoNotRequireInterpolation, usedBondIds, parsedDate, _db, fXdBonds);
     }
 
+    public static ProcessBenchmarkResult ProcessYieldCurvePreview(DateTime parsedDate, QuotationsBoardContext _db, List<YieldCurveDataSet> yieldCurveCalculations, Dictionary<int, (double, double)> benchmarkRanges, HashSet<double> tenuresThatRequireInterPolation, HashSet<double> tenuresThatDoNotRequireInterpolation, HashSet<string> usedBondIds, List<DraftImpliedYield> draftImpliedYields)
+    {
+        var fXdBonds = GetFXDBonds(parsedDate);
+        return ProcessBenchmarkRangesForPreview(benchmarkRanges, tenuresThatRequireInterPolation, tenuresThatDoNotRequireInterpolation, usedBondIds, parsedDate, _db, fXdBonds, draftImpliedYields);
+    }
+
+
     public static ProcessBenchmarkResult ProcessYieldCurveUsingQuotes(DateTime parsedDate, QuotationsBoardContext _db, List<YieldCurveDataSet> ieldCurveCalculations, Dictionary<int, (double, double)> benchmarkRanges, HashSet<double> tenuresThatRequireInterPolation, HashSet<double> tenuresThatDoNotRequireInterpolation, HashSet<string> usedBondIds, List<BondAndYield> bondAndYields)
     {
-        var fXdBonds = YieldCurveHelper.GetFXDBonds(parsedDate);
+        var fXdBonds = GetFXDBonds(parsedDate);
         return ProcessBenchmarkRangesUsingQuotesData(benchmarkRanges, tenuresThatRequireInterPolation, tenuresThatDoNotRequireInterpolation, usedBondIds, parsedDate, _db, fXdBonds, bondAndYields);
     }
 
