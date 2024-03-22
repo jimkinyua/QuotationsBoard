@@ -82,6 +82,32 @@ public class QuotationsBoardContext : IdentityDbContext<PortalUser>
     // overide SaveChanges too
     public override int SaveChanges()
     {
+        Institution institution = new Institution();
+        PortalUser portalUser = new PortalUser();
+
+        var InstitutionId = "Anonymous: User not logged in hence not able to get Institution";
+        var UserId = "Anonymous: User not logged in";
+
+        // get current Loggedn in User
+        var httpContextAccessor = new HttpContextAccessor();
+        var user = httpContextAccessor.HttpContext?.User;
+        if (user != null)
+        {
+            var _userId = user.FindFirst(ClaimTypes.NameIdentifier).Value;
+
+            if (_userId != null)
+            {
+                UserId = _userId;
+                portalUser = Users.Include(x => x.Institution).FirstOrDefault(x => x.Id == _userId);
+                if (portalUser != null)
+                {
+                    institution = portalUser.Institution;
+                    InstitutionId = institution.Id;
+                }
+
+            }
+
+        }
         var modifiedEntities = ChangeTracker.Entries()
        .Where(e => e.State == EntityState.Added
        || e.State == EntityState.Modified
@@ -95,10 +121,10 @@ public class QuotationsBoardContext : IdentityDbContext<PortalUser>
                 EntityName = modifiedEntity.Entity.GetType().Name,
                 EntityId = modifiedEntity.Entity.ToString(),
                 Action = modifiedEntity.State.ToString(),
-                ActionBy = "System",
+                ActionBy = UserId,
                 ActionDate = DateTime.Now.ToString(),
                 ActionDetails = GetChanges(modifiedEntity),
-                InstitutionId = "System",
+                InstitutionId = InstitutionId,
                 ActionTime = DateTime.Now
             };
             AuditTrails.Add(AuditLogTosave);
