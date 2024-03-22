@@ -24,99 +24,33 @@ public class QuotationsBoardContext : IdentityDbContext<PortalUser>
     {
         base.OnModelCreating(builder);
     }
+
     public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
-        Institution institution = new Institution();
-        PortalUser portalUser = new PortalUser();
-
-        var InstitutionId = "Anonymous: User not logged in hence not able to get Institution";
-        var UserId = "Anonymous: User not logged in";
-
-        // get current Loggedn in User
-        var httpContextAccessor = new HttpContextAccessor();
-        var user = httpContextAccessor.HttpContext?.User;
-        if (user != null)
-        {
-            var _userId = user.FindFirst(ClaimTypes.NameIdentifier).Value;
-
-            if (_userId != null)
-            {
-                UserId = _userId;
-                portalUser = Users.Include(x => x.Institution).FirstOrDefault(x => x.Id == _userId);
-                if (portalUser != null)
-                {
-                    institution = portalUser.Institution;
-                    InstitutionId = institution.Id;
-                }
-
-            }
-
-        }
-
-
-        var modifiedEntities = ChangeTracker.Entries()
-       .Where(e => e.State == EntityState.Added
-       || e.State == EntityState.Modified
-       || e.State == EntityState.Deleted)
-       .ToList();
-
-        foreach (var modifiedEntity in modifiedEntities)
-        {
-            var AuditLogTosave = new AuditTrail
-            {
-                EntityName = modifiedEntity.Entity.GetType().Name,
-                EntityId = modifiedEntity.Entity.ToString(),
-                Action = modifiedEntity.State.ToString(),
-                ActionBy = UserId,
-                ActionDate = DateTime.Now.ToString(),
-                ActionDetails = GetChanges(modifiedEntity),
-                InstitutionId = InstitutionId,
-                ActionTime = DateTime.Now
-            };
-            AuditTrails.Add(AuditLogTosave);
-        }
-
+        var (UserId, InstitutionId) = GetUserInfo();
+        LogAuditTrail(UserId, InstitutionId);
         return base.SaveChangesAsync(cancellationToken);
     }
 
-    // overide SaveChanges too
     public override int SaveChanges()
     {
-        Institution institution = new Institution();
-        PortalUser portalUser = new PortalUser();
+        var (UserId, InstitutionId) = GetUserInfo();
+        LogAuditTrail(UserId, InstitutionId);
+        return base.SaveChanges();
 
-        var InstitutionId = "Anonymous: User not logged in hence not able to get Institution";
-        var UserId = "Anonymous: User not logged in";
+    }
 
-        // get current Loggedn in User
-        var httpContextAccessor = new HttpContextAccessor();
-        var user = httpContextAccessor.HttpContext?.User;
-        if (user != null)
-        {
-            var _userId = user.FindFirst(ClaimTypes.NameIdentifier).Value;
-
-            if (_userId != null)
-            {
-                UserId = _userId;
-                portalUser = Users.Include(x => x.Institution).FirstOrDefault(x => x.Id == _userId);
-                if (portalUser != null)
-                {
-                    institution = portalUser.Institution;
-                    InstitutionId = institution.Id;
-                }
-
-            }
-
-        }
+    private void LogAuditTrail(string UserId, string InstitutionId)
+    {
         var modifiedEntities = ChangeTracker.Entries()
-       .Where(e => e.State == EntityState.Added
-       || e.State == EntityState.Modified
-       || e.State == EntityState.Deleted)
-       .ToList();
+            .Where(e => e.State == EntityState.Added
+            || e.State == EntityState.Modified
+            || e.State == EntityState.Deleted)
+            .ToList();
 
         foreach (var modifiedEntity in modifiedEntities)
         {
-            var AuditLogTosave = new AuditTrail
+            var auditLogToSave = new AuditTrail
             {
                 EntityName = modifiedEntity.Entity.GetType().Name,
                 EntityId = modifiedEntity.Entity.ToString(),
@@ -127,26 +61,70 @@ public class QuotationsBoardContext : IdentityDbContext<PortalUser>
                 InstitutionId = InstitutionId,
                 ActionTime = DateTime.Now
             };
-            AuditTrails.Add(AuditLogTosave);
+            AuditTrails.Add(auditLogToSave);
         }
-
-        return base.SaveChanges();
     }
 
+    private (string UserId, string InstitutionId) GetUserInfo()
+    {
+        var UserId = "Anonymous: User not logged in";
+        var InstitutionId = "Anonymous: User not logged in hence not able to get Institution";
+        var httpContextAccessor = new HttpContextAccessor();
+        var user = httpContextAccessor.HttpContext?.User;
+        if (user != null)
+        {
+            var claim = user.FindFirst(ClaimTypes.NameIdentifier);
+            if (claim != null)
+            {
+                UserId = claim.Value;
+                var portalUser = Users.Include(x => x.Institution).FirstOrDefault(x => x.Id == UserId);
+                if (portalUser != null)
+                {
+                    InstitutionId = portalUser.Institution.Id;
+                }
+            }
+        }
+        return (UserId, InstitutionId);
+    }
     private static string GetChanges(EntityEntry entity)
     {
         var changes = new StringBuilder();
-        foreach (var property in entity.OriginalValues.Properties)
+        var action = entity.State.ToString();
+
+        changes.AppendLine($"Entity: {entity.Entity.GetType().Name}, Action: {action}");
+
+        if (entity.State == EntityState.Modified)
         {
-            var originalValue = entity.OriginalValues[property];
-            var currentValue = entity.CurrentValues[property];
-            if (!Equals(originalValue, currentValue))
+            foreach (var property in entity.OriginalValues.Properties)
             {
-                changes.AppendLine($"{property.Name}: From '{originalValue}' to '{currentValue}'");
+                var originalValue = entity.OriginalValues[property];
+                var currentValue = entity.CurrentValues[property];
+                if (!Equals(originalValue, currentValue))
+                {
+                    changes.AppendLine($"Property: {property.Name}, From: '{originalValue}', To: '{currentValue}'");
+                }
             }
         }
+        else if (entity.State == EntityState.Added)
+        {
+            foreach (var property in entity.CurrentValues.Properties)
+            {
+                var currentValue = entity.CurrentValues[property];
+                changes.AppendLine($"Property: {property.Name}, Value: '{currentValue}'");
+            }
+        }
+        else if (entity.State == EntityState.Deleted)
+        {
+            foreach (var property in entity.OriginalValues.Properties)
+            {
+                var originalValue = entity.OriginalValues[property];
+                changes.AppendLine($"Property: {property.Name}, Original Value: '{originalValue}'");
+            }
+        }
+
         return changes.ToString();
     }
+
 
     public DbSet<InstitutionApplication> InstitutionApplications { get; set; } = null!;
     public DbSet<InstitutionType> InstitutionTypes { get; set; } = null!;
