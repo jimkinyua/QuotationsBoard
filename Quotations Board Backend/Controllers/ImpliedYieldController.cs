@@ -442,7 +442,7 @@ namespace Quotations_Board_Backend.Controllers
                         if (existingImpliedYield != null)
                         {
                             existingImpliedYield.Yield = YieldToSave;
-                            db.Entry(existingImpliedYield).State = EntityState.Modified;
+                            db.Update(existingImpliedYield);
                         }
                         else
                         {
@@ -594,7 +594,7 @@ namespace Quotations_Board_Backend.Controllers
                         else
                         {
                             TbillImpliedYield.Yield = currentTBill.Yield;
-                            db.Entry(TbillImpliedYield).State = EntityState.Modified;
+                            db.Update(TbillImpliedYield);
                         }
 
                     }
@@ -613,7 +613,7 @@ namespace Quotations_Board_Backend.Controllers
                         if (existingImpliedYield != null)
                         {
                             existingImpliedYield.Yield = YieldToSave;
-                            db.Entry(existingImpliedYield).State = EntityState.Modified;
+                            db.Update(existingImpliedYield);
                         }
                         else
                         {

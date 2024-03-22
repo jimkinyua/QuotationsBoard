@@ -721,7 +721,7 @@ namespace Quotations_Board_Backend.Controllers
                     QuotationToUpdate.InstitutionId = existingQuotationEdit.InstitutionId;
                     QuotationToUpdate.UserId = existingQuotationEdit.UserId;
                     QuotationToUpdate.UpdatedAt = DateTime.Now;
-
+                    context.Quotations.Update(QuotationToUpdate);
                     await context.SaveChangesAsync();
 
                     return StatusCode(200);
@@ -783,6 +783,7 @@ namespace Quotations_Board_Backend.Controllers
                     // Update the quotation edit
                     existingQuotationEdit.Status = QuotationEditStatus.Rejected;
                     existingQuotationEdit.RejectionReason = rejectQuotationEdit.RejectionReason;
+                    context.QuotationEdits.Update(existingQuotationEdit);
                     await context.SaveChangesAsync();
 
                     var emailSubject = "Quotation Edit Rejected";
