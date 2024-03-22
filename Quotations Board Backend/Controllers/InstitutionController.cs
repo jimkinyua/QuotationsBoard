@@ -783,13 +783,7 @@ namespace Quotations_Board_Backend.Controllers
             }
         }
 
-        // Reject Application
-        [HttpPost("RejectApplication")]
-        [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        [SwaggerOperation(Summary = "Reject Institution Application", Description = "Rejects an institution application", OperationId = "RejectInstitutionApplication")]
-        [Authorize(Roles = CustomRoles.SuperAdmin, AuthenticationSchemes = "Bearer")]
-
+       
         // Approve Application
         [HttpPost("ApproveApplication/{id}")]
         [ProducesResponseType(StatusCodes.Status200OK)]
@@ -828,6 +822,12 @@ namespace Quotations_Board_Backend.Controllers
                 return StatusCode(500, UtilityService.HandleException(Ex));
             }
         }
+        // Reject Application
+        [HttpPost("RejectApplication")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [SwaggerOperation(Summary = "Reject Institution Application", Description = "Rejects an institution application", OperationId = "RejectInstitutionApplication")]
+        [Authorize(Roles = CustomRoles.SuperAdmin, AuthenticationSchemes = "Bearer")]
 
         public async Task<IActionResult> RejectInstitutionApplicationAsync(RejectApplication rejectApplication)
         {
