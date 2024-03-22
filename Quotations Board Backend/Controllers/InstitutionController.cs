@@ -134,17 +134,11 @@ namespace Quotations_Board_Backend.Controllers
                     };
                     context.InstitutionApplications.Add(newApplication);
                     await context.SaveChangesAsync();
-                    var res = await ApproveInstitutionApplicationAsync(newApplication.Id);
+                    // var res = await ApproveInstitutionApplicationAsync(newApplication.Id);
                     // check if the application was approved
-                    if (res is OkObjectResult)
-                    {
-                        return Ok("Institution Registered");
-                    }
-                    else
-                    {
-                        // get the error message
-                        return res;
-                    }
+
+                    return Ok("Institution Registered");
+
                 }
 
             }
@@ -757,9 +751,6 @@ namespace Quotations_Board_Backend.Controllers
                                         </head>
                                         <body>
                                             <div class='container'>
-                                                <div class='logo'>
-                                                    <img src='Images/nselogo.png' alt='Nairobi Stock Exchange Logo' width='200px' />
-                                                </div>
                                                 <h1>Application Approval Notification</h1>
                                                 <p>Dear {institutionApplication.AdministratorName},</p>
                                                 <p>We are pleased to inform you that your application for access to the Quotation Board has been approved. As the authorized representative of your institution, you play a vital role in leveraging our platform for your institution's success.</p>
@@ -773,7 +764,7 @@ namespace Quotations_Board_Backend.Controllers
                                                 <p>Should you require any assistance or have any queries, do not hesitate to reach out to our support team by replying to this email.</p>
                                                 <p>We look forward to your institution's active participation on our platform.</p>
                                                 <p>Warm regards,</p>
-                                                <p> Nairobi Stock Exchange</p>
+                                                <p> Nairobi Securities Exchange</p>
                                                
                                             </div>
                                         </body>
@@ -798,6 +789,46 @@ namespace Quotations_Board_Backend.Controllers
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [SwaggerOperation(Summary = "Reject Institution Application", Description = "Rejects an institution application", OperationId = "RejectInstitutionApplication")]
         [Authorize(Roles = CustomRoles.SuperAdmin, AuthenticationSchemes = "Bearer")]
+
+        // Approve Application
+        [HttpPost("ApproveApplication/{id}")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [Authorize(Roles = CustomRoles.SuperAdmin, AuthenticationSchemes = "Bearer")]
+        public async Task<IActionResult> ApproveAsync(string id)
+        {
+            if (string.IsNullOrEmpty(id))
+            {
+                return BadRequest("Id is required");
+            }
+
+            try
+            {
+                using (var context = new QuotationsBoardContext())
+                {
+                    var institutionApplication = await context.InstitutionApplications.FirstOrDefaultAsync(x => x.Id == id);
+                    if (institutionApplication == null)
+                    {
+                        return NotFound();
+                    }
+                    var ApproveResult = await ApproveInstitutionApplicationAsync(institutionApplication.Id);
+                    if (ApproveResult is OkObjectResult)
+                    {
+                        return Ok("Application Approved");
+                    }
+                    else
+                    {
+                        return BadRequest(ApproveResult);
+                    }
+                }
+            }
+            catch (Exception Ex)
+            {
+                UtilityService.LogException(Ex);
+                return StatusCode(500, UtilityService.HandleException(Ex));
+            }
+        }
+
         public async Task<IActionResult> RejectInstitutionApplicationAsync(RejectApplication rejectApplication)
         {
             if (!ModelState.IsValid)
