@@ -85,10 +85,29 @@ namespace Quotations_Board_Backend.Controllers
         [HttpPut("UpdateBond")]
         public async Task<IActionResult> PutBond(UpdateBondDTO bond)
         {
-            // Map the DTO to the model
-            var mapper = new MapperConfiguration(cfg => cfg.CreateMap<UpdateBondDTO, Bond>()).CreateMapper();
-            var bondModel = mapper.Map<Bond>(bond);
-            _context.Entry(bondModel).State = EntityState.Modified;
+            // Model is valid?
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+            // get the bond
+            var bondModel = await _context.Bonds.FindAsync(bond.Id);
+            if (bondModel == null)
+            {
+                return NotFound();
+            }
+            bondModel.IssueNumber = bond.IssueNumber;
+            bondModel.Isin = bond.Isin;
+            bondModel.IssueDate = bond.IssueDate;
+            bondModel.MaturityDate = bond.MaturityDate;
+            bondModel.OutstandingValue = bond.OutstandingValue;
+            bondModel.CouponType = bond.CouponType;
+            bondModel.CouponRate = bond.CouponRate;
+            bondModel.VariableCouponRate = bond.VariableCouponRate;
+            bondModel.BondType = bond.BondType;
+            bondModel.BondCategory = bond.BondCategory;
+            bondModel.IsBenchMarkBond = bond.IsBenchMarkBond;
+            _context.Update(bondModel);
             try
             {
                 await _context.SaveChangesAsync();
