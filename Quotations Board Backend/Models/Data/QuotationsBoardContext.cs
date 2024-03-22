@@ -1,5 +1,7 @@
+using System.Text;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
 
 public class QuotationsBoardContext : IdentityDbContext<PortalUser>
 {
@@ -21,6 +23,75 @@ public class QuotationsBoardContext : IdentityDbContext<PortalUser>
     {
         base.OnModelCreating(builder);
     }
+    public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+    {
+        var modifiedEntities = ChangeTracker.Entries()
+       .Where(e => e.State == EntityState.Added
+       || e.State == EntityState.Modified
+       || e.State == EntityState.Deleted)
+       .ToList();
+
+        foreach (var modifiedEntity in modifiedEntities)
+        {
+            var AuditLogTosave = new AuditTrail
+            {
+                EntityName = modifiedEntity.Entity.GetType().Name,
+                EntityId = modifiedEntity.Entity.ToString(),
+                Action = modifiedEntity.State.ToString(),
+                ActionBy = "System",
+                ActionDate = DateTime.Now.ToString(),
+                ActionDetails = GetChanges(modifiedEntity),
+                InstitutionId = "System",
+                ActionTime = DateTime.Now
+            };
+            AuditTrails.Add(AuditLogTosave);
+        }
+
+        return base.SaveChangesAsync(cancellationToken);
+    }
+
+    // overide SaveChanges too
+    public override int SaveChanges()
+    {
+        var modifiedEntities = ChangeTracker.Entries()
+       .Where(e => e.State == EntityState.Added
+       || e.State == EntityState.Modified
+       || e.State == EntityState.Deleted)
+       .ToList();
+
+        foreach (var modifiedEntity in modifiedEntities)
+        {
+            var AuditLogTosave = new AuditTrail
+            {
+                EntityName = modifiedEntity.Entity.GetType().Name,
+                EntityId = modifiedEntity.Entity.ToString(),
+                Action = modifiedEntity.State.ToString(),
+                ActionBy = "System",
+                ActionDate = DateTime.Now.ToString(),
+                ActionDetails = GetChanges(modifiedEntity),
+                InstitutionId = "System",
+                ActionTime = DateTime.Now
+            };
+            AuditTrails.Add(AuditLogTosave);
+        }
+
+        return base.SaveChanges();
+    }
+
+    private static string GetChanges(EntityEntry entity)
+    {
+        var changes = new StringBuilder();
+        foreach (var property in entity.OriginalValues.Properties)
+        {
+            var originalValue = entity.OriginalValues[property];
+            var currentValue = entity.CurrentValues[property];
+            if (!Equals(originalValue, currentValue))
+            {
+                changes.AppendLine($"{property.Name}: From '{originalValue}' to '{currentValue}'");
+            }
+        }
+        return changes.ToString();
+    }
 
     public DbSet<InstitutionApplication> InstitutionApplications { get; set; } = null!;
     public DbSet<InstitutionType> InstitutionTypes { get; set; } = null!;
@@ -38,5 +109,6 @@ public class QuotationsBoardContext : IdentityDbContext<PortalUser>
     public DbSet<Tenure> Tenures { get; set; } = null!;
     public DbSet<DraftImpliedYield> DraftImpliedYields { get; set; } = null!;
     public DbSet<TBillImpliedYield> TBillImpliedYields { get; set; } = null!;
+    public DbSet<AuditTrail> AuditTrails { get; set; } = null!;
 
 }
