@@ -99,11 +99,29 @@ namespace Quotations_Board_Backend.Controllers
                 return Unauthorized();
             }
 
+            var userId = UtilityService.GetUserIdFromToken(Request);
+
+            if (userId == null)
+            {
+                return Unauthorized();
+            }
+
+            // what institution doe the user belong to? // Make sure they are institution admins too
+            var userRoles = await _userManager.GetRolesAsync(await _userManager.FindByIdAsync(userId));
+            if (userRoles.Count == 0 || userRoles[0] != CustomRoles.InstitutionAdmin)
+            {
+                return Unauthorized();
+            }
+
+
             using (var context = new QuotationsBoardContext())
             {
+
                 Institution? institution = await context.Institutions
-                    .Include(i => i.PortalUsers)
-                    .FirstOrDefaultAsync(i => i.Id == portalUserDTO.InstitutionId);
+               .Include(i => i.PortalUsers)
+               .FirstOrDefaultAsync(i => i.Id == TokenContents.InstitutionId);
+
+
                 if (institution == null)
                 {
                     return NotFound();
