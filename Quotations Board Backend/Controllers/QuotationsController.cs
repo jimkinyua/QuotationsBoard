@@ -12,7 +12,7 @@ namespace Quotations_Board_Backend.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    [Authorize(Roles = $"{CustomRoles.Dealer}, {CustomRoles.ChiefDealer}, {CustomRoles.InstitutionAdmin}, {CustomRoles.SuperAdmin}", AuthenticationSchemes = "Bearer")]
+    // [Authorize(Roles = $"{CustomRoles.Dealer}, {CustomRoles.ChiefDealer}, {CustomRoles.InstitutionAdmin}, {CustomRoles.SuperAdmin}", AuthenticationSchemes = "Bearer")]
 
     public class QuotationsController : ControllerBase
     {
@@ -41,6 +41,11 @@ namespace Quotations_Board_Backend.Controllers
                 }
                 using (var context = new QuotationsBoardContext())
                 {
+                    // is it a weekend?
+                    if (DateTime.Now.DayOfWeek == DayOfWeek.Saturday || DateTime.Now.DayOfWeek == DayOfWeek.Sunday)
+                    {
+                        return BadRequest("Quotations cannot be filled on weekends");
+                    }
                     LoginTokenDTO TokenContents = UtilityService.GetUserIdFromCurrentRequest(Request);
                     var userId = UtilityService.GetUserIdFromToken(Request);
                     // Validate bond
@@ -93,7 +98,8 @@ namespace Quotations_Board_Backend.Controllers
                     .OrderByDescending(q => q.CreatedAt)
                     .Select(q => q.CreatedAt.Date)
                     .FirstOrDefaultAsync();
-                    if (mostRecentTradingDay == default(DateTime))
+                    // if (mostRecentTradingDay == default(DateTime))
+                    if (1 == 2)
                     {
                         // First time this bond is being quoted (We can allow the quotation because there is no previous quotation hennce not bale to compare)
                         // Save the quotation
@@ -103,17 +109,16 @@ namespace Quotations_Board_Backend.Controllers
                     }
                     else
                     {
-                        var LastImpliedYield = context.Quotations
-                                                    .Where(q => q.BondId == quotation.BondId && q.CreatedAt.Date == mostRecentTradingDay.Date)
-                                                    .OrderByDescending(q => q.CreatedAt)
-                                                    .Select(q => q.BuyingYield)
-                                                    .FirstOrDefault();
-                        if (LastImpliedYield == default(double))
+                        var MostRecentImpliedYield = await context.ImpliedYields
+                            .Where(i => i.BondId == bond.Id)
+                            .OrderByDescending(i => i.YieldDate)
+                            .Select(i => i.Yield)
+                            .FirstOrDefaultAsync();
+
+                        if (MostRecentImpliedYield == default(double))
                         {
-                            // Save the quotation
-                            await context.Quotations.AddAsync(quotation);
-                            await context.SaveChangesAsync();
-                            return StatusCode(201, quotation);
+                            // reject
+                            return BadRequest("Quotation Rejected: The last implied yield for this bond was not found. Please contact the system administrator for assistance.");
                         }
 
                         var RemainingTenorInYearsQuotedBond = QuotationsHelper.CalculateRemainingTenor(bond.MaturityDate, quotation.CreatedAt);
@@ -123,7 +128,7 @@ namespace Quotations_Board_Backend.Controllers
                         if (await QuotationsHelper.IsValidationEnabledForTenureAsync(RemainingTenorInYearsQuotedBond))
                         {
                             double currentAverageWeightedYield = QuotationsHelper.CalculateCurrentAverageWeightedYield(quotation.BuyingYield, quotation.BuyVolume, quotation.SellingYield, quotation.SellVolume);
-                            var change = Math.Abs(currentAverageWeightedYield - LastImpliedYield);
+                            var change = Math.Abs(currentAverageWeightedYield - MostRecentImpliedYield);
                             if (change > 1)
                             {
                                 return BadRequest($"Quotation Rejected: The change in yield is {change}%, which significantly differs from the last implied yield recorded on {mostRecentTradingDay}. This exceeds our allowable limit of 1%. To resolve this, please adjust your buying or selling yields to bring the change within the 1% limit and resubmit the quotation.");
