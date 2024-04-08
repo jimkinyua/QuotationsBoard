@@ -36,7 +36,7 @@ namespace Quotations_Board_Backend.Controllers
                         return Unauthorized();
                     }
                     // does the tenure already exist?
-                    var tenureExists = context.Tenures.Any(t => t.Tenor == tenure.Tenor);
+                    var tenureExists = context.Tenures.Any(t => t.Tenor == tenure.Tenor && t.IsDeleted == false);
                     if (tenureExists)
                     {
                         return BadRequest("Tenure already exists");

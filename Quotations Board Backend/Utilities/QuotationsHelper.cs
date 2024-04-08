@@ -243,7 +243,7 @@ public static class QuotationsHelper
     {
         using (var context = new QuotationsBoardContext())
         {
-            var tenure = await context.Tenures.FirstOrDefaultAsync(x => x.Tenor == tenor);
+            var tenure = await context.Tenures.FirstOrDefaultAsync(x => x.Tenor == tenor && x.IsDeleted == false);
             if (tenure != null)
             {
                 return tenure.IsValidationEnabled;
