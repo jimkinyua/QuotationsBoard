@@ -89,7 +89,7 @@ namespace Quotations_Board_Backend.Controllers
                     var existingQuotation = await context.Quotations.FirstOrDefaultAsync(q => q.InstitutionId == quotation.InstitutionId && q.BondId == quotation.BondId && q.CreatedAt.Date == quotation.CreatedAt.Date);
                     if (existingQuotation != null)
                     {
-                        return BadRequest(" A quotation for this bond has already been  for today");
+                        return BadRequest(" A quotation for this bond has already been placed for today");
                     }
 
                     // GET THE MOST RECENT DAY A QUOTATION WAS FILLED FOR THIS BOND Except today
