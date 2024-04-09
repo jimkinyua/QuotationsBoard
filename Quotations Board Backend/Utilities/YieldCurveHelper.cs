@@ -366,6 +366,11 @@ public static class YieldCurveHelper
 
             if (BondWithExactTenure != null)
             {
+                if (benchmark.Key == 1)
+                {
+                    // I year TBill reigns supreme
+                    continue;
+                }
                 // get implied yield of this Bond
                 var impliedYield = _db.ImpliedYields.Where(i => i.BondId == BondWithExactTenure.Id && i.YieldDate.Date == parsedDate.Date).FirstOrDefault();
                 if (impliedYield == null)
