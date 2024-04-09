@@ -514,6 +514,8 @@ namespace Quotations_Board_Backend.Controllers
                 yieldCurveCalculations.AddRange(Mnaoes.YieldCurveCalculations);
                 YieldCurveHelper.InterpolateWhereNecessary(yieldCurveCalculations, tenuresThatRequireInterPolation);
                 YieldCurveToPlot = YieldCurveHelper.GenerateYieldCurves(tenuresThatRequireInterPolation, tenuresThatDoNotRequireInterpolation, yieldCurveCalculations);
+                // sort the yield curve by tenure lowest to highest
+                YieldCurveToPlot = YieldCurveToPlot.OrderBy(y => y.Tenure).ToList();
                 return Ok(YieldCurveToPlot);
 
             }

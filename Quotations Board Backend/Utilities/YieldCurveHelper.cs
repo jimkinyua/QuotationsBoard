@@ -525,6 +525,11 @@ public static class YieldCurveHelper
 
             if (BondWithExactTenure != null)
             {
+                if (benchmark.Key == 1)
+                {
+                    // I year TBill reigns supreme
+                    continue;
+                }
                 // get bondAndYield of this Bond
                 var bondDraftImliedYield = draftImpliedYields.Where(i => i.BondId == BondWithExactTenure.Id).FirstOrDefault();
                 if (bondDraftImliedYield == null)
