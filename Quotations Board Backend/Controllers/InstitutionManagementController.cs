@@ -108,7 +108,7 @@ namespace Quotations_Board_Backend.Controllers
 
             // what institution doe the user belong to? // Make sure they are institution admins too
             var userRoles = await _userManager.GetRolesAsync(await _userManager.FindByIdAsync(userId));
-            if (userRoles.Count == 0 || userRoles[0] != CustomRoles.InstitutionAdmin)
+            if (userRoles.Count == 0 || userRoles[0] != CustomRoles.InstitutionAdmin || TokenContents.InstitutionId != portalUserDTO.InstitutionId || userRoles[0] != CustomRoles.SuperAdmin)
             {
                 return Unauthorized();
             }

@@ -451,51 +451,143 @@ namespace Quotations_Board_Backend.Controllers
         [HttpPost("ResetPassword")]
         public async Task<IActionResult> ResetPassword(ResetPasswordDTO resetPassword)
         {
-            if (UtilityService.IsDTOValid(resetPassword) == true)
+            using (var context = new QuotationsBoardContext())
             {
-
-                var user = await _userManager.FindByIdAsync(resetPassword.UserId);
-                if (user == null)
+                if (UtilityService.IsDTOValid(resetPassword) == true)
                 {
-                    return NotFound($"Unable to load user with ID '{resetPassword.UserId}'.");
-                }
 
-                // is account locked out?
-                if (await _userManager.IsLockedOutAsync(user))
+                    var user = await _userManager.FindByIdAsync(resetPassword.UserId);
+                    if (user == null)
+                    {
+                        return NotFound($"Unable to load user with ID '{resetPassword.UserId}'.");
+                    }
+
+                    // is account locked out?
+                    if (await _userManager.IsLockedOutAsync(user))
+                    {
+                        return BadRequest("User account locked out.");
+                    }
+
+                    // Calidate Password
+                    var passwordValidator = new PasswordValidator<PortalUser>();
+                    var passwordValidationResult = await passwordValidator.ValidateAsync(_userManager, user, resetPassword.Password);
+
+                    if (!passwordValidationResult.Succeeded)
+                    {
+                        var Passerrors = passwordValidationResult.Errors.Select(result => result.Description);
+                        return BadRequest(Passerrors);
+                    }
+
+
+                    var result = await _userManager.ResetPasswordAsync(user, resetPassword.Token, resetPassword.Password);
+                    if (result.Succeeded)
+                    {
+                        // update the user and set TwoFactorEnabled to true
+                        user.TwoFactorEnabled = true;
+                        await _userManager.UpdateAsync(user);
+                        return Ok();
+                    }
+                    // did it fail due to invalid token?
+                    if (result.Errors.Any(x => x.Code == "InvalidToken"))
+                    {
+                        //get user details 
+                        var institutionUser = await _userManager.Users.FirstOrDefaultAsync(x => x.Id == resetPassword.UserId);
+                        if (institutionUser == null)
+                        {
+                            return BadRequest("Invalid login attempt.");
+                        }
+                        var UserRoles = await _userManager.GetRolesAsync(institutionUser);
+                        // has user set up password? if not and they have role inst admin send them a link to set up password
+                        if (UserRoles.Contains(CustomRoles.InstitutionAdmin))
+                        {
+                            var instAdmin = await _userManager.Users.FirstOrDefaultAsync(x => x.Id == resetPassword.UserId);
+                            if (instAdmin == null)
+                            {
+                                return BadRequest("Invalid login attempt.");
+                            }
+                            var actualInst = await context.Institutions.FirstOrDefaultAsync(x => x.Id == instAdmin.InstitutionId);
+                            if (actualInst == null)
+                            {
+                                return BadRequest("Invalid login attempt. Can't Find Your Insititution");
+                            }
+                            var InstApplication = await context.InstitutionApplications.FirstOrDefaultAsync(x => x.InstitutionName == actualInst.OrganizationName);
+
+                            if (InstApplication == null)
+                            {
+                                return BadRequest("Invalid login attempt. Can't Find Your Insititution");
+                            }
+                            // is the passoword field null?
+                            if (string.IsNullOrEmpty(instAdmin.PasswordHash))
+                            {
+                                var token = await _userManager.GenerateEmailConfirmationTokenAsync(instAdmin);
+                                var encodedUserId = HttpUtility.UrlEncode(instAdmin.Id);
+                                var encodedCode = HttpUtility.UrlEncode(token);
+                                var callbackUrl = $"{_configuration["FrontEndUrl"]}/complete-institution-setup?userId={encodedUserId}&code={encodedCode}";
+
+                                var adminSubject = "Institution Application Approved";
+                                var adminMessage = "";
+
+                                var emailHtml = $@"
+                                        <html>
+                                        <head>
+                                            <style>
+                                                body {{ font-family: Arial, sans-serif; background-color: #f5f5f5; margin: 0; padding: 0; }}
+                                                .container {{ max-width: 600px; margin: 0 auto; background-color: #ffffff; padding: 20px; }}
+                                                h1 {{ color: #0052CC; }}
+                                                p {{ font-size: 16px; color: #555; }}
+                                                a.button {{ 
+                                                    text-decoration: none; 
+                                                    color: #ffffff; 
+                                                    background-color: #0052CC; 
+                                                    padding: 10px 20px; 
+                                                    border-radius: 5px; 
+                                                    display: inline-block; 
+                                                }}
+                                                a.button:hover {{ background-color: #003E7E; }}
+                                                .logo {{ text-align: center; margin-bottom: 20px; }}
+                                                .footer {{ background-color: #0052CC; color: #ffffff; text-align: center; padding: 10px; font-size: 12px; }}
+                                            </style>
+                                        </head>
+                                        <body>
+                                            <div class='container'>
+                                                <h1>Application Approval Notification</h1>
+                                                <p>Dear {InstApplication.AdministratorName},</p>
+                                                <p>We are pleased to inform you that your application for access to the Quotation Board has been approved. As the authorized representative of your institution, you play a vital role in leveraging our platform for your institution's success.</p>
+                                                <p>Key Information:</p>
+                                                <ul>
+                                                    <li><strong>Login Credentials:</strong> Please use your email address, {InstApplication.AdministratorEmail}, to log in to the Quotations Board Platform.</li>
+                                                    <li><strong>User Management:</strong> As the primary contact, you are responsible for managing user accounts and ensuring a secure experience for your institution's members.</li>
+                                                </ul>
+                                                <p>To set up your password and complete your account setup, please click the link below:</p>
+                                                <a href='{callbackUrl}' class='button'>Set Up Your Password</a>
+                                                <p>Should you require any assistance or have any queries, do not hesitate to reach out to our support team by replying to this email.</p>
+                                                <p>We look forward to your institution's active participation on our platform.</p>
+                                                <p>Warm regards,</p>
+                                                <p> Nairobi Securities Exchange</p>
+                                               
+                                            </div>
+                                        </body>
+                                        </html>";
+
+                                await UtilityService.SendEmailAsync(instAdmin.Email, adminSubject, emailHtml);
+                                return Ok("Please check your email for a password reset link.");
+                            }
+                        }
+
+                    }
+
+                    // If we got this far, something failed. Fetch the error list and display it.
+                    var errors = result.Errors.Select(result => result.Description);
+                    return BadRequest(errors);
+
+                }
+                else
                 {
-                    return BadRequest("User account locked out.");
+                    var errors = UtilityService.FetchDataAnnotationErrors(resetPassword);
+                    return BadRequest(errors);
                 }
-
-                // Calidate Password
-                var passwordValidator = new PasswordValidator<PortalUser>();
-                var passwordValidationResult = await passwordValidator.ValidateAsync(_userManager, user, resetPassword.Password);
-
-                if (!passwordValidationResult.Succeeded)
-                {
-                    var Passerrors = passwordValidationResult.Errors.Select(result => result.Description);
-                    return BadRequest(Passerrors);
-                }
-
-
-                var result = await _userManager.ResetPasswordAsync(user, resetPassword.Token, resetPassword.Password);
-                if (result.Succeeded)
-                {
-                    // update the user and set TwoFactorEnabled to true
-                    user.TwoFactorEnabled = true;
-                    await _userManager.UpdateAsync(user);
-                    return Ok();
-                }
-
-                // If we got this far, something failed. Fetch the error list and display it.
-                var errors = result.Errors.Select(result => result.Description);
-                return BadRequest(errors);
-
             }
-            else
-            {
-                var errors = UtilityService.FetchDataAnnotationErrors(resetPassword);
-                return BadRequest(errors);
-            }
+
         }
 
         // Intentionally Change Password
