@@ -91,6 +91,7 @@ namespace Quotations_Board_Backend.Controllers
         }
 
         [HttpPost("AddInstitutionUser")]
+        [Authorize(Roles = $"{CustomRoles.InstitutionAdmin}, {CustomRoles.SuperAdmin}", AuthenticationSchemes = "Bearer")]
         public async Task<ActionResult<PortalUserDTO>> AddInstitutionUser(NewPortalUser portalUserDTO)
         {
             LoginTokenDTO TokenContents = UtilityService.GetUserIdFromCurrentRequest(Request);
@@ -107,15 +108,35 @@ namespace Quotations_Board_Backend.Controllers
             }
 
             // what institution doe the user belong to? // Make sure they are institution admins too
-            var userRoles = await _userManager.GetRolesAsync(await _userManager.FindByIdAsync(userId));
-            if (userRoles.Count == 0 || userRoles[0] != CustomRoles.InstitutionAdmin || TokenContents.InstitutionId != portalUserDTO.InstitutionId || userRoles[0] != CustomRoles.SuperAdmin)
-            {
-                return Unauthorized();
-            }
+            // var userRoles = await _userManager.GetRolesAsync(await _userManager.FindByIdAsync(userId));
+            // if (userRoles.Count == 0 || userRoles[0] != CustomRoles.InstitutionAdmin || TokenContents.InstitutionId != portalUserDTO.InstitutionId || userRoles[0] != CustomRoles.SuperAdmin)
+            // {
+            //     return Unauthorized();
+            // }
 
 
             using (var context = new QuotationsBoardContext())
             {
+
+                var userAddingUser = await context.Users.FirstOrDefaultAsync(u => u.Id == userId);
+                if (userAddingUser == null)
+                {
+                    return Unauthorized();
+                }
+
+                // role of the user adding the new user
+                var userAddingUserRole = await _userManager.GetRolesAsync(userAddingUser);
+                if (userAddingUserRole.Count == 0)
+                {
+                    return Unauthorized();
+                }
+
+                // is the user superamin role contained in the many rols they may have
+                if (userAddingUserRole.Contains(CustomRoles.SuperAdmin))
+                {
+                    // new user will also be a super admin
+                    portalUserDTO.Role = CustomRoles.SuperAdmin;
+                }
 
                 Institution? institution = await context.Institutions
                .Include(i => i.PortalUsers)
