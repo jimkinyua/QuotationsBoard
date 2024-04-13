@@ -278,11 +278,11 @@ namespace Quotations_Board_Backend.Controllers
                         throw new Exception($"A quotation for this bond at cell {row} has already been filled for today.");
                     }
 
-                    var mostRecentTradingDay = dbContext.Quotations
+                    /*var mostRecentTradingDay = dbContext.Quotations
                         .Where(q => q.BondId == bond.Id && q.CreatedAt < DateTime.Now.Date)
                         .OrderByDescending(q => q.CreatedAt)
                         .Select(q => q.CreatedAt.Date)
-                        .FirstOrDefault();
+                        .FirstOrDefault();*/
 
                     Quotation quote = new Quotation
                     {
@@ -295,17 +295,18 @@ namespace Quotations_Board_Backend.Controllers
                         CreatedAt = DateTime.Now,
                         InstitutionId = user.InstitutionId
                     };
-                    if (mostRecentTradingDay == default(DateTime))
+                    //if (mostRecentTradingDay == default(DateTime))
+                    if (1==2)
                     {
                         // First time this bond is being quoted (We can allow the quotation because there is no previous quotation hennce not bale to compare)
-                        quotationRows.Add(quote);
+                        //quotationRows.Add(quote);
                     }
                     else
                     {
-                        var LastImpliedYield = dbContext.Quotations
-                            .Where(q => q.BondId == bond.Id && q.CreatedAt.Date == mostRecentTradingDay.Date)
-                            .OrderByDescending(q => q.CreatedAt)
-                            .Select(q => q.BuyingYield)
+                        var LastImpliedYield = dbContext.ImpliedYields
+                            .Where(q => q.BondId == bond.Id && q.YieldDate.Date <= DateTime.Now.Date)
+                            .OrderByDescending(q => q.YieldDate)
+                            .Select(q => q.Yield)
                             .FirstOrDefault();
                         if (LastImpliedYield == default(double))
                         {
@@ -319,7 +320,7 @@ namespace Quotations_Board_Backend.Controllers
                             var change = Math.Abs(currentAverageWeightedYield - LastImpliedYield);
                             if (change > 1)
                             {
-                                throw new Exception($"Quotation at row {row} rejected. The current average weighted yield ({currentAverageWeightedYield:0.##}%) significantly differs from the last implied yield ({LastImpliedYield:0.##}%) recorded on {mostRecentTradingDay:yyyy-MM-dd}. The percentage change of {change:0.##}% exceeds the allowable limit of 1%.");
+                                throw new Exception($"Quotation at row {row} rejected. The current average weighted yield ({currentAverageWeightedYield:0.##}%) significantly differs from the last implied yield ({LastImpliedYield:0.##}%) recorded on. The percentage change of {change:0.##}% exceeds the allowable limit of 1%.");
                             }
                         }
                         quotationRows.Add(quote);
@@ -570,11 +571,14 @@ namespace Quotations_Board_Backend.Controllers
 
 
                         var emailSubject = "Quotation Edit";
+                        List<string> CCEmails = new List<string>();
+                        CCEmails.Add("souko@nse.co.ke");
+
                         await UtilityService.SendEmailAsync(
-                            //superAdmin.Email,
-                            "jackline.njeri@agilebiz.co.ke",
+                            superAdmin.Email,
                             emailSubject,
-                            emailBody
+                            emailBody,
+                            CCEmails
                         );
                     }
                     return StatusCode(200, quotationEdit);
