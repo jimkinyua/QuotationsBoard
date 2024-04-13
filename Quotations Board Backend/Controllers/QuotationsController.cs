@@ -62,7 +62,7 @@ namespace Quotations_Board_Backend.Controllers
                     // Validate quotation time (if required)
                     if (!QuotationsHelper.IsValidQuotationTime(DateTime.Now))
                     {
-                        return BadRequest("Quotations past 9 am are not accepted");
+                        return BadRequest("Quotations past 9:30 am are not accepted");
                     }
 
 
@@ -176,7 +176,7 @@ namespace Quotations_Board_Backend.Controllers
                     // Validate quotation time (if required)
                     if (!QuotationsHelper.IsValidQuotationTime(DateTime.Now))
                     {
-                        return BadRequest("Quotations past 9 am are not accepted");
+                        return BadRequest("Quotations past 9:30 am are not accepted");
                     }
 
                     // Read the excel file
@@ -296,7 +296,7 @@ namespace Quotations_Board_Backend.Controllers
                         InstitutionId = user.InstitutionId
                     };
                     //if (mostRecentTradingDay == default(DateTime))
-                    if (1==2)
+                    if (1 == 2)
                     {
                         // First time this bond is being quoted (We can allow the quotation because there is no previous quotation hennce not bale to compare)
                         //quotationRows.Add(quote);
@@ -436,6 +436,11 @@ namespace Quotations_Board_Backend.Controllers
                 if (!ModelState.IsValid)
                 {
                     return BadRequest(ModelState);
+                }
+                if (QuotationsHelper.isValidQuotationEditTime(DateTime.Now) == false)
+                {
+                    return BadRequest("Quotations can only be edited between 9:00 am and 3:00 pm");
+
                 }
                 using (var context = new QuotationsBoardContext())
                 {

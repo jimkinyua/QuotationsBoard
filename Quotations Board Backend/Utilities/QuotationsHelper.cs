@@ -280,8 +280,22 @@ public static class QuotationsHelper
 
     public static bool IsValidQuotationTime(DateTime createdAt)
     {
-        // Uncomment and adjust logic if time-based validation is required
-        // return createdAt.Hour < 9;
+        // make sure not past 9:30am
+        if (createdAt.TimeOfDay > new TimeSpan(9, 30, 0))
+        {
+            return false;
+        }
+
+        return true;
+    }
+
+    public static bool isValidQuotationEditTime(DateTime createdAt)
+    {
+        // make sure not past 9:30am
+        if (createdAt.TimeOfDay > new TimeSpan(3, 00, 0))
+        {
+            return false;
+        }
 
         return true;
     }
