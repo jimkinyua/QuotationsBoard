@@ -281,7 +281,7 @@ public static class QuotationsHelper
     public static bool IsValidQuotationTime(DateTime createdAt)
     {
         // make sure not past 9:30am
-        if (createdAt.TimeOfDay > new TimeSpan(9, 30, 0))
+        if (createdAt.TimeOfDay > new TimeSpan(9, 00, 0))
         {
             return false;
         }
@@ -292,12 +292,12 @@ public static class QuotationsHelper
     public static bool isValidQuotationEditTime(DateTime createdAt)
     {
         // make sure not past 9:30am
-        if (createdAt.TimeOfDay > new TimeSpan(3, 00, 0))
+        if (createdAt.TimeOfDay < new TimeSpan(3, 00, 0))
         {
-            return false;
+            return true;
         }
 
-        return true;
+        return false;
     }
 
     public static string ValidateYields(double buyingYield, double sellingYield)
