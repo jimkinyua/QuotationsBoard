@@ -62,7 +62,7 @@ namespace Quotations_Board_Backend.Controllers
                     // Validate quotation time (if required)
                     if (!QuotationsHelper.IsValidQuotationTime(DateTime.Now))
                     {
-                        return BadRequest("Quotations past 9:30 am are not accepted");
+                        return BadRequest("Quotations past 9:00 am are not accepted");
                     }
 
 
@@ -176,7 +176,7 @@ namespace Quotations_Board_Backend.Controllers
                     // Validate quotation time (if required)
                     if (!QuotationsHelper.IsValidQuotationTime(DateTime.Now))
                     {
-                        return BadRequest("Quotations past 9:30 am are not accepted");
+                        return BadRequest("Quotations past 9:00 am are not accepted");
                     }
 
                     // Read the excel file
