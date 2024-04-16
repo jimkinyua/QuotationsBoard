@@ -280,25 +280,39 @@ public static class QuotationsHelper
 
     public static bool IsValidQuotationTime(DateTime createdAt)
     {
-        // make sure not past 9:30am
-        if (createdAt.TimeOfDay > new TimeSpan(9, 00, 0))
-        {
-            return false;
-        }
+        // Extract the time part of the DateTime
+        TimeSpan time = createdAt.TimeOfDay;
 
-        return true;
+        // Define the cutoff time as 9:00 AM
+        TimeSpan cutoffTime = new TimeSpan(9, 00, 0);
+
+        // Check if the time is before or exactly at 9:00 AM
+        if (time <= cutoffTime)
+        {
+            return true;
+        }
+        return false;
     }
+
 
     public static bool isValidQuotationEditTime(DateTime createdAt)
     {
-        // make sure not past 9:30am
-        if (createdAt.TimeOfDay < new TimeSpan(3, 00, 0))
+        // Extract only the time part of the DateTime
+        TimeSpan time = createdAt.TimeOfDay;
+
+        // Define start and end times
+        TimeSpan startTime = new TimeSpan(9, 30, 0); // 9:30 AM
+        TimeSpan endTime = new TimeSpan(15, 00, 0); // 3:00 PM
+
+        // Check if the time is within the allowed time range
+        if (time >= startTime && time <= endTime)
         {
             return true;
         }
 
         return false;
     }
+
 
     public static string ValidateYields(double buyingYield, double sellingYield)
     {
