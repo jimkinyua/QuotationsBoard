@@ -863,7 +863,78 @@ namespace Quotations_Board_Backend.Controllers
             }
         }
 
+        // List of Quotation Edits Pending Approval
+        [HttpGet("GetQuotationEditsPendingApproval")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [Authorize(Roles = CustomRoles.SuperAdmin, AuthenticationSchemes = "Bearer")]
 
+        public async Task<ActionResult<List<QuotationEditDTO>>?> GetQuotationEditsPendingApproval()
+        {
+            try
+            {
+                using (var context = new QuotationsBoardContext())
+                {
+                    var quotationEdits = await context.QuotationEdits
+                        .Where(q => q.Status == QuotationEditStatus.Pending)
+                        .ToListAsync();
+
+                    List<QuotationEditDTO> quotationEditDTOs = new List<QuotationEditDTO>();
+                    foreach (var quotationEdit in quotationEdits)
+                    {
+                        var bond = await context.Bonds.FirstOrDefaultAsync(b => b.Id == quotationEdit.BondId);
+                        if (bond == null)
+                        {
+                            return BadRequest("Invalid bond");
+                        }
+
+                        Institution? institution = await context.Institutions.FirstOrDefaultAsync(i => i.Id == quotationEdit.InstitutionId);
+                        if (institution == null)
+                        {
+                            return BadRequest("Invalid institution");
+                        }
+
+                        var user = await context.Users.FirstOrDefaultAsync(u => u.Id == quotationEdit.UserId);
+                        if (user == null)
+                        {
+                            return BadRequest("Invalid user");
+                        }
+
+                        var quotation = await context.Quotations.FirstOrDefaultAsync(q => q.Id == quotationEdit.QuotationId);
+                        if (quotation == null)
+                        {
+                            return BadRequest("Invalid quotation");
+                        }
+
+                        var quotationEditDTO = new QuotationEditDTO
+                        {
+                            BondId = bond.Isin,
+                            BuyYield = quotationEdit.BuyingYield,
+                            BuyVolume = quotationEdit.BuyVolume,
+                            SellYield = quotationEdit.SellingYield,
+                            SellVolume = quotationEdit.SellVolume,
+                            CreatedAt = quotationEdit.CreatedAt,
+                            OrganizationName = institution.OrganizationName,
+                            EditSubmittedBy = user.FirstName + " " + user.LastName,
+                            QuotationId = quotationEdit.QuotationId,
+                            Status = quotationEdit.Status,
+                            Comment = quotationEdit.Comment ?? "",
+                            Id = quotationEdit.Id,
+                        };
+
+                        quotationEditDTOs.Add(quotationEditDTO);
+                    }
+
+                    return StatusCode(200, quotationEditDTOs);
+                }
+
+            }
+            catch (Exception Ex)
+            {
+                UtilityService.LogException(Ex);
+                return StatusCode(500, UtilityService.HandleException(Ex));
+            }
+        }
 
         // Fetch all quotations filled by Institution
         [HttpGet("GetQuotationsFilledByInstitution/{bondId}/{From}/{To}")]
