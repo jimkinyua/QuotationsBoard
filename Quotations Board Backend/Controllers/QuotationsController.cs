@@ -908,7 +908,8 @@ namespace Quotations_Board_Backend.Controllers
 
                         var quotationEditDTO = new QuotationEditDTO
                         {
-                            BondId = bond.Isin,
+                            ISIN = bond.Isin,
+                            BondId = bond.Id,
                             BuyYield = quotationEdit.BuyingYield,
                             BuyVolume = quotationEdit.BuyVolume,
                             SellYield = quotationEdit.SellingYield,
@@ -918,7 +919,7 @@ namespace Quotations_Board_Backend.Controllers
                             EditSubmittedBy = user.FirstName + " " + user.LastName,
                             QuotationId = quotationEdit.QuotationId,
                             Status = quotationEdit.Status,
-                            Comment = quotationEdit.Comment ?? "",
+                            // Comment = quotationEdit.Comment ?? "",
                             Id = quotationEdit.Id,
                         };
 

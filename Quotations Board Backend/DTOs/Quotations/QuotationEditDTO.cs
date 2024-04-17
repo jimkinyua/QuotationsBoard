@@ -5,4 +5,5 @@ public class QuotationEditDTO : EditQuotation
     public string OrganizationName { get; set; } = null!;
     public string Status { get; set; } = null!;
     public string EditSubmittedBy { get; set; } = null!;
+    public string ISIN { get; set; } = null!;
 }
