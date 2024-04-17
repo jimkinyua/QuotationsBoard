@@ -439,7 +439,7 @@ namespace Quotations_Board_Backend.Controllers
                 }
                 if (QuotationsHelper.isValidQuotationEditTime(DateTime.Now) == false)
                 {
-                    return BadRequest("Quotations can only be edited between 9:00 am and 3:00 pm");
+                    return BadRequest("Quotations can only be edited between 9:30 am and 3:00 pm");
 
                 }
                 using (var context = new QuotationsBoardContext())
