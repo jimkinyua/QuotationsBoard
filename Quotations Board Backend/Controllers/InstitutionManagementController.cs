@@ -130,22 +130,36 @@ namespace Quotations_Board_Backend.Controllers
                 {
                     return Unauthorized();
                 }
+                Institution? institution = await context.Institutions
+                            .Include(i => i.PortalUsers)
+                            .FirstOrDefaultAsync(i => i.Id == TokenContents.InstitutionId);
 
+
+                if (institution == null)
+                {
+                    return NotFound();
+                }
                 // is the user superamin role contained in the many rols they may have
                 if (userAddingUserRole.Contains(CustomRoles.SuperAdmin))
                 {
                     // new user will also be a super admin
                     portalUserDTO.Role = CustomRoles.SuperAdmin;
                 }
-
-                Institution? institution = await context.Institutions
-               .Include(i => i.PortalUsers)
-               .FirstOrDefaultAsync(i => i.Id == TokenContents.InstitutionId);
-
-
-                if (institution == null)
+                switch (institution.InstitutionType)
                 {
-                    return NotFound();
+                    case "7":
+                        portalUserDTO.Role = CustomRoles.CentralBank;
+                        break;
+                    case "8":
+
+                        portalUserDTO.Role = CustomRoles.CapitalMarketsRegulator;
+                        break;
+                    case "9":
+                        portalUserDTO.Role = CustomRoles.NseSRO;
+                        break;
+                    default:
+                        portalUserDTO.Role = CustomRoles.InstitutionAdmin;
+                        break;
                 }
 
                 // check if user already exists
@@ -160,6 +174,8 @@ namespace Quotations_Board_Backend.Controllers
                     return BadRequest("User already exists");
                 }
 
+
+
                 var mapper = new MapperConfiguration(cfg => cfg.CreateMap<NewPortalUser, PortalUser>()).CreateMapper();
                 var portalUser = mapper.Map<PortalUser>(portalUserDTO);
                 portalUser.InstitutionId = institution.Id;
@@ -173,6 +189,7 @@ namespace Quotations_Board_Backend.Controllers
                 {
                     return BadRequest("Role does not exist");
                 }
+
 
                 // add user to role 
                 // add user to role of InstitutionAdmin

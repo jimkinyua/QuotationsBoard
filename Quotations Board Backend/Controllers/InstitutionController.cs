@@ -690,9 +690,11 @@ namespace Quotations_Board_Backend.Controllers
                     };
                     context.Users.Add(newPortalUser);
 
+
+
                     //  Fetch the roles available
                     var roles = await context.Roles.ToListAsync();
-                    // Usure all roles in the Roles class exist in the database if not create them
+                    // Esnure all roles in the Roles class exist in the database if not create them
                     foreach (var role in CustomRoles.AllRoles)
                     {
 
@@ -703,20 +705,38 @@ namespace Quotations_Board_Backend.Controllers
                         }
 
                     }
-                    var institutionAdminRole = await context.Roles.FirstOrDefaultAsync(x => x.Name == CustomRoles.InstitutionAdmin);
-                    if (institutionAdminRole == null)
+                    // default role to assign
+                    var roleToAssign = CustomRoles.InstitutionAdmin;
+                    // is the institution type 7 or 8? (Central Bank or Capital Markets Regulator)
+                    switch (institutionApplication.InstitutionType)
+                    {
+                        case "7":
+                            roleToAssign = CustomRoles.CentralBank;
+                            break;
+                        case "8":
+                            roleToAssign = CustomRoles.CapitalMarketsRegulator;
+                            break;
+                        case "11":
+                            roleToAssign = CustomRoles.NseSRO;
+                            break;
+                        default:
+                            roleToAssign = CustomRoles.InstitutionAdmin;
+                            break;
+                    }
+
+                    var roleOfUser = await context.Roles.FirstOrDefaultAsync(x => x.Name == roleToAssign);
+                    if (roleOfUser == null)
                     {
                         return BadRequest("Institution Admin Role does not exist");
                     }
                     // add user to role of InstitutionAdmin
                     var userRole = new IdentityUserRole<string>
                     {
-                        RoleId = institutionAdminRole.Id,
+                        RoleId = roleOfUser.Id,
                         UserId = newPortalUser.Id
                     };
                     context.UserRoles.Add(userRole);
 
-                    ;
 
                     await context.SaveChangesAsync();
                     // Generate Email Confirmation PasswordResetToken
@@ -783,7 +803,7 @@ namespace Quotations_Board_Backend.Controllers
             }
         }
 
-       
+
         // Approve Application
         [HttpPost("ApproveApplication/{id}")]
         [ProducesResponseType(StatusCodes.Status200OK)]
