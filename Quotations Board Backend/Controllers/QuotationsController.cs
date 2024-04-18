@@ -278,6 +278,12 @@ namespace Quotations_Board_Backend.Controllers
                         throw new Exception($"A quotation for this bond at cell {row} has already been filled for today.");
                     }
 
+                    var existingQuotationInList = quotationRows.FirstOrDefault(q => q.BondId == bond.Id && q.UserId == userId && q.CreatedAt.Date == DateTime.Now.Date);
+                    if (existingQuotationInList != null)
+                    {
+                        throw new Exception($"Duplicate quotation for bond ID '{bondId}' at row {row}. Please ensure each bond is quoted only once.");
+                    }
+
                     /*var mostRecentTradingDay = dbContext.Quotations
                         .Where(q => q.BondId == bond.Id && q.CreatedAt < DateTime.Now.Date)
                         .OrderByDescending(q => q.CreatedAt)
@@ -493,13 +499,13 @@ namespace Quotations_Board_Backend.Controllers
                     QuotationEdit quotationEdit = new QuotationEdit
                     {
                         BondId = existingQuotation.BondId,
-                        BuyingYield = existingQuotation.BuyingYield,
-                        BuyVolume = existingQuotation.BuyVolume,
-                        SellingYield = existingQuotation.SellingYield,
-                        SellVolume = existingQuotation.SellVolume,
-                        CreatedAt = existingQuotation.CreatedAt,
+                        BuyingYield = editQuotation.BuyYield,
+                        BuyVolume = editQuotation.BuyVolume,
+                        SellingYield = editQuotation.SellYield,
+                        SellVolume = editQuotation.SellVolume,
+                        CreatedAt = DateTime.Now,
                         InstitutionId = existingQuotation.InstitutionId,
-                        UserId = existingQuotation.UserId,
+                        UserId = userId,
                         QuotationId = existingQuotation.Id,
                         Status = QuotationEditStatus.Pending,
                         Comment = editQuotation.Comment
@@ -867,7 +873,7 @@ namespace Quotations_Board_Backend.Controllers
         [HttpGet("GetQuotationEditsPendingApproval")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        [Authorize(Roles = CustomRoles.SuperAdmin, AuthenticationSchemes = "Bearer")]
+        //[Authorize(Roles = CustomRoles.SuperAdmin, AuthenticationSchemes = "Bearer")]
 
         public async Task<ActionResult<List<QuotationEditDTO>>?> GetQuotationEditsPendingApproval()
         {

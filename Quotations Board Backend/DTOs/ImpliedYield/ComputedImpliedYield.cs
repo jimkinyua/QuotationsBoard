@@ -8,4 +8,5 @@ public class ComputedImpliedYield
     public double TradedYield { get; set; }
     public double QuotedYield { get; set; }
     public double PreviousYield { get; set; }
+    public double CentralBankYield { get; set; }
 }

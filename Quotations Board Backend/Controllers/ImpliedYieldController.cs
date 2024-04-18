@@ -373,7 +373,8 @@ namespace Quotations_Board_Backend.Controllers
                             SelectedYield = selectedYield,
                             TradedYield = averageWeightedTradedYield,
                             QuotedYield = averageWeightedQuotedYield,
-                            PreviousYield = _preImpYield //previousImpliedYield.Yield
+                            PreviousYield = _preImpYield, //previousImpliedYield.Yield
+                            CentralBankYield = 0,
                         });
                     }
 
@@ -433,6 +434,10 @@ namespace Quotations_Board_Backend.Controllers
                         else if (selectedImpliedYield == SelectedYield.TradedYield)
                         {
                             YieldToSave = impliedYield.TradedYield;
+                        }
+                        else if (selectedImpliedYield == SelectedYield.CentalBankYield)
+                        {
+                            YieldToSave = impliedYield.CentralBankYield;
                         }
                         else
                         {
