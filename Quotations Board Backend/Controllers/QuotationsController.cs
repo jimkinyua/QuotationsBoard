@@ -607,7 +607,7 @@ namespace Quotations_Board_Backend.Controllers
         [HttpGet("GetQuotationEditDetails/{QuotationEditId}")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public async Task<ActionResult<QuotationEdit>> GetQuotationEditDetails(string QuotationEditId)
+        public async Task<ActionResult<QuotationEditMoreDetails>> GetQuotationEditDetails(string QuotationEditId)
         {
             try
             {
@@ -653,12 +653,18 @@ namespace Quotations_Board_Backend.Controllers
                         return BadRequest("Invalid quotation");
                     }
 
-                    var quotationEditDTO = new QuotationEditDTO
+                    var quotationEditDTO = new QuotationEditMoreDetails
                     {
                         BondId = bond.Isin,
-                        BuyYield = quotationEdit.BuyingYield,
+                        BondName = bond.IssueNumber,
+                        PresentBuyingYield = quotation.BuyingYield,
+                        PresentSellingYield = quotation.SellingYield,
+                        PresentBuyVolume = quotation.BuyVolume,
+                        PresentSellVolume = quotation.SellVolume,
+                        InstitutionId = institution.Id,
+                        BuyingYield = quotationEdit.BuyingYield,
                         BuyVolume = quotationEdit.BuyVolume,
-                        SellYield = quotationEdit.SellingYield,
+                        SellingYield = quotationEdit.SellingYield,
                         SellVolume = quotationEdit.SellVolume,
                         CreatedAt = quotationEdit.CreatedAt,
                         OrganizationName = institution.OrganizationName,
