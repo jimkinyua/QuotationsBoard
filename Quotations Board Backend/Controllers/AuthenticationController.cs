@@ -208,7 +208,7 @@ namespace Quotations_Board_Backend.Controllers
                     }
                     else if (roles.Contains(CustomRoles.NseSRO))
                     {
-                        loginTokenDTO.IsSuperAdmin= false;
+                        loginTokenDTO.IsSuperAdmin = false;
                         loginTokenDTO.Role = CustomRoles.NseSRO;
                         loginTokenDTO.InstitutionId = institution.Id;
                         loginTokenDTO.InstitutionName = institution.OrganizationName;
@@ -397,9 +397,32 @@ namespace Quotations_Board_Backend.Controllers
                             loginTokenDTO.Name = user.FirstName + " " + user.LastName;
                             loginTokenDTO.Email = user.Email;
                         }
-                        else
+                        else if (roles.Contains(CustomRoles.NseSRO))
                         {
-                            return BadRequest("Invalid login attempt. No Role");
+                            loginTokenDTO.IsSuperAdmin = false;
+                            loginTokenDTO.Role = CustomRoles.NseSRO;
+                            loginTokenDTO.InstitutionId = user.InstitutionId;
+                            loginTokenDTO.InstitutionName = user.Institution.OrganizationName;
+                            loginTokenDTO.Name = user.FirstName + " " + user.LastName;
+                            loginTokenDTO.Email = user.Email;
+                        }
+                        else if (roles.Contains(CustomRoles.CentralBank))
+                        {
+                            loginTokenDTO.IsSuperAdmin = false;
+                            loginTokenDTO.Role = CustomRoles.CentralBank;
+                            loginTokenDTO.InstitutionId = user.InstitutionId;
+                            loginTokenDTO.InstitutionName = user.Institution.OrganizationName;
+                            loginTokenDTO.Name = user.FirstName + " " + user.LastName;
+                            loginTokenDTO.Email = user.Email;
+                        }
+                        else if (roles.Contains(CustomRoles.CapitalMarketsRegulator))
+                        {
+                            loginTokenDTO.IsSuperAdmin = false;
+                            loginTokenDTO.Role = CustomRoles.CapitalMarketsRegulator;
+                            loginTokenDTO.InstitutionId = user.InstitutionId;
+                            loginTokenDTO.InstitutionName = user.Institution.OrganizationName;
+                            loginTokenDTO.Name = user.FirstName + " " + user.LastName;
+                            loginTokenDTO.Email = user.Email;
                         }
 
                         var claims = new List<Claim>
