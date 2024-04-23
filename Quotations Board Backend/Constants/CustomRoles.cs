@@ -6,9 +6,9 @@ public class CustomRoles
     public const string ChiefDealer = "ChiefDealer";
     public const string InstitutionAdmin = "InstitutionAdmin";
     public const string APIUser = "APIUser";
-    public const string CentralBank = "CentralBank";
-    public const string CapitalMarketsRegulator = "CapitalMarketsRegulator";
-    public const string NseSRO = "NseSRO";
+    public const string CentralBank = "CBK";
+    public const string CapitalMarketsRegulator = "CMA";
+    public const string NseSRO = "NSE SRO";
     // All Roles
     public static readonly string[] AllRoles = { SuperAdmin, Institution, Dealer, ChiefDealer, InstitutionAdmin, APIUser, CentralBank, CapitalMarketsRegulator, NseSRO };
 }

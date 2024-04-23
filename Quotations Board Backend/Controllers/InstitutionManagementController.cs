@@ -91,7 +91,7 @@ namespace Quotations_Board_Backend.Controllers
         }
 
         [HttpPost("AddInstitutionUser")]
-        [Authorize(Roles = $"{CustomRoles.InstitutionAdmin}, {CustomRoles.SuperAdmin}", AuthenticationSchemes = "Bearer")]
+        [Authorize(Roles = $"{CustomRoles.InstitutionAdmin}, {CustomRoles.SuperAdmin}, {CustomRoles.CapitalMarketsRegulator}, {CustomRoles.CentralBank}, {CustomRoles.NseSRO}", AuthenticationSchemes = "Bearer")]
         public async Task<ActionResult<PortalUserDTO>> AddInstitutionUser(NewPortalUser portalUserDTO)
         {
             LoginTokenDTO TokenContents = UtilityService.GetUserIdFromCurrentRequest(Request);

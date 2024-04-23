@@ -9,4 +9,5 @@ public class ComputedImpliedYield
     public double QuotedYield { get; set; }
     public double PreviousYield { get; set; }
     public double CentralBankYield { get; set; }
+    public double Tenor { get; set; }
 }

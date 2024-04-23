@@ -16,8 +16,17 @@ public class QuotationsBoardContext : IdentityDbContext<PortalUser>
     // On Configuring. Called when the DbContextOptions are not provided to the constructor
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
-        var config = new ConfigurationBuilder().SetBasePath(Directory.GetCurrentDirectory()).AddJsonFile("appsettings.json").Build();
+        var environment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
+        var config = new ConfigurationBuilder()
+       .SetBasePath(Directory.GetCurrentDirectory())
+       .AddJsonFile("appsettings.json")
+       .AddJsonFile($"appsettings.{environment}.json", optional: true)
+       .AddEnvironmentVariables()
+       .Build();
+
         optionsBuilder.UseSqlServer(config.GetConnectionString("DefaultConnection"));
+        // var config = new ConfigurationBuilder().SetBasePath(Directory.GetCurrentDirectory()).AddJsonFile("appsettings.json").Build();
+        // optionsBuilder.UseSqlServer(config.GetConnectionString("DefaultConnection"));
     }
 
     protected override void OnModelCreating(ModelBuilder builder)

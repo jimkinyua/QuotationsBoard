@@ -221,6 +221,12 @@ public static class QuotationsHelper
         return (decimal)Math.Floor(remainingTenorInYears);
     }
 
+    public static double CalculateRemainingTenorInDouble(DateTime maturityDate, DateTime createdAt)
+    {
+        var remainingTenorInYears = Math.Round((maturityDate.Date - createdAt.Date).TotalDays / 364, 4, MidpointRounding.AwayFromZero);
+        return remainingTenorInYears;
+    }
+
     public static double CalculateBondAndAverageQuotedYield(List<Quotation> quotationsForBond)
     {
         var totalBuyVolume = quotationsForBond.Sum(x => x.BuyVolume);

@@ -1,5 +1,6 @@
 ﻿using System.Globalization;
 using ClosedXML.Excel;
+using DocumentFormat.OpenXml.Drawing.Diagrams;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -375,6 +376,7 @@ namespace Quotations_Board_Backend.Controllers
                             QuotedYield = averageWeightedQuotedYield,
                             PreviousYield = _preImpYield, //previousImpliedYield.Yield
                             CentralBankYield = 0,
+
                         });
                     }
 
@@ -411,8 +413,42 @@ namespace Quotations_Board_Backend.Controllers
             {
                 using (var db = new QuotationsBoardContext())
                 {
+                    List<ImpliedYieldDataSet> impliedYieldDataSet = new List<ImpliedYieldDataSet>();
+
                     var bonds = db.Bonds.ToList();
                     var bondsNotMatured = bonds.Where(b => b.MaturityDate.Date > _draftImpliedYieldDTO.YieldDate.Date).ToList();
+                    var (startOfCycle, endOfCycle) = TBillHelper.GetCurrentTBillCycle(_draftImpliedYieldDTO.YieldDate);
+                    var currentTbills = db.TBills
+                                           .Where(t => t.IssueDate.Date >= startOfCycle.Date
+                                                       && t.IssueDate.Date <= endOfCycle.Date)
+                                           .ToList();
+                    HashSet<double> tenuresThatRequireInterPolation = new HashSet<double>();
+                    List<YieldCurveDataSet> yieldCurveCalculations = new List<YieldCurveDataSet>();
+                    // are there any tbills for the current week?
+                    if (!currentTbills.Any())
+                    {
+                        return BadRequest($"There are no T-Bills for the current week starting from {startOfCycle} to {endOfCycle}. This is required to calculate the Implied Yield");
+                    }
+                    // get one Year T-Bill for the current week
+                    var oneYearTBill = currentTbills.Where(t => t.Tenor == 364).FirstOrDefault();
+                    if (oneYearTBill == null)
+                    {
+                        return BadRequest("One year Tbill for the current week starting from " + startOfCycle + " to " + endOfCycle + " does not exist. This is required to calculate the variance betwwen the current and previous One Year TBill");
+                    }
+
+                    ImpliedYieldDataSet impliedYieldWithTbillData = new ImpliedYieldDataSet
+                    {
+                        BondId = oneYearTBill.Tenor / 364 + " Year T-Bill",
+                        IsBenchMarkBond = false,
+                        IsTbill = true,
+                        Yield = oneYearTBill.Yield,
+                        YieldDate = _draftImpliedYieldDTO.YieldDate,
+                        Tenor = oneYearTBill.Tenor / 364,
+                        BondCategory = "TBill",
+                        IssueDate = oneYearTBill.IssueDate,
+                        MaturityDate = oneYearTBill.MaturityDate
+                    };
+                    impliedYieldDataSet.Add(impliedYieldWithTbillData);
 
                     foreach (var impliedYield in _draftImpliedYieldDTO.ImpliedYields)
                     {
@@ -422,6 +458,8 @@ namespace Quotations_Board_Backend.Controllers
                             return BadRequest($"Bond with Id {impliedYield.BondId} does not exist or has matured");
                         }
                         double YieldToSave = 0;
+                        var BondRemainingTenure = QuotationsHelper.CalculateRemainingTenorInDouble(bondDetails.MaturityDate, _draftImpliedYieldDTO.YieldDate);
+                        var isBenchmark = YieldCurveHelper.IsBenchmarkTenure(bondDetails);
                         var selectedImpliedYield = impliedYield.SelectedYield;
                         if (selectedImpliedYield == SelectedYield.PreviousYield)
                         {
@@ -443,11 +481,76 @@ namespace Quotations_Board_Backend.Controllers
                         {
                             return BadRequest("Seems you have selected an invalid Implied Yield");
                         }
-                        var existingImpliedYield = db.DraftImpliedYields.Where(i => i.YieldDate.Date == _draftImpliedYieldDTO.YieldDate.Date && i.BondId == bondDetails.Id).FirstOrDefault();
-                        if (existingImpliedYield != null)
+
+
+                        ImpliedYieldDataSet impliedYieldData = new ImpliedYieldDataSet
                         {
-                            existingImpliedYield.Yield = YieldToSave;
-                            db.Update(existingImpliedYield);
+                            BondId = bondDetails.IssueNumber,
+                            IsBenchMarkBond = isBenchmark,
+                            IsTbill = false,
+                            Yield = YieldToSave,
+                            SelectedYield = YieldToSave,
+                            YieldDate = _draftImpliedYieldDTO.YieldDate,
+                            Tenor = BondRemainingTenure,
+                            BondCategory = bondDetails.BondCategory ?? "N/A",
+                            IssueDate = bondDetails.IssueDate,
+                            MaturityDate = bondDetails.MaturityDate
+                        };
+                        impliedYieldDataSet.Add(impliedYieldData);
+
+                    }
+
+                    // order the implied yield data set by tenure
+                    impliedYieldDataSet = impliedYieldDataSet.OrderBy(i => i.Tenor).ToList();
+                    // remove the IFBS and N\A bonds
+                    var FxdsToInterpolate = impliedYieldDataSet.Where(i => i.BondCategory != "IFB" && i.BondCategory != "N/A").ToList();
+                    var TheRestofTheBonds = impliedYieldDataSet.Where(i => i.BondCategory == "IFB" || i.BondCategory == "N/A").ToList();
+                    // enusre no bond is the two lists
+                    if (FxdsToInterpolate.Count + TheRestofTheBonds.Count != impliedYieldDataSet.Count)
+                    {
+                        return BadRequest("There seems to be a bond in both the IFB and N/A category and the FXD category");
+                    }
+                    // set the yield as null where teh bond is not a benchmark bond, but skip the first bond and the last bond
+                    for (int i = 1; i < FxdsToInterpolate.Count - 1; i++)
+                    {
+                        if (FxdsToInterpolate[i].IsBenchMarkBond || FxdsToInterpolate[i].IsTbill)
+                        {
+                            continue;
+                        }
+                        FxdsToInterpolate[i].Yield = 0;
+                        tenuresThatRequireInterPolation.Add(FxdsToInterpolate[i].Tenor);
+                    }
+
+                    foreach (var filteredDataSet in FxdsToInterpolate)
+                    {
+                        var isTbill = filteredDataSet.IsTbill;
+                        YieldCurveDataSet yieldCurveDataSet = new YieldCurveDataSet
+                        {
+                            BondUsed = filteredDataSet.BondId,
+                            IssueDate = filteredDataSet.IssueDate,
+                            MaturityDate = filteredDataSet.MaturityDate,
+                            Tenure = filteredDataSet.Tenor,
+                            Yield = filteredDataSet.Yield,
+                            isTbill = isTbill
+                        };
+                        yieldCurveCalculations.Add(yieldCurveDataSet);
+                    }
+
+                    YieldCurveHelper.InterpolateWhereNecessary(yieldCurveCalculations, tenuresThatRequireInterPolation, true);
+                    // time to handle the others that are not interpolated
+                    foreach (var bond in TheRestofTheBonds)
+                    {
+                        var bondDetails = bondsNotMatured.Where(b => b.IssueNumber == bond.BondId).FirstOrDefault();
+                        if (bondDetails == null)
+                        {
+                            return BadRequest($"Bond with Id {bond.BondId} does not exist or has matured");
+                        }
+                        double YieldToSave = bond.SelectedYield;
+                        var _existingImpliedYield = db.DraftImpliedYields.Where(i => i.YieldDate.Date == _draftImpliedYieldDTO.YieldDate.Date && i.BondId == bondDetails.Id).FirstOrDefault();
+                        if (_existingImpliedYield != null)
+                        {
+                            _existingImpliedYield.Yield = YieldToSave;
+                            db.Update(_existingImpliedYield);
                         }
                         else
                         {
@@ -455,13 +558,47 @@ namespace Quotations_Board_Backend.Controllers
                             {
                                 BondId = bondDetails.Id,
                                 Yield = YieldToSave,
-                                YieldDate = impliedYield.YieldDate
+                                YieldDate = _draftImpliedYieldDTO.YieldDate
                             };
                             db.DraftImpliedYields.Add(impliedYieldToSave);
                         }
+
+                    }
+
+                    foreach (var interPolatedYield in yieldCurveCalculations) // Only FXDs are here
+                    {
+                        if (interPolatedYield.isTbill)
+                        {
+                            continue;
+                        }
+                        var bondDetails = bondsNotMatured.Where(b => b.IssueNumber == interPolatedYield.BondUsed).FirstOrDefault();
+                        if (bondDetails == null)
+                        {
+                            return BadRequest($"Bond with Id {interPolatedYield.BondUsed} does not exist or has matured");
+                        }
+                        double YieldToSave = interPolatedYield.Yield;
+                        var _existingImpliedYield = db.DraftImpliedYields.Where(i => i.YieldDate.Date == _draftImpliedYieldDTO.YieldDate.Date && i.BondId == bondDetails.Id).FirstOrDefault();
+                        if (_existingImpliedYield != null)
+                        {
+                            _existingImpliedYield.Yield = YieldToSave;
+                            db.Update(_existingImpliedYield);
+                        }
+                        else
+                        {
+                            var impliedYieldToSave = new DraftImpliedYield
+                            {
+                                BondId = bondDetails.Id,
+                                Yield = YieldToSave,
+                                YieldDate = _draftImpliedYieldDTO.YieldDate
+                            };
+                            db.DraftImpliedYields.Add(impliedYieldToSave);
+                        }
+
                     }
 
                     db.SaveChanges();
+
+
 
                     return Ok();
 

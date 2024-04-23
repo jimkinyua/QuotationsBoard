@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore;
 
 public static class YieldCurveHelper
 {
-    public static List<YieldCurveDataSet> InterpolateWhereNecessary(List<YieldCurveDataSet> yieldCurveDataList, HashSet<double> tenuresThatRequireInterPolation)
+    public static List<YieldCurveDataSet> InterpolateWhereNecessary(List<YieldCurveDataSet> yieldCurveDataList, HashSet<double> tenuresThatRequireInterPolation, Boolean IsImpliedYieldInterploation = false)
     {
         yieldCurveDataList.Sort((x, y) => x.Tenure.CompareTo(y.Tenure));
         foreach (var tenureToInterpolate in tenuresThatRequireInterPolation)
@@ -16,25 +16,44 @@ public static class YieldCurveHelper
                 // Perform the interpolation
                 double interpolatedYield = PerformLinearInterpolation(previousData, nextData, tenureToInterpolate);
 
-                // Create a new YieldCurve object for the interpolated yield
-                var interpolatedYieldCurve = new YieldCurveDataSet
+
+
+                if (IsImpliedYieldInterploation)
                 {
-                    Yield = interpolatedYield,
-                    BondUsed = "Interpolated",
-                    Tenure = tenureToInterpolate
-                };
+                    // do update the yield of this tenure
+                    var _yieldCurve = yieldCurveDataList.Where(y => y.Tenure == tenureToInterpolate).FirstOrDefault();
+                    if (_yieldCurve != null)
+                    {
+                        _yieldCurve.Yield = interpolatedYield;
+                        _yieldCurve.isInterpolated = true;
+                    }
 
-                // Find the correct index to insert the new interpolatedYieldCurve
-                int insertIndex = yieldCurveDataList.FindIndex(y => y.Tenure > tenureToInterpolate);
-                if (insertIndex < 0) insertIndex = yieldCurveDataList.Count; // If not found, add to the end
+                }
+                else
+                {
+                    // Create a new YieldCurve object for the interpolated yield
+                    var interpolatedYieldCurve = new YieldCurveDataSet
+                    {
+                        Yield = interpolatedYield,
+                        BondUsed = "Interpolated",
+                        Tenure = tenureToInterpolate
+                    };
+                    // Find the correct index to insert the new interpolatedYieldCurve
+                    int insertIndex = yieldCurveDataList.FindIndex(y => y.Tenure > tenureToInterpolate);
+                    if (insertIndex < 0) insertIndex = yieldCurveDataList.Count; // If not found, add to the end
 
-                // Insert the interpolatedYieldCurve into the yieldCurveDataList
-                yieldCurveDataList.Insert(insertIndex, interpolatedYieldCurve);
+                    // Insert the interpolatedYieldCurve into the yieldCurveDataList
+                    yieldCurveDataList.Insert(insertIndex, interpolatedYieldCurve);
+                }
+
+
             }
         }
 
         return yieldCurveDataList;
     }
+
+
 
     public static YieldCurveDataSet? GetCurrentTBillYield(DateTime fromDate)
     {
@@ -136,7 +155,15 @@ public static class YieldCurveHelper
     }
     private static bool IsYieldMissing(YieldCurveDataSet data)
     {
-        return data.Yield == 0 || string.IsNullOrEmpty(data.BondUsed);
+        bool isYieldMissingOrZero = data.Yield == 0;
+        bool isBondUsedMissingOrEmpty = string.IsNullOrEmpty(data.BondUsed);
+
+        if (isYieldMissingOrZero || isBondUsedMissingOrEmpty)
+        {
+            return true;
+        }
+
+        return false;
     }
 
     // receives a list of bonds and tenure then filters out that are within the tenure
@@ -711,13 +738,14 @@ public static class YieldCurveHelper
         return ProcessBenchmarkRangesUsingQuotesData(benchmarkRanges, tenuresThatRequireInterPolation, tenuresThatDoNotRequireInterpolation, usedBondIds, parsedDate, _db, fXdBonds, bondAndYields);
     }
 
-
-
-
-
-
-
-
+    public static bool IsBenchmarkTenure(Bond bondDetails)
+    {
+        if (bondDetails.IsBenchMarkBond)
+        {
+            return true;
+        }
+        return false;
+    }
 }
 
 
